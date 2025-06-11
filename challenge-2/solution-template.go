@@ -22,13 +22,6 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	out := ""
-	if s == "" {
-		return out
-	}
-	n := len(s)
-	for i := n - 1; i >= 0; i-- {
-		out += string(s[i])
-	}
-	return out
+	// TODO: Implement the function
+	return ""
 }
