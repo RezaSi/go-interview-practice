@@ -26,68 +26,50 @@ func main() {
 // BinarySearch performs a standard binary search to find the target in the sorted array.
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearch(arr []int, target int) int {
-	// TODO: Target in between test not detected -> inf loop
+	// get len of arr and assert > 0
 	l := len(arr)
 	if l == 0 {
 		return -1
 	}
-	if l == 1 {
-		if arr[0] == target {
-			return 0
-		}
-		return -1
-	}
 
+	// set boundaries and initial search indices
 	leftEnd, rightEnd := 0, l-1
 	midIdx := rightEnd / 2
-	// done := false
-
 	currLeft, currRight := leftEnd, rightEnd
+
+	// loop thru mid points
 	for {
 		// see if we've hit the target, bingo
 		if arr[midIdx] == target {
 			return midIdx
 		}
-		// see if we've reached either end and we're done, not found
+
+		// see if we've reached either end and we're done, i.e. not found
 		if midIdx == leftEnd || midIdx == rightEnd {
 			return -1
 		}
-		// go right
-		if arr[midIdx] < target {
-			currLeft = midIdx
-			midIdx = currLeft + (currRight-currLeft)/2
-			if midIdx == currLeft {
-				midIdx++
+
+		// check if current bounds adjacent, check both for target or done
+		if currRight-currLeft == 1 {
+			if arr[currLeft] == target {
+				return currLeft
 			}
-		} else { // go left
-			currRight = midIdx
-			midIdx = currLeft + (currRight-currLeft)/2
+			if arr[currRight] == target {
+				return currRight
+			}
+			return -1
 		}
+
+		// check for left or right
+		if arr[midIdx] < target {
+			currLeft = midIdx // go right
+		} else {
+			currRight = midIdx // go left
+		}
+
+		// set new mid point
+		midIdx = currLeft + (currRight-currLeft)/2
 	}
-	/*
-			Start with the middle element of the array
-		If the target value equals the middle element, we're done
-		If the target value is less than the middle element, search the left half
-		If the target value is greater than the middle element, search the right half
-		Repeat until the element is found or the search space is empty
-		Binary search has a time complexity of O(log n), which is much more efficient than linear search (O(n)) for large datasets.
-
-		Implementation Approaches
-		Iterative Implementation:
-
-		Use a loop with left and right pointers
-		Calculate middle index in each iteration
-		Adjust pointers based on comparison with target
-		Continue until element is found or search space is exhausted
-
-	*/
-	// midIdx :=
-	// if l ==  {
-	// 	if arr[0] == target {
-	// 		return 0
-	// 	}
-	// }
-	return -2
 }
 
 // BinarySearchRecursive performs binary search using recursion.
