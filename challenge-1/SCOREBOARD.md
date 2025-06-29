@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AliNazariii | 6 | 6 |
 | RezaSi | 6 | 6 |
+| bmeverett | 6 | 6 |
 | krmaxwell | 6 | 6 |
 | lajosbnk | 6 | 6 |
 | mick4711 | 6 | 6 |
