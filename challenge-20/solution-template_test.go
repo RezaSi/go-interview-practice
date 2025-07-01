@@ -129,10 +129,7 @@ func TestCircuitOpening(t *testing.T) {
 
 	// Execute failing operations to trip the circuit
 	for i := 0; i < 3; i++ {
-		result, err := cb.Call(ctx, op.execute)
-		if err != nil {
-			t.Errorf("Expected no error for failed operation, got %v", err)
-		}
+		result, _ := cb.Call(ctx, op.execute)
 		if result != nil {
 			t.Errorf("Expected nil result for failed operation, got %v", result)
 		}
