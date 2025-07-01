@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -92,7 +93,7 @@ func BenchmarkSlowSort(b *testing.B) {
 
 	for _, size := range sizes {
 		data := generateRandomSlice(size)
-		b.Run(string(size), func(b *testing.B) {
+		b.Run(fmt.Sprint(size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				SlowSort(data)
 			}
@@ -105,7 +106,7 @@ func BenchmarkOptimizedSort(b *testing.B) {
 
 	for _, size := range sizes {
 		data := generateRandomSlice(size)
-		b.Run(string(size), func(b *testing.B) {
+		b.Run(fmt.Sprint(size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				OptimizedSort(data)
 			}

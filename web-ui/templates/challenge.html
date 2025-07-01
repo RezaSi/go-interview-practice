@@ -193,6 +193,9 @@
         const learningElement = document.getElementById('learning-materials');
         renderMarkdown(challengeData.learningMaterials, learningElement);
 
+        // Initialize learning materials highlighting
+        initLearningMaterials('learning-materials', challengeData.id);
+
         // Initialize hints system
         initializeHints(challengeData.hints);
 
