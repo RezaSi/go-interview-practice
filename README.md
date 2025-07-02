@@ -59,9 +59,9 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **15**/30 | **50.0%** | Expert | ✅✅✅✅✅✅✅⬜⬜⬜⬜⬜✅⬜⬜<br/>✅✅✅✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **19**/30 | **63.3%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜⬜⬜⬜✅ |
 | 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 🥉 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **10**/30 | **33.3%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜⬜⬜⬜✅⬜⬜⬜⬜⬜✅ |
+| 🥉 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
 | 4 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **5**/30 | **16.7%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 5 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 6 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
@@ -84,7 +84,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 - **Total Challenges Available**: 30
 - **Active Developers**: 15
-- **Most Challenges Solved**: 15 by odelbos
+- **Most Challenges Solved**: 19 by odelbos
 
 ---
 
