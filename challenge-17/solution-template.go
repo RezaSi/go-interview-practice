@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"unicode"
 )
 
 func main() {
@@ -22,8 +24,22 @@ func main() {
 // IsPalindrome checks if a string is a palindrome.
 // A palindrome reads the same backward as forward, ignoring case, spaces, and punctuation.
 func IsPalindrome(s string) bool {
-	// TODO: Implement this function
 	// 1. Clean the string (remove spaces, punctuation, and convert to lowercase)
+	s = strings.ToLower(s)
+	runes := []rune(s)
+	res := make([]rune, 0, len(s))
+	for _, r := range runes {
+		if unicode.In(r, unicode.Letter, unicode.Digit) {
+			res = append(res, r)
+		}
+	}
 	// 2. Check if the cleaned string is the same forwards and backwards
-	return false
+	l := len(res)
+	for i := 0; i < l/2; i++ {
+		if res[i] != res[l-i-1] {
+			return false
+		}
+	}
+
+	return true
 }
