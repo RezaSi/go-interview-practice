@@ -63,7 +63,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
 | 🥉 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
 | 4 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **11**/30 | **36.7%** | Advanced | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 5 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **8**/30 | **26.7%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜✅⬜⬜⬜⬜ |
+| 5 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **10**/30 | **33.3%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜✅⬜⬜⬜⬜ |
 | 6 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 7 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 8 | <img src="https://github.com/Seokky.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Seokky](https://github.com/Seokky)** | **3**/30 | **10.0%** | Beginner | ✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
@@ -124,7 +124,29 @@ go run main.go
 - Follow the provided Git commands to commit and push your changes
 - Create a pull request to contribute your solutions back to the main project
 
-### Option 2: Command Line
+### Option 2: GitHub Codespaces (Cloud Development + Web UI)
+
+Want to get started instantly without setting up anything locally? Use GitHub Codespaces!
+
+1. **Fork this repository** (if you haven't already)
+2. **Open in Codespaces**: Click the green "Code" button on your forked repository, then select "Codespaces" tab
+3. **Create Codespace**: Click "Create codespace on main"
+4. **Start the Web UI**: Once the codespace loads, open a terminal and run:
+   ```bash
+   cd web-ui
+   go run main.go
+   ```
+5. **Access the Web UI**: Click on the "Ports" tab in the bottom panel, then click the "Open in Browser" button next to port 8080
+
+**Benefits of using Codespaces:**
+- No local setup required
+- Pre-configured Go environment
+- Full VS Code experience in the browser
+- Automatic port forwarding for the web UI
+- All dependencies pre-installed
+- Works on any device with a browser
+
+### Option 3: Command Line
 
 ```bash
 # 1. Fork the repository first (see step 1 above)
