@@ -13,6 +13,7 @@
 | jersonzc | 6 | 6 |
 | krmaxwell | 6 | 6 |
 | lajosbnk | 6 | 6 |
+| lanmanul | 6 | 6 |
 | mick4711 | 6 | 6 |
 | odelbos | 6 | 6 |
 | puffyguy | 6 | 6 |
