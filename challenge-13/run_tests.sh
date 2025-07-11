@@ -29,24 +29,40 @@ fi
 # Create a temporary directory to avoid modifying the original files
 TEMP_DIR=$(mktemp -d)
 
-# Copy the participant's solution and the test file to the temporary directory
+# Copy the participant's solution, test file, and go.mod to the temporary directory
 cp "$SUBMISSION_FILE" "solution-template_test.go" "$TEMP_DIR/"
+
+# Copy go.mod if it exists
+if [ -f "go.mod" ]; then
+    cp "go.mod" "$TEMP_DIR/"
+fi
 
 echo "Running tests for user '$USERNAME'..."
 
 # Navigate to the temporary directory
 pushd "$TEMP_DIR" > /dev/null
 
-# Initialize a new Go module in the temporary directory
-go mod init "challenge" || {
-  echo "Failed to initialize Go module."
-  popd > /dev/null
-  rm -rf "$TEMP_DIR"
-  exit 1
-}
-
-# Add dependencies and tidy
-go mod tidy
+# If go.mod exists, use it; otherwise initialize a new module
+if [ -f "go.mod" ]; then
+    echo "Using existing go.mod file"
+    # Update module name to avoid conflicts (macOS compatible)
+    sed -i '' 's/^module .*/module challenge/' go.mod
+    # Download dependencies
+    go mod tidy || {
+        echo "Failed to download dependencies."
+        popd > /dev/null
+        rm -rf "$TEMP_DIR"
+        exit 1
+    }
+else
+    # Initialize a new Go module in the temporary directory
+    go mod init "challenge" || {
+        echo "Failed to initialize Go module."
+        popd > /dev/null
+        rm -rf "$TEMP_DIR"
+        exit 1
+    }
+fi
 
 # Run the tests
 go test -v
