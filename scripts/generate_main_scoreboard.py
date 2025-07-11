@@ -133,11 +133,11 @@ def generate_main_scoreboard():
     
     # Generate the HTML leaderboard
     markdown_lines = [
-        "## 🏆 **Top 10 Leaderboard**",
+        "## 🏆 Top 10 Leaderboard",
         "",
         "Our most accomplished Go developers, ranked by number of challenges completed:",
         "",
-        "> 📝 **Note**: The data below is automatically updated by GitHub Actions when challenge scoreboards change.",
+        "> **Note**: The data below is automatically updated by GitHub Actions when challenge scoreboards change.",
         "",
     ]
     
@@ -158,7 +158,7 @@ def generate_main_scoreboard():
         "",
         f"*Updated automatically based on {total_challenges} available challenges*",
         "",
-        "### 🎯 **Challenge Progress Overview**",
+        "### Challenge Progress Overview",
         "",
         f"- **Total Challenges Available**: {total_challenges}",
         f"- **Active Developers**: {len(user_completions)}",
@@ -189,17 +189,17 @@ def generate_html_leaderboard(top_users, total_challenges, challenge_dirs):
         
         # Determine achievement badge
         if count >= 20:
-            achievement = "🔥 Master"
+            achievement = "Master"
         elif count >= 15:
-            achievement = "⭐ Expert"
+            achievement = "Expert"
         elif count >= 10:
-            achievement = "💪 Advanced"
+            achievement = "Advanced"
         elif count >= 5:
-            achievement = "🚀 Intermediate"
+            achievement = "Intermediate"
         else:
-            achievement = "🌱 Beginner"
+            achievement = "Beginner"
         
-        # Rank badge with medal emojis
+        # Rank badge with medals for top 3
         if i == 1:
             rank_badge = "🥇"
         elif i == 2:
@@ -277,8 +277,8 @@ def update_readme_with_scoreboard(scoreboard_content):
         return False
     
     # Define markers for the scoreboard section
-    start_marker = "## 🏆 **Top 10 Leaderboard**"
-    end_marker = "## 🌟 Key Features"
+    start_marker = "## 🏆 Top 10 Leaderboard"
+    end_marker = "## Key Features"
     
     # Find the positions of markers
     start_pos = content.find(start_marker)
@@ -286,7 +286,7 @@ def update_readme_with_scoreboard(scoreboard_content):
     
     if start_pos == -1 or end_pos == -1:
         # If markers don't exist, insert before Key Features section
-        key_features_pos = content.find("## 🌟 Key Features")
+        key_features_pos = content.find("## Key Features")
         if key_features_pos == -1:
             print("Could not find insertion point in README.md", file=sys.stderr)
             return False

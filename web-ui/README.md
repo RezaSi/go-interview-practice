@@ -105,7 +105,7 @@ Contributions to improve the web UI are welcome! Please feel free to submit pull
 
 This project is licensed under the MIT License - see the LICENSE file for details. 
 
-## 🔄 Complete Workflow: From Fork to Pull Request
+## Complete Workflow: From Fork to Pull Request
 
 ### Prerequisites
 1. **Fork the repository** on GitHub (click the "Fork" button)

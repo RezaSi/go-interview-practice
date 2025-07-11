@@ -1,22 +1,23 @@
-# Go Interview Practice 🚀
+
+# Go Interview Practice
 
 Welcome to the **Go Interview Practice** repository! Master Go programming and ace your technical interviews with our interactive coding challenges.
 
 ---
 
-## 🎨 **Visual Overview**
+## Visual Overview
 
-### 📋 Interactive Challenge Platform
+### Interactive Challenge Platform
 Our comprehensive web interface provides everything you need to practice and master Go programming:
 
 <div align="center">
-  <img src="./images/challenges.png" alt="Go Interview Practice - Challenge Overview" width="90%">
-  <p><em>📊 Complete challenge dashboard with difficulty levels, progress tracking, and performance metrics</em></p>
+  <video src="https://github.com/user-attachments/assets/b715a4b7-de39-40b2-94bc-2a74e344e51a" controls width="90%"></video>
+  <p><em>A brief introduction to the project</em></p>
 </div>
 
 ---
 
-### 💻 **Code & Test Experience**
+### Code & Test Experience
 
 <div align="center">
   <img src="./images/challenge.png" alt="Go Interview Practice Web UI - challenge" width="48%" style="margin-right: 2%;">
@@ -27,12 +28,12 @@ Our comprehensive web interface provides everything you need to practice and mas
   <table>
     <tr>
       <td align="center" width="48%">
-        <strong>🔧 Interactive Code Editor</strong><br>
+        <strong>Interactive Code Editor</strong><br>
         <em>Write, edit, and test your Go solutions<br>with syntax highlighting and real-time feedback</em>
       </td>
       <td width="4%"></td>
       <td align="center" width="48%">
-        <strong>📈 Instant Results & Analytics</strong><br>
+        <strong>Instant Results & Analytics</strong><br>
         <em>Get immediate test results, performance metrics,<br>and detailed execution analysis</em>
       </td>
     </tr>
@@ -41,27 +42,33 @@ Our comprehensive web interface provides everything you need to practice and mas
 
 ---
 
-### 🏆 **Competitive Leaderboard**
+### Competitive Leaderboard
 
 <div align="center">
   <img src="./images/scoreboard.png" alt="Go Interview Practice - Main Leaderboard" width="90%">
-  <p><em>🏅 Beautiful leaderboard showcasing top developers with challenge completion indicators, rankings, and achievements</em></p>
+  <p><em>Beautiful leaderboard showcasing top developers with challenge completion indicators, rankings, and achievements</em></p>
 </div>
 
 ---
 
-## 🏆 **Top 10 Leaderboard**
+## 🏆 Top 10 Leaderboard
 
 Our most accomplished Go developers, ranked by number of challenges completed:
 
-> 📝 **Note**: The data below is automatically updated by GitHub Actions when challenge scoreboards change.
+> **Note**: The data below is automatically updated by GitHub Actions when challenge scoreboards change.
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | 💪 Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 🥈 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | 🌱 Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 🥉 | <img src="https://github.com/setarehabhari.png" width="24" height="24" style="border-radius: 50%;"><br/>**[setarehabhari](https://github.com/setarehabhari)** | **2**/30 | **6.7%** | 🌱 Beginner | ✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 4 | <img src="https://github.com/puffyguy.png" width="24" height="24" style="border-radius: 50%;"><br/>**[puffyguy](https://github.com/puffyguy)** | **1**/30 | **3.3%** | 🌱 Beginner | ✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **15**/30 | **50.0%** | Expert | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
+| 4 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **12**/30 | **40.0%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅⬜⬜⬜✅ |
+| 5 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
+| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **7**/30 | **23.3%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 7 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 8 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 9 | <img src="https://github.com/skx.png" width="24" height="24" style="border-radius: 50%;"><br/>**[skx](https://github.com/skx)** | **4**/30 | **13.3%** | Beginner | ✅✅⬜⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 10 | <img src="https://github.com/MuraliMohan-2000.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MuraliMohan-2000](https://github.com/MuraliMohan-2000)** | **3**/30 | **10.0%** | Beginner | ✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 
 <div align="center">
 
@@ -73,15 +80,15 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 *Updated automatically based on 30 available challenges*
 
-### 🎯 **Challenge Progress Overview**
+### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 4
-- **Most Challenges Solved**: 14 by RezaSi
+- **Active Developers**: 22
+- **Most Challenges Solved**: 21 by odelbos
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 - **Interactive Web UI** - Code, test, and submit solutions in your browser
 - **Automated Testing** - Get immediate feedback on your solutions
@@ -90,9 +97,9 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 - **Comprehensive Learning** - Each challenge includes detailed explanations and resources
 - **Progressive Difficulty** - From beginner to advanced Go concepts
 
-## 🚀 Quick Start
+## Quick Start
 
-> ⚠️ **Important**: You must fork this repository first before cloning, otherwise you won't be able to push your solutions or create pull requests!
+> **Important**: You must fork this repository first before cloning, otherwise you won't be able to push your solutions or create pull requests!
 
 ### Option 1: Web UI (Recommended)
 
@@ -117,7 +124,29 @@ go run main.go
 - Follow the provided Git commands to commit and push your changes
 - Create a pull request to contribute your solutions back to the main project
 
-### Option 2: Command Line
+### Option 2: GitHub Codespaces (Cloud Development + Web UI)
+
+Want to get started instantly without setting up anything locally? Use GitHub Codespaces!
+
+1. **Fork this repository** (if you haven't already)
+2. **Open in Codespaces**: Click the green "Code" button on your forked repository, then select "Codespaces" tab
+3. **Create Codespace**: Click "Create codespace on main"
+4. **Start the Web UI**: Once the codespace loads, open a terminal and run:
+   ```bash
+   cd web-ui
+   go run main.go
+   ```
+5. **Access the Web UI**: Click on the "Ports" tab in the bottom panel, then click the "Open in Browser" button next to port 8080
+
+**Benefits of using Codespaces:**
+- No local setup required
+- Pre-configured Go environment
+- Full VS Code experience in the browser
+- Automatic port forwarding for the web UI
+- All dependencies pre-installed
+- Works on any device with a browser
+
+### Option 3: Command Line
 
 ```bash
 # 1. Fork the repository first (see step 1 above)
@@ -133,7 +162,7 @@ cd challenge-1
 ./run_tests.sh
 ```
 
-## 📊 Scoreboards
+## Scoreboards
 
 Each challenge has its own scoreboard that tracks:
 - Successful submissions by user
@@ -143,9 +172,9 @@ Each challenge has its own scoreboard that tracks:
 
 View global and per-challenge scoreboards in the Web UI to compare your solutions with others.
 
-## 📚 Challenge Categories
+## Challenge Categories
 
-### 🟢 Beginner
+### Beginner
 Perfect for those new to Go or brushing up on fundamentals
 - **[Challenge 1](./challenge-1)**: Sum of Two Numbers
 - **[Challenge 2](./challenge-2)**: Reverse a String
@@ -155,7 +184,7 @@ Perfect for those new to Go or brushing up on fundamentals
 - **[Challenge 21](./challenge-21)**: Binary Search Implementation
 - **[Challenge 22](./challenge-22)**: Greedy Coin Change
 
-### 🟠 Intermediate
+### Intermediate
 For developers familiar with Go who want to deepen their knowledge
 - **[Challenge 4](./challenge-4)**: Concurrent Graph BFS Queries
 - **[Challenge 5](./challenge-5)**: HTTP Authentication Middleware
@@ -171,7 +200,7 @@ For developers familiar with Go who want to deepen their knowledge
 - **[Challenge 27](./challenge-27)**: Go Generics Data Structures
 - **[Challenge 30](./challenge-30)**: Context Management Implementation
 
-### 🔴 Advanced
+### Advanced
 Challenging problems that test mastery of Go and computer science concepts
 - **[Challenge 8](./challenge-8)**: Chat Server with Channels
 - **[Challenge 9](./challenge-9)**: RESTful Book Management API
@@ -184,7 +213,7 @@ Challenging problems that test mastery of Go and computer science concepts
 - **[Challenge 28](./challenge-28)**: Cache Implementation with Multiple Eviction Policies
 - **[Challenge 29](./challenge-29)**: Rate Limiter Implementation
 
-## 💡 How to Use This Repository
+## How to Use This Repository
 
 ### 1. Explore Challenges
 Browse challenges through the web UI or in the code repository. Each challenge includes:
@@ -212,7 +241,7 @@ Submit your passing solution to be added to the scoreboard:
 ### 5. Learn & Progress
 Review the learning materials to deepen your understanding of the concepts used.
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! To add a new challenge:
 
@@ -222,9 +251,13 @@ We welcome contributions! To add a new challenge:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=RezaSi/go-interview-practice&type=Date)](https://www.star-history.com/#RezaSi/go-interview-practice&Date)
 
 ---
 

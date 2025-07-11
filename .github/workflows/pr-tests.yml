@@ -138,6 +138,13 @@ jobs:
           if [ -d "$SUBMISSION_DIR" ]; then
             echo "Testing submission from $USERNAME"
             cp "$SUBMISSION_DIR"/*.go .
+            
+            # Handle dependencies if go.mod exists
+            if [ -f "go.mod" ]; then
+              echo "Found go.mod file, downloading dependencies..."
+              go mod tidy
+            fi
+            
             go test -v
           else
             echo "No submission found for $USERNAME in ${{ matrix.challenge }}"

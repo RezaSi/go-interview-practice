@@ -13,6 +13,7 @@ type Challenge struct {
 	Template          string `json:"template"`
 	TestFile          string `json:"testFile"`
 	LearningMaterials string `json:"learningMaterials"`
+	Hints             string `json:"hints"`
 }
 
 // Submission represents a user's submitted solution

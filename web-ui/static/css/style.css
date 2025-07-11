@@ -14,6 +14,189 @@
     background-color: #dc3545 !important;
 }
 
+/* Learning materials highlighting styles */
+.highlighting-controls {
+    border: 1px solid #e9ecef !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border-radius: 8px !important;
+}
+
+.highlighting-controls .btn {
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.highlighting-controls .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Color options styling */
+.color-options {
+    display: flex;
+    gap: 4px;
+}
+
+.color-btn {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dee2e6;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background: none;
+    padding: 0;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.color-btn.active {
+    border-color: #495057;
+    box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.2);
+}
+
+.color-btn.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #495057;
+    font-size: 10px;
+    font-weight: bold;
+    text-shadow: 0 0 2px white;
+}
+
+.highlighted-text {
+    border-radius: 3px;
+    padding: 1px 3px;
+    margin: 0 1px;
+    transition: all 0.2s ease;
+    position: relative;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.highlighted-text:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.highlighted-text:hover .highlight-delete-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.highlight-delete-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    z-index: 10;
+    line-height: 1;
+}
+
+.highlight-delete-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.highlighted-text::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    pointer-events: none;
+}
+
+/* Highlight color variations */
+.highlighted-text[style*="background-color: #ffeb3b"] {
+    background-color: #ffeb3b !important;
+    color: #000;
+}
+
+.highlighted-text[style*="background-color: #ffcdd2"] {
+    background-color: #ffcdd2 !important;
+    color: #000;
+}
+
+.highlighted-text[style*="background-color: #c8e6c9"] {
+    background-color: #c8e6c9 !important;
+    color: #000;
+}
+
+.highlighted-text[style*="background-color: #bbdefb"] {
+    background-color: #bbdefb !important;
+    color: #000;
+}
+
+/* Learning materials container */
+#learning-materials {
+    position: relative;
+    user-select: text;
+}
+
+#learning-materials.highlight-mode {
+    cursor: crosshair;
+}
+
+#learning-materials.highlight-mode * {
+    cursor: crosshair;
+}
+
+#learning-materials.highlight-mode pre,
+#learning-materials.highlight-mode code {
+    cursor: default;
+}
+
+/* Highlight controls responsive design */
+@media (max-width: 768px) {
+    .highlighting-controls .d-flex {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .highlighting-controls .d-flex > div {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .highlighting-controls .btn {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .color-btn {
+        width: 18px;
+        height: 18px;
+    }
+}
+
 /* Challenge cards styling */
 .challenge-card {
     transition: all 0.3s ease;
@@ -273,4 +456,193 @@
 .hljs-number,
 .hljs-literal {
     color: #005CC5;
+}
+
+/* Hints system styling */
+.hint-item {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    width: 100%;
+    min-width: 0;
+}
+
+.hint-item .badge {
+    font-size: 0.75rem;
+    min-width: 60px;
+}
+
+/* Enhanced inline code styling for hints */
+.hint-item code {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #e83e8c;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-weight: 600;
+    font-size: 0.9em;
+    border: 1px solid rgba(232, 62, 140, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    margin: 0 2px;
+}
+
+.hint-item pre {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: pre;
+    scrollbar-width: thin;
+    scrollbar-color: #64748b #334155;
+}
+
+/* Custom scrollbar for code blocks */
+.hint-item pre::-webkit-scrollbar {
+    height: 8px;
+}
+
+.hint-item pre::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 4px;
+}
+
+.hint-item pre::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #64748b 0%, #475569 100%);
+    border-radius: 4px;
+    border: 1px solid #334155;
+}
+
+.hint-item pre::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #475569 0%, #374151 100%);
+}
+
+.hint-item pre::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 33%, #10b981 66%, #3b82f6 100%);
+    border-radius: 8px 8px 0 0;
+    opacity: 0.8;
+}
+
+.hint-item pre::after {
+    content: '●●●';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #1e293b;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.hint-item pre code {
+    background: transparent;
+    color: #e2e8f0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    display: block;
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+/* Syntax highlighting for hint code blocks */
+.hint-item .hljs-keyword,
+.hint-item .hljs-selector-tag,
+.hint-item .hljs-type {
+    color: #f472b6;
+    font-weight: 600;
+}
+
+.hint-item .hljs-title,
+.hint-item .hljs-title.function_ {
+    color: #60a5fa;
+}
+
+.hint-item .hljs-string,
+.hint-item .hljs-quote {
+    color: #34d399;
+}
+
+.hint-item .hljs-comment {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.hint-item .hljs-number,
+.hint-item .hljs-literal {
+    color: #fbbf24;
+}
+
+.hint-item .hljs-variable,
+.hint-item .hljs-name {
+    color: #a78bfa;
+}
+
+/* Ensure hint markdown content is properly contained */
+.hint-item .markdown-content {
+    overflow: hidden;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Hints animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hint-item {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+/* Hints tab icon styling */
+#hints-tab .bi-lightbulb {
+    color: #ffc107;
+}
+
+/* Hints progress styling */
+#hints-content .text-muted {
+    font-size: 0.875rem;
+}
+
+/* Hints buttons styling */
+#show-hint-btn {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+#show-hint-btn:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+#reset-hints-btn {
+    border-color: #6c757d;
+    color: #6c757d;
 } 

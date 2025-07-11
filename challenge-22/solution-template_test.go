@@ -20,8 +20,8 @@ func TestMinCoins(t *testing.T) {
 		{"Example 2", 42, []int{1, 5, 10, 25, 50}, 5},
 		{"Larger amount", 99, []int{1, 5, 10, 25, 50}, 8},
 		{"Cannot make amount", 3, []int{5, 10, 25}, -1},
-		{"Custom denominations", 30, []int{1, 6, 10}, 3},
-		{"Larger denominations", 63, []int{1, 5, 10, 21, 25}, 6},
+		{"Custom denominations", 30, []int{1, 5, 10}, 3},
+		{"Larger denominations", 63, []int{1, 5, 10, 25}, 6},
 	}
 
 	for _, tt := range tests {
@@ -51,7 +51,7 @@ func TestCoinCombination(t *testing.T) {
 		{"Larger amount", 99, []int{1, 5, 10, 25, 50}, map[int]int{1: 4, 10: 2, 25: 1, 50: 1}},
 		{"Cannot make amount", 3, []int{5, 10, 25}, map[int]int{}},
 		{"Custom denominations", 30, []int{1, 6, 10}, map[int]int{10: 3}},
-		{"Larger denominations", 63, []int{1, 5, 10, 21, 25}, map[int]int{1: 3, 10: 1, 25: 2}},
+		{"Larger denominations", 63, []int{1, 5, 10, 25}, map[int]int{1: 3, 10: 1, 25: 2}},
 	}
 
 	for _, tt := range tests {

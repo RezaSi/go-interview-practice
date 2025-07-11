@@ -79,7 +79,7 @@ func (h *WebHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
+		// Don't call http.Error here since headers may already be sent during template execution
 	}
 }
 
@@ -144,7 +144,7 @@ func (h *WebHandler) ChallengePage(w http.ResponseWriter, r *http.Request) {
 	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
+		// Don't call http.Error here since headers may already be sent during template execution
 	}
 }
 
@@ -172,7 +172,7 @@ func (h *WebHandler) ScoreboardPage(w http.ResponseWriter, r *http.Request) {
 	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
+		// Don't call http.Error here since headers may already be sent during template execution
 	}
 }
 
@@ -212,7 +212,7 @@ func (h *WebHandler) ScoreChallengeHandler(w http.ResponseWriter, r *http.Reques
 	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
+		// Don't call http.Error here since headers may already be sent during template execution
 	}
 }
 

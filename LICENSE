@@ -1,4 +1,4 @@
- MIT License
+MIT License
 
 Copyright (c) 2025 Reza Shiri
 
@@ -19,3 +19,20 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+ADDITIONAL TERMS - WEBSITE EXCLUSIVITY:
+The original author (Reza Shiri) reserves the exclusive right to create and operate 
+a commercial website or web application based on this Go Interview Practice project. 
+This includes but is not limited to:
+- Creating a hosted version of this platform
+- Offering premium features or subscriptions
+- Monetizing the platform through advertisements, courses, or services
+- Creating derivative commercial web applications
+
+While others may use, modify, and distribute this code under the MIT License, 
+they may not create a competing commercial website or web application based on 
+this project without explicit written permission from the copyright holder.
+
+This exclusivity clause does not affect the open-source nature of the code for 
+educational, personal, or non-commercial use, and does not restrict contributions 
+to the project itself. 

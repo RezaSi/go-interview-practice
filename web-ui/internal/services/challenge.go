@@ -94,6 +94,13 @@ func (cs *ChallengeService) loadSingleChallenge(id int, dir string) (*models.Cha
 		learningContent = learningFileContent
 	}
 
+	// Read hints if available
+	hintsPath := filepath.Join(dir, "hints.md")
+	hintsContent := []byte("*No hints available for this challenge yet.*")
+	if hintsFileContent, err := ioutil.ReadFile(hintsPath); err == nil {
+		hintsContent = hintsFileContent
+	}
+
 	// Create challenge
 	challenge := &models.Challenge{
 		ID:                id,
@@ -103,6 +110,7 @@ func (cs *ChallengeService) loadSingleChallenge(id int, dir string) (*models.Cha
 		Template:          string(templateContent),
 		TestFile:          string(testContent),
 		LearningMaterials: string(learningContent),
+		Hints:             string(hintsContent),
 	}
 
 	return challenge, nil
