@@ -20,3 +20,4 @@
 | setarehabhari | 6 | 6 |
 | skx | 6 | 6 |
 | suminitgo | 6 | 6 |
+| timlkko | 6 | 6 |
