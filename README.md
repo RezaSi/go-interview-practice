@@ -59,16 +59,16 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **15**/30 | **50.0%** | Expert | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **24**/30 | **80.0%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅✅⬜✅ |
+| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜✅✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 4 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **12**/30 | **40.0%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅⬜⬜⬜✅ |
+| 4 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **13**/30 | **43.3%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 5 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
-| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **7**/30 | **23.3%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 7 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 8 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 9 | <img src="https://github.com/skx.png" width="24" height="24" style="border-radius: 50%;"><br/>**[skx](https://github.com/skx)** | **4**/30 | **13.3%** | Beginner | ✅✅⬜⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 10 | <img src="https://github.com/MuraliMohan-2000.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MuraliMohan-2000](https://github.com/MuraliMohan-2000)** | **3**/30 | **10.0%** | Beginner | ✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **9**/30 | **30.0%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 7 | <img src="https://github.com/lanmanul.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lanmanul](https://github.com/lanmanul)** | **5**/30 | **16.7%** | Intermediate | ✅✅⬜⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 8 | <img src="https://github.com/timlkko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[timlkko](https://github.com/timlkko)** | **5**/30 | **16.7%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 9 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 10 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 
 <div align="center">
 
@@ -83,8 +83,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 22
-- **Most Challenges Solved**: 21 by odelbos
+- **Active Developers**: 28
+- **Most Challenges Solved**: 24 by odelbos
 
 ---
 
