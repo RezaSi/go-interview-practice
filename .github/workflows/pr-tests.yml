@@ -1,5 +1,8 @@
 name: PR Tests
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
@@ -14,6 +17,8 @@ jobs:
     outputs:
       validation_needed: ${{ steps.validate-dirs.outputs.validation_needed }}
       validation_passed: ${{ steps.validate-dirs.outputs.validation_passed }}
+      manual_approval_needed: ${{ steps.validate-dirs.outputs.manual_approval_needed }}
+      changed_challenges: ${{ steps.validate-dirs.outputs.changed_challenges }}
     runs-on: ubuntu-latest
     name: Validate Submission Security
     
@@ -44,12 +49,59 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
           
-          # Extract submission directories that were modified
+          # Check if any files outside of submissions directories are modified
+          NON_SUBMISSION_FILES=$(echo "$CHANGED_FILES" | grep -v -E "challenge-[0-9]+/submissions/" || true)
+          
+          # Check for manual approval in PR labels or comments
+          MANUAL_APPROVAL_GRANTED="false"
+          
+          # Check if PR has manual approval label
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'manual-approval-granted') }}" == "true" ]]; then
+            MANUAL_APPROVAL_GRANTED="true"
+            echo "✅ Manual approval granted via label"
+          fi
+          
+          if [ -n "$NON_SUBMISSION_FILES" ] && [ "$MANUAL_APPROVAL_GRANTED" != "true" ]; then
+            echo "⚠️  WARNING: User '$USERNAME' modified files outside of submission directories:"
+            echo "$NON_SUBMISSION_FILES"
+            echo "🔍 This PR requires manual approval from maintainers"
+            echo "✅ Maintainers can approve by adding the 'manual-approval-granted' label"
+            echo "manual_approval_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "manual_approval_needed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Extract challenges that were modified (either submissions or other files)
+          CHANGED_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "^challenge-[0-9]+/" | sed 's|/.*||' | sort -u || true)
+          
+          # Extract submission directories that were modified  
           MODIFIED_SUBMISSION_DIRS=$(echo "$CHANGED_FILES" | grep -E "challenge-[0-9]+/submissions/" | cut -d'/' -f3 | sort -u || true)
+          
+          if [ -n "$CHANGED_CHALLENGES" ]; then
+            echo "Changed challenges: $CHANGED_CHALLENGES"
+            # Convert to JSON array format for matrix
+            CHALLENGES_JSON=$(echo "$CHANGED_CHALLENGES" | tr ' ' '\n' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/,$//')
+            echo "changed_challenges=[$CHALLENGES_JSON]" >> $GITHUB_OUTPUT
+          else
+            echo "No challenges modified in this PR"
+            echo "changed_challenges=[]" >> $GITHUB_OUTPUT
+          fi
           
           if [ -z "$MODIFIED_SUBMISSION_DIRS" ]; then
             echo "No submission directories modified in this PR"
-            echo "validation_needed=false" >> $GITHUB_OUTPUT
+            
+            # Still need to check if manual approval is required for non-submission files
+            if [ -n "$NON_SUBMISSION_FILES" ] && [ "$MANUAL_APPROVAL_GRANTED" != "true" ]; then
+              echo "⚠️  PR contains non-submission file changes that require manual approval"
+              echo "validation_needed=true" >> $GITHUB_OUTPUT
+              echo "validation_passed=false" >> $GITHUB_OUTPUT
+              echo "manual_approval_needed=true" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No submission files modified and no manual approval needed"
+              echo "validation_needed=false" >> $GITHUB_OUTPUT
+              echo "validation_passed=true" >> $GITHUB_OUTPUT
+              echo "manual_approval_needed=false" >> $GITHUB_OUTPUT
+            fi
             exit 0
           fi
           
@@ -68,56 +120,86 @@ jobs:
             fi
           done
           
-          if [ -n "$INVALID_DIRS" ]; then
-            echo "❌ SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+          # Validate that all changed files are within the user's own submission directories
+          USERNAME_LOWER=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
+          INVALID_FILES=""
+          for FILE in $CHANGED_FILES; do
+            if [[ "$FILE" =~ ^challenge-[0-9]+/submissions/([^/]+)/ ]]; then
+              SUBMISSION_USER="${BASH_REMATCH[1]}"
+              SUBMISSION_USER_LOWER=$(echo "$SUBMISSION_USER" | tr '[:upper:]' '[:lower:]')
+              if [ "$SUBMISSION_USER_LOWER" != "$USERNAME_LOWER" ]; then
+                INVALID_FILES="$INVALID_FILES $FILE"
+              fi
+            fi
+          done
+          
+          # Check for strict security violations (modifying other users' submissions)
+          if [ -n "$INVALID_DIRS" ] || [ -n "$INVALID_FILES" ]; then
+            if [ -n "$INVALID_DIRS" ]; then
+              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+            fi
+            if [ -n "$INVALID_FILES" ]; then
+              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify files in other users' submission directories:"
+              echo "$INVALID_FILES"
+            fi
             echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
             echo "validation_passed=false" >> $GITHUB_OUTPUT
             echo "validation_needed=true" >> $GITHUB_OUTPUT
             exit 1
+          fi
+          
+          # Check if manual approval is needed and not granted
+          if [ -n "$NON_SUBMISSION_FILES" ] && [ "$MANUAL_APPROVAL_GRANTED" != "true" ]; then
+            echo "⚠️  PR contains non-submission file changes that require manual approval"
+            echo "validation_passed=false" >> $GITHUB_OUTPUT
+            echo "validation_needed=true" >> $GITHUB_OUTPUT
           else
-            echo "✅ Security validation passed: User '$USERNAME' only modified their own submission directory"
+            echo "✅ Security validation passed"
             echo "validation_passed=true" >> $GITHUB_OUTPUT
             echo "validation_needed=false" >> $GITHUB_OUTPUT
           fi
 
+  manual-approval-status:
+    runs-on: ubuntu-latest
+    needs: validate-submission-security
+    if: needs.validate-submission-security.outputs.manual_approval_needed == 'true'
+    
+    steps:
+      - name: Manual Approval Required
+        run: |
+          echo "🚨 MANUAL APPROVAL REQUIRED 🚨"
+          echo ""
+          echo "🔍 This PR modifies files outside of submission directories"
+          echo "📝 Files modified outside challenge-*/submissions/ need admin review"
+          echo ""
+          echo "📢 @RezaSi - Please review and approve this PR by:"
+          echo "   1. ✅ Reviewing the changes carefully"
+          echo "   2. 🏷️  Adding the 'manual-approval-granted' label"
+          echo "   3. 🔄 Re-running this workflow (close/reopen PR)"
+          echo ""
+          echo "⚠️  SECURITY: Only approve changes you trust!"
+          echo "❌ This workflow will block until manual approval is granted"
+
+  no-challenges-changed:
+    runs-on: ubuntu-latest
+    needs: validate-submission-security
+    if: needs.validate-submission-security.outputs.validation_passed == 'true' && needs.validate-submission-security.outputs.changed_challenges == '[]'
+    
+    steps:
+      - name: No Tests Needed
+        run: |
+          echo "✅ PR validation passed but no challenge directories were modified"
+          echo "🎯 This PR doesn't contain any challenge submissions to test"
+          echo "✨ All security checks completed successfully"
+
   test-submissions:
     runs-on: ubuntu-latest
     needs: validate-submission-security
-    if: needs.validate-submission-security.outputs.validation_passed == 'true'
+    if: needs.validate-submission-security.outputs.validation_passed == 'true' && needs.validate-submission-security.outputs.changed_challenges != '[]'
 
     strategy:
       matrix:
-        challenge:
-          - challenge-1
-          - challenge-2
-          - challenge-3
-          - challenge-4
-          - challenge-5
-          - challenge-6
-          - challenge-7
-          - challenge-8
-          - challenge-9
-          - challenge-10
-          - challenge-11
-          - challenge-12
-          - challenge-13
-          - challenge-14
-          - challenge-15
-          - challenge-16
-          - challenge-17
-          - challenge-18
-          - challenge-19
-          - challenge-20
-          - challenge-21
-          - challenge-22
-          - challenge-23
-          - challenge-24
-          - challenge-25
-          - challenge-26
-          - challenge-27
-          - challenge-28
-          - challenge-29
-          - challenge-30
+        challenge: ${{ fromJson(needs.validate-submission-security.outputs.changed_challenges) }}
 
     steps:
       - name: Checkout repository
