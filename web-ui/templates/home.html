@@ -49,30 +49,65 @@
     </div>
 </div>
 
+<!-- Challenge Types Navigation -->
 <div class="row mb-4" id="challenges">
     <div class="col">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h2 class="mb-0">Challenge Library</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-outline-secondary active" id="filter-all">All</button>
-                    <button class="btn btn-sm btn-outline-success" id="filter-beginner">Beginner</button>
-                    <button class="btn btn-sm btn-outline-warning" id="filter-intermediate">Intermediate</button>
-                    <button class="btn btn-sm btn-outline-danger" id="filter-advanced">Advanced</button>
-                </div>
-                <select class="form-select form-select-sm" id="sort-select" style="width: auto;">
-                    <option value="difficulty" selected>Difficulty</option>
-                    <option value="id-asc">Number ↑</option>
-                    <option value="id-desc">Number ↓</option>
-                </select>
+        <!-- Modern Tab Navigation -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom-0">
+                <ul class="nav nav-pills card-header-pills justify-content-center" id="challengeTypeTabs" role="tablist">
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link active px-4 py-2 fw-semibold" 
+                                id="algorithm-tab" 
+                                data-bs-toggle="pill" 
+                                data-bs-target="#algorithm-challenges" 
+                                type="button" 
+                                role="tab">
+                            <i class="bi bi-cpu me-2"></i>Classic Challenges
+                            <span class="badge bg-primary ms-2">{{len .Challenges}}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4 py-2 fw-semibold" 
+                                id="package-tab" 
+                                data-bs-toggle="pill" 
+                                data-bs-target="#package-challenges" 
+                                type="button" 
+                                role="tab">
+                            <i class="bi bi-box-seam me-2"></i>Package Mastery
+                            <span class="badge bg-success ms-2">4</span>
+                        </button>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="challenges-container">
+        
+        <!-- Tab Content -->
+        <div class="tab-content mt-4" id="challengeTypeContent">
+            <!-- Algorithm Challenges Tab -->
+            <div class="tab-pane fade show active" id="algorithm-challenges" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h3 class="mb-1">Classic Challenges</h3>
+                        <p class="text-muted mb-0">Classic coding interview problems to master fundamental concepts</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-secondary active" id="filter-all">All</button>
+                            <button class="btn btn-sm btn-outline-success" id="filter-beginner">Beginner</button>
+                            <button class="btn btn-sm btn-outline-warning" id="filter-intermediate">Intermediate</button>
+                            <button class="btn btn-sm btn-outline-danger" id="filter-advanced">Advanced</button>
+                        </div>
+                        <select class="form-select form-select-sm" id="sort-select" style="width: auto;">
+                            <option value="difficulty" selected>Difficulty</option>
+                            <option value="id-asc">Number ↑</option>
+                            <option value="id-desc">Number ↓</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Classic Challenges Grid -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="classic-challenges-container">
     {{range .Challenges}}
     <div class="col challenge-item" data-difficulty="{{.Difficulty}}" data-id="{{.ID}}" data-attempted="{{if and $.UserAttempts (index $.UserAttempts.AttemptedIDs .ID)}}true{{else}}false{{end}}">
         <div class="card h-100 shadow-sm hover-shadow {{if and $.UserAttempts (index $.UserAttempts.AttemptedIDs .ID)}}attempted-challenge{{end}}">
@@ -101,7 +136,185 @@
         </div>
     </div>
     {{end}}
-</div>
+                </div>
+            </div>
+            
+            <!-- Package Challenges Tab -->
+            <div class="tab-pane fade" id="package-challenges" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="mb-1">Real-World Package Challenges</h3>
+                        <p class="text-muted mb-0">Master popular Go packages and frameworks used in production</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-secondary active" id="package-filter-all">All Packages</button>
+                            <button class="btn btn-sm btn-outline-info" id="package-filter-web">Web</button>
+                            <button class="btn btn-sm btn-outline-warning" id="package-filter-cli">CLI</button>
+                            <button class="btn btn-sm btn-outline-success" id="package-filter-database">Database</button>
+                        </div>
+                        <select class="form-select form-select-sm" id="package-sort-select" style="width: auto;">
+                            <option value="popularity" selected>Popularity</option>
+                            <option value="difficulty">Difficulty</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Package Grid -->
+                <div class="row row-cols-1 row-cols-lg-2 g-4" id="packages-container">
+                    {{range $name, $package := .Packages}}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm hover-shadow package-card border-0 {{if eq $package.Category "web"}}{{else if eq $package.Category "database"}}opacity-75{{else if eq $package.Category "cli"}}opacity-75{{else}}opacity-75{{end}}" data-category="{{$package.Category}}" data-popularity="1">
+                            <div class="card-header {{if eq $package.Category "web"}}bg-gradient-primary{{else if eq $package.Category "database"}}bg-gradient-secondary{{else if eq $package.Category "cli"}}bg-gradient-warning{{else}}bg-gradient-info{{end}} text-white border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="{{if eq $package.Category "web"}}bi bi-globe2{{else if eq $package.Category "database"}}bi bi-database{{else if eq $package.Category "cli"}}bi bi-terminal{{else}}bi bi-lightning{{end}} me-2 fs-4"></i>
+                                        <div>
+                                            <h5 class="mb-0 fw-bold">{{$package.DisplayName}}</h5>
+                                            <small class="opacity-75">{{$package.Description}}</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-star-fill text-warning me-1"></i>
+                                            <span class="fw-semibold">{{formatStars $package.Stars}}</span>
+                                        </div>
+                                        <span class="badge bg-light text-dark">{{$package.Category}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {{if ne $package.Name "gin"}}
+                                <!-- Coming Soon Card -->
+                                <div class="text-center py-4">
+                                    <i class="bi bi-clock text-muted fs-1 mb-3"></i>
+                                    <h6 class="text-muted">Coming Soon</h6>
+                                    <p class="small text-muted mb-0">{{$package.Description}} challenges and tutorials</p>
+                                    {{if $package.Prerequisites}}
+                                    <div class="mt-3">
+                                        <h6 class="small fw-semibold text-muted">Prerequisites:</h6>
+                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                            {{range $package.Prerequisites}}
+                                            <span class="badge bg-light text-muted border">{{.}}</span>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    {{end}}
+                                </div>
+                                {{else}}
+                                <!-- Active Gin Package -->
+                                <div class="mb-3">
+                                    {{if $package.Tags}}
+                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                        {{range $package.Tags}}
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info">{{. | replace "_" " "}}</span>
+                                        {{end}}
+                                    </div>
+                                    {{end}}
+                                    <p class="text-muted small mb-0">Learn to build production-ready REST APIs with routing, middleware, and JSON handling.</p>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted">Progress</small>
+                                        <small class="text-muted">{{if eq $package.Name "gin"}}{{/* Calculate actual progress for gin package */}}{{if $.UserAttempts}}{{countPackageAttempts $.UserAttempts}}{{else}}0{{end}}/{{len $package.LearningPath}}{{else}}0/{{len $package.LearningPath}}{{end}} challenges</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{if and (eq $package.Name "gin") $.UserAttempts}}{{calculateProgress (countPackageAttempts $.UserAttempts) (len $package.LearningPath)}}{{else}}0{{end}}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Challenge List -->
+                                <div class="package-challenges">
+                                    <h6 class="fw-semibold mb-2">Learning Path:</h6>
+                                    <div class="list-group list-group-flush">
+                                        {{if eq $package.Name "gin"}}
+                                        {{range $index, $challengeId := $package.LearningPath}}
+                                        <div class="list-group-item px-0 py-2 border-0">
+                                            <div class="d-flex align-items-center">
+                                                {{if eq $challengeId "challenge-1-basic-routing"}}
+                                                <i class="bi bi-play-circle text-success me-2"></i>
+                                                <span class="small">Basic Routing & User Management API</span>
+                                                <span class="badge bg-success ms-auto">Beginner</span>
+                                                {{else if eq $challengeId "challenge-2-middleware"}}
+                                                <i class="bi bi-play-circle text-primary me-2"></i>
+                                                <span class="small">Middleware & Request Handling</span>
+                                                <span class="badge bg-primary ms-auto">Beginner</span>
+                                                {{else if eq $challengeId "challenge-3-validation-errors"}}
+                                                <i class="bi bi-play-circle text-warning me-2"></i>
+                                                <span class="small">JSON API with Validation & Error Handling</span>
+                                                <span class="badge bg-warning ms-auto">Intermediate</span>
+                                                {{else if eq $challengeId "challenge-4-authentication"}}
+                                                <i class="bi bi-play-circle text-danger me-2"></i>
+                                                <span class="small">Authentication & Session Management</span>
+                                                <span class="badge bg-danger ms-auto">Intermediate</span>
+                                                {{else}}
+                                                <i class="bi bi-circle text-muted me-2"></i>
+                                                <span class="small">{{$challengeId | replace "-" " " | replace "challenge" "Challenge"}}</span>
+                                                <span class="badge bg-secondary ms-auto">Available</span>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                        {{else}}
+                                        {{if $package.LearningPath}}
+                                        {{range $package.LearningPath}}
+                                        <div class="list-group-item px-0 py-2 border-0">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-circle text-muted me-2"></i>
+                                                <span class="small">{{.}}</span>
+                                                <span class="badge bg-secondary ms-auto">Coming Soon</span>
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                        {{else}}
+                                        <div class="list-group-item px-0 py-2 border-0">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-info-circle text-muted me-2"></i>
+                                                <span class="small text-muted">No challenges available yet</span>
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                        {{end}}
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                            {{if eq $package.Name "gin"}}
+                            <div class="card-footer bg-transparent border-0">
+                                <div class="d-flex gap-2">
+                                    <a href="/packages/{{$package.Name}}" class="btn btn-primary btn-sm flex-fill">
+                                        <i class="bi bi-play-circle me-1"></i>Start Learning
+                                    </a>
+                                    <a href="{{$package.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-github"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {{else}}
+                            <div class="card-footer bg-transparent border-0">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-secondary btn-sm flex-fill disabled" disabled>
+                                        <i class="bi bi-clock me-1"></i>Coming Soon
+                                    </button>
+                                    <a href="{{$package.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-github"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+
+            
+        </div> <!-- End package challenges tab (already closed above) -->
+    </div> <!-- End tab content -->
+</div> <!-- End challenges section -->
 {{end}}
 
 {{define "scripts"}}
@@ -111,7 +324,7 @@
         const filterButtons = document.querySelectorAll('[id^="filter-"]');
         const challengeItems = document.querySelectorAll('.challenge-item');
         const sortSelect = document.getElementById('sort-select');
-        const challengesContainer = document.getElementById('challenges-container');
+        const challengesContainer = document.getElementById('classic-challenges-container');
         const usernameInput = document.getElementById('username');
 
         // Auto-refresh attempts on page load if username is set
@@ -315,6 +528,140 @@
 
         // Initialize: set all filter as active
         document.getElementById('filter-all').classList.add('active');
+        
+        // Package Challenges Filtering
+        const packageFilterButtons = document.querySelectorAll('[id^="package-filter-"]');
+        const packageCards = document.querySelectorAll('.package-card');
+        const packageSortSelect = document.getElementById('package-sort-select');
+        const packagesContainer = document.getElementById('packages-container');
+
+        // Package filter functionality
+        packageFilterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all package filter buttons
+                packageFilterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                const filter = this.id.replace('package-filter-', '');
+                
+                packageCards.forEach(card => {
+                    if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                        card.parentElement.style.display = 'block';
+                    } else {
+                        card.parentElement.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Package sort functionality
+        if (packageSortSelect) {
+            packageSortSelect.addEventListener('change', function() {
+                sortPackages(this.value);
+            });
+        }
+
+        function sortPackages(sortValue) {
+            const packages = Array.from(packagesContainer.children);
+            
+            packages.sort((a, b) => {
+                if (sortValue === 'popularity') {
+                    const popA = parseInt(a.querySelector('.package-card').getAttribute('data-popularity') || '999');
+                    const popB = parseInt(b.querySelector('.package-card').getAttribute('data-popularity') || '999');
+                    return popA - popB;
+                } else if (sortValue === 'name') {
+                    const nameA = a.querySelector('h5').textContent;
+                    const nameB = b.querySelector('h5').textContent;
+                    return nameA.localeCompare(nameB);
+                } else if (sortValue === 'difficulty') {
+                    // For now, sort by name since difficulty isn't implemented yet
+                    const nameA = a.querySelector('h5').textContent;
+                    const nameB = b.querySelector('h5').textContent;
+                    return nameA.localeCompare(nameB);
+                }
+            });
+            
+            // Reappend in sorted order
+            packages.forEach(packageCard => {
+                packagesContainer.appendChild(packageCard);
+            });
+        }
     });
 </script>
+
+<style>
+    /* Custom styles for package challenges */
+    .package-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .package-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .progress {
+        border-radius: 10px;
+        background-color: rgba(0,0,0,0.1);
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 25px;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background-color: rgba(0,123,255,0.1);
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    }
+    
+    .hover-shadow {
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .hover-shadow:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .badge.bg-info.bg-opacity-10 {
+        border: 1px solid rgba(13, 202, 240, 0.3);
+    }
+    
+    /* Tab content animations */
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 {{end}} 
