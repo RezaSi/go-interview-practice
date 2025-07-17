@@ -169,7 +169,7 @@
         // Initialize challenge data from server (loaded from hidden elements)
         challengeData = {
             packageName: "{{.Package.Name}}",
-            challengeId: "{{.Challenge.ID}}",
+            challengeId: parseInt("{{.Challenge.ID}}"),
             title: "{{.Challenge.Title}}",
             description: `{{.Challenge.Description}}`,
             template: decodeHtmlEntities(document.getElementById('template-content').textContent),
