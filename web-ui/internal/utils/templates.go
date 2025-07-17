@@ -171,6 +171,219 @@ func GetTemplateFuncs() template.FuncMap {
 			}
 			return 0
 		},
+		// New function to count attempts for a specific package
+		"countPackageAttemptsForPackage": func(userAttempts interface{}, pkg interface{}) int {
+			if userAttempts == nil || pkg == nil {
+				return 0
+			}
+
+			// Get package name
+			pkgValue := reflect.ValueOf(pkg)
+			if pkgValue.Kind() == reflect.Ptr {
+				pkgValue = pkgValue.Elem()
+			}
+
+			var packageName string
+			if pkgValue.Kind() == reflect.Struct {
+				nameField := pkgValue.FieldByName("Name")
+				if nameField.IsValid() && nameField.Kind() == reflect.String {
+					packageName = nameField.String()
+				}
+			}
+
+			if packageName == "" {
+				return 0
+			}
+
+			// Use reflection to access the AttemptedIDs field
+			v := reflect.ValueOf(userAttempts)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+
+			if v.Kind() == reflect.Struct {
+				field := v.FieldByName("AttemptedIDs")
+				if field.IsValid() && field.Kind() == reflect.Map {
+					count := 0
+
+					// Get learning path to know how many challenges this package has
+					learningPathField := pkgValue.FieldByName("LearningPath")
+					if !learningPathField.IsValid() {
+						return 0
+					}
+
+					learningPath := learningPathField.Interface()
+					if pathSlice, ok := learningPath.([]string); ok {
+						// Check each challenge in the learning path
+						for i := range pathSlice {
+							// Generate the same unique ID as in the web handler
+							packageChallengeID := -(1000 + i*10 + len(packageName))
+
+							key := reflect.ValueOf(packageChallengeID)
+							value := field.MapIndex(key)
+							if value.IsValid() && value.Kind() == reflect.Bool && value.Bool() {
+								count++
+							}
+						}
+					}
+					return count
+				}
+			}
+			return 0
+		},
+		// New template functions for dynamic package rendering
+		"getChallengeInfo": func(pkg interface{}, challengeID string) map[string]interface{} {
+			// Extract challenge information dynamically from package
+			v := reflect.ValueOf(pkg)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+
+			challengeDetailsField := v.FieldByName("ChallengeDetails")
+			if !challengeDetailsField.IsValid() || challengeDetailsField.Kind() != reflect.Map {
+				return map[string]interface{}{
+					"Title":       "Coming Soon",
+					"Description": "Challenge content will be available soon",
+					"Difficulty":  "Beginner",
+					"Status":      "coming-soon",
+					"Icon":        "bi-clock",
+				}
+			}
+
+			key := reflect.ValueOf(challengeID)
+			challenge := challengeDetailsField.MapIndex(key)
+
+			if !challenge.IsValid() {
+				return map[string]interface{}{
+					"Title":       "Coming Soon",
+					"Description": "Challenge content will be available soon",
+					"Difficulty":  "Beginner",
+					"Status":      "coming-soon",
+					"Icon":        "bi-clock",
+				}
+			}
+
+			// Convert challenge to map for template use
+			challengeInfo := make(map[string]interface{})
+			challengeValue := challenge.Elem()
+			challengeType := challengeValue.Type()
+
+			for i := 0; i < challengeValue.NumField(); i++ {
+				field := challengeValue.Field(i)
+				fieldName := challengeType.Field(i).Name
+				challengeInfo[fieldName] = field.Interface()
+			}
+
+			return challengeInfo
+		},
+		"isPackageActive": func(pkg interface{}) bool {
+			// Check if package has any available challenges
+			v := reflect.ValueOf(pkg)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+
+			challengeDetailsField := v.FieldByName("ChallengeDetails")
+			if !challengeDetailsField.IsValid() || challengeDetailsField.Kind() != reflect.Map {
+				return false
+			}
+
+			// Check if there are any challenges with "available" status
+			for _, key := range challengeDetailsField.MapKeys() {
+				challenge := challengeDetailsField.MapIndex(key)
+				if challenge.IsValid() && challenge.Kind() == reflect.Ptr {
+					statusField := challenge.Elem().FieldByName("Status")
+					if statusField.IsValid() && statusField.String() == "available" {
+						return true
+					}
+				}
+			}
+
+			return false
+		},
+		"getPackageChallenges": func(pkg interface{}) []map[string]interface{} {
+			// Extract challenges from package and sort by order
+			v := reflect.ValueOf(pkg)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+
+			challengeDetailsField := v.FieldByName("ChallengeDetails")
+			learningPathField := v.FieldByName("LearningPath")
+
+			if !challengeDetailsField.IsValid() || !learningPathField.IsValid() {
+				return []map[string]interface{}{}
+			}
+
+			var challenges []map[string]interface{}
+
+			// Use learning path to maintain order
+			learningPath := learningPathField.Interface()
+			if pathSlice, ok := learningPath.([]string); ok {
+				for _, challengeID := range pathSlice {
+					key := reflect.ValueOf(challengeID)
+					challenge := challengeDetailsField.MapIndex(key)
+
+					if challenge.IsValid() && challenge.Kind() == reflect.Ptr {
+						challengeInfo := make(map[string]interface{})
+						challengeValue := challenge.Elem()
+						challengeType := challengeValue.Type()
+
+						for i := 0; i < challengeValue.NumField(); i++ {
+							field := challengeValue.Field(i)
+							fieldName := challengeType.Field(i).Name
+							challengeInfo[fieldName] = field.Interface()
+						}
+
+						challenges = append(challenges, challengeInfo)
+					}
+				}
+			}
+
+			return challenges
+		},
+		"getDifficultyBadgeClass": func(difficulty string) string {
+			switch strings.ToLower(difficulty) {
+			case "beginner":
+				return "bg-success"
+			case "intermediate":
+				return "bg-warning"
+			case "advanced":
+				return "bg-danger"
+			default:
+				return "bg-secondary"
+			}
+		},
+		"getCategoryIcon": func(category string) string {
+			switch strings.ToLower(category) {
+			case "web":
+				return "bi-globe2"
+			case "database":
+				return "bi-database"
+			case "cli":
+				return "bi-terminal"
+			default:
+				return "bi-lightning"
+			}
+		},
+		"getCategoryGradient": func(category string) string {
+			switch strings.ToLower(category) {
+			case "web":
+				return "bg-gradient-primary"
+			case "database":
+				return "bg-gradient-secondary"
+			case "cli":
+				return "bg-gradient-warning"
+			default:
+				return "bg-gradient-info"
+			}
+		},
+		"isComingSoon": func(challengeInfo map[string]interface{}) bool {
+			if status, ok := challengeInfo["Status"].(string); ok {
+				return status == "coming-soon"
+			}
+			return false
+		},
 		"extractTitle": func(description string) string {
 			// Extract title from markdown content
 			lines := strings.Split(description, "\n")

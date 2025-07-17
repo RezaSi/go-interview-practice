@@ -6,7 +6,7 @@
   "github_url": "https://github.com/gin-gonic/gin",
   "documentation_url": "https://gin-gonic.com/",
   "stars": 47000,
-  "category": "web_framework",
+  "category": "web",
   "difficulty": "beginner_to_advanced",
   "prerequisites": ["basic_go", "http_concepts"],
   "learning_path": [

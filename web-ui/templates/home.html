@@ -75,7 +75,7 @@
                                 type="button" 
                                 role="tab">
                             <i class="bi bi-box-seam me-2"></i>Package Mastery
-                            <span class="badge bg-success ms-2">4</span>
+                            <span class="badge bg-success ms-2">{{len .PackagesList}}</span>
                         </button>
                     </li>
                 </ul>
@@ -163,39 +163,39 @@
                 
                 <!-- Package Grid -->
                 <div class="row row-cols-1 row-cols-lg-2 g-4" id="packages-container">
-                    {{range $name, $package := .Packages}}
+                    {{range .PackagesList}}
                     <div class="col">
-                        <div class="card h-100 shadow-sm hover-shadow package-card border-0 {{if eq $package.Category "web"}}{{else if eq $package.Category "database"}}opacity-75{{else if eq $package.Category "cli"}}opacity-75{{else}}opacity-75{{end}}" data-category="{{$package.Category}}" data-popularity="1">
-                            <div class="card-header {{if eq $package.Category "web"}}bg-gradient-primary{{else if eq $package.Category "database"}}bg-gradient-secondary{{else if eq $package.Category "cli"}}bg-gradient-warning{{else}}bg-gradient-info{{end}} text-white border-0">
+                        <div class="card h-100 shadow-sm hover-shadow package-card border-0 {{if not (isPackageActive .Package)}}opacity-75{{end}}" data-category="{{.Category}}" data-popularity="{{.Stars}}">
+                            <div class="card-header {{getCategoryGradient .Category}} text-white border-0">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
-                                        <i class="{{if eq $package.Category "web"}}bi bi-globe2{{else if eq $package.Category "database"}}bi bi-database{{else if eq $package.Category "cli"}}bi bi-terminal{{else}}bi bi-lightning{{end}} me-2 fs-4"></i>
+                                        <i class="{{getCategoryIcon .Category}} me-2 fs-4"></i>
                                         <div>
-                                            <h5 class="mb-0 fw-bold">{{$package.DisplayName}}</h5>
-                                            <small class="opacity-75">{{$package.Description}}</small>
+                                            <h5 class="mb-0 fw-bold">{{.DisplayName}}</h5>
+                                            <small class="opacity-75">{{.Description}}</small>
                                         </div>
                                     </div>
                                     <div class="text-end">
                                         <div class="d-flex align-items-center mb-1">
                                             <i class="bi bi-star-fill text-warning me-1"></i>
-                                            <span class="fw-semibold">{{formatStars $package.Stars}}</span>
+                                            <span class="fw-semibold">{{formatStars .Stars}}</span>
                                         </div>
-                                        <span class="badge bg-light text-dark">{{$package.Category}}</span>
+                                        <span class="badge bg-light text-dark">{{.Category}}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="card-body">
-                                {{if ne $package.Name "gin"}}
+                                {{if not (isPackageActive .Package)}}
                                 <!-- Coming Soon Card -->
                                 <div class="text-center py-4">
                                     <i class="bi bi-clock text-muted fs-1 mb-3"></i>
                                     <h6 class="text-muted">Coming Soon</h6>
-                                    <p class="small text-muted mb-0">{{$package.Description}} challenges and tutorials</p>
-                                    {{if $package.Prerequisites}}
+                                    <p class="small text-muted mb-0">{{.Description}} challenges and tutorials</p>
+                                    {{if .Prerequisites}}
                                     <div class="mt-3">
                                         <h6 class="small fw-semibold text-muted">Prerequisites:</h6>
                                         <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                            {{range $package.Prerequisites}}
+                                            {{range .Prerequisites}}
                                             <span class="badge bg-light text-muted border">{{.}}</span>
                                             {{end}}
                                         </div>
@@ -203,27 +203,27 @@
                                     {{end}}
                                 </div>
                                 {{else}}
-                                <!-- Active Gin Package -->
+                                <!-- Active Package -->
                                 <div class="mb-3">
-                                    {{if $package.Tags}}
+                                    {{if .Tags}}
                                     <div class="d-flex flex-wrap gap-1 mb-2">
-                                        {{range $package.Tags}}
+                                        {{range .Tags}}
                                         <span class="badge bg-info bg-opacity-10 text-info border border-info">{{. | replace "_" " "}}</span>
                                         {{end}}
                                     </div>
                                     {{end}}
-                                    <p class="text-muted small mb-0">Learn to build production-ready REST APIs with routing, middleware, and JSON handling.</p>
+                                    <p class="text-muted small mb-0">{{.Description}}</p>
                                 </div>
                                 
                                 <!-- Progress Bar -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted">Progress</small>
-                                        <small class="text-muted">{{if eq $package.Name "gin"}}{{/* Calculate actual progress for gin package */}}{{if $.UserAttempts}}{{countPackageAttempts $.UserAttempts}}{{else}}0{{end}}/{{len $package.LearningPath}}{{else}}0/{{len $package.LearningPath}}{{end}} challenges</small>
+                                        <small class="text-muted">{{if $.UserAttempts}}{{countPackageAttemptsForPackage $.UserAttempts .Package}}{{else}}0{{end}}/{{len .LearningPath}} challenges</small>
                                     </div>
                                     <div class="progress" style="height: 6px;">
                                         <div class="progress-bar bg-success" role="progressbar" 
-                                             style="width: {{if and (eq $package.Name "gin") $.UserAttempts}}{{calculateProgress (countPackageAttempts $.UserAttempts) (len $package.LearningPath)}}{{else}}0{{end}}%"></div>
+                                             style="width: {{if $.UserAttempts}}{{calculateProgress (countPackageAttemptsForPackage $.UserAttempts .Package) (len .LearningPath)}}{{else}}0{{end}}%"></div>
                                     </div>
                                 </div>
                                 
@@ -231,46 +231,23 @@
                                 <div class="package-challenges">
                                     <h6 class="fw-semibold mb-2">Learning Path:</h6>
                                     <div class="list-group list-group-flush">
-                                        {{if eq $package.Name "gin"}}
-                                        {{range $index, $challengeId := $package.LearningPath}}
+                                        {{$challenges := getPackageChallenges .Package}}
+                                        {{range $challenges}}
                                         <div class="list-group-item px-0 py-2 border-0">
                                             <div class="d-flex align-items-center">
-                                                {{if eq $challengeId "challenge-1-basic-routing"}}
-                                                <i class="bi bi-play-circle text-success me-2"></i>
-                                                <span class="small">Basic Routing & User Management API</span>
-                                                <span class="badge bg-success ms-auto">Beginner</span>
-                                                {{else if eq $challengeId "challenge-2-middleware"}}
-                                                <i class="bi bi-play-circle text-primary me-2"></i>
-                                                <span class="small">Middleware & Request Handling</span>
-                                                <span class="badge bg-primary ms-auto">Beginner</span>
-                                                {{else if eq $challengeId "challenge-3-validation-errors"}}
-                                                <i class="bi bi-play-circle text-warning me-2"></i>
-                                                <span class="small">JSON API with Validation & Error Handling</span>
-                                                <span class="badge bg-warning ms-auto">Intermediate</span>
-                                                {{else if eq $challengeId "challenge-4-authentication"}}
-                                                <i class="bi bi-play-circle text-danger me-2"></i>
-                                                <span class="small">Authentication & Session Management</span>
-                                                <span class="badge bg-danger ms-auto">Intermediate</span>
+                                                {{if isComingSoon .}}
+                                                <i class="bi bi-clock text-muted me-2"></i>
+                                                <span class="small">{{.Title}}</span>
+                                                <span class="badge bg-secondary ms-auto">Coming Soon</span>
                                                 {{else}}
-                                                <i class="bi bi-circle text-muted me-2"></i>
-                                                <span class="small">{{$challengeId | replace "-" " " | replace "challenge" "Challenge"}}</span>
-                                                <span class="badge bg-secondary ms-auto">Available</span>
+                                                <i class="{{.Icon}} text-primary me-2"></i>
+                                                <span class="small">{{.Title}}</span>
+                                                <span class="badge {{getDifficultyBadgeClass .Difficulty}} ms-auto">{{.Difficulty}}</span>
                                                 {{end}}
                                             </div>
                                         </div>
                                         {{end}}
-                                        {{else}}
-                                        {{if $package.LearningPath}}
-                                        {{range $package.LearningPath}}
-                                        <div class="list-group-item px-0 py-2 border-0">
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-circle text-muted me-2"></i>
-                                                <span class="small">{{.}}</span>
-                                                <span class="badge bg-secondary ms-auto">Coming Soon</span>
-                                            </div>
-                                        </div>
-                                        {{end}}
-                                        {{else}}
+                                        {{if not $challenges}}
                                         <div class="list-group-item px-0 py-2 border-0">
                                             <div class="d-flex align-items-center">
                                                 <i class="bi bi-info-circle text-muted me-2"></i>
@@ -278,18 +255,17 @@
                                             </div>
                                         </div>
                                         {{end}}
-                                        {{end}}
                                     </div>
                                 </div>
                                 {{end}}
                             </div>
-                            {{if eq $package.Name "gin"}}
+                            {{if isPackageActive .Package}}
                             <div class="card-footer bg-transparent border-0">
                                 <div class="d-flex gap-2">
-                                    <a href="/packages/{{$package.Name}}" class="btn btn-primary btn-sm flex-fill">
+                                    <a href="/packages/{{.Name}}" class="btn btn-primary btn-sm flex-fill">
                                         <i class="bi bi-play-circle me-1"></i>Start Learning
                                     </a>
-                                    <a href="{{$package.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-github"></i>
                                     </a>
                                 </div>
@@ -300,7 +276,7 @@
                                     <button class="btn btn-secondary btn-sm flex-fill disabled" disabled>
                                         <i class="bi bi-clock me-1"></i>Coming Soon
                                     </button>
-                                    <a href="{{$package.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-github"></i>
                                     </a>
                                 </div>
@@ -567,9 +543,9 @@
             
             packages.sort((a, b) => {
                 if (sortValue === 'popularity') {
-                    const popA = parseInt(a.querySelector('.package-card').getAttribute('data-popularity') || '999');
-                    const popB = parseInt(b.querySelector('.package-card').getAttribute('data-popularity') || '999');
-                    return popA - popB;
+                    const popA = parseInt(a.querySelector('.package-card').getAttribute('data-popularity') || '0');
+                    const popB = parseInt(b.querySelector('.package-card').getAttribute('data-popularity') || '0');
+                    return popB - popA; // Descending order: highest stars first
                 } else if (sortValue === 'name') {
                     const nameA = a.querySelector('h5').textContent;
                     const nameB = b.querySelector('h5').textContent;
@@ -587,6 +563,8 @@
                 packagesContainer.appendChild(packageCard);
             });
         }
+
+        // Packages are now pre-sorted by Go backend in popularity order
     });
 </script>
 

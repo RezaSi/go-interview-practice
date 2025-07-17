@@ -45,8 +45,9 @@ type PackageMetadata struct {
 
 func (s *PackageService) LoadPackages() error {
 	// This method is called to ensure packages are loaded
-	// In our new implementation, packages are loaded on-demand
-	fmt.Printf("Loaded 4 packages with real-time GitHub stars\n")
+	// Load packages and count them for logging
+	packages := s.GetPackages()
+	fmt.Printf("Loaded %d packages with real-time GitHub stars\n", len(packages))
 	return nil
 }
 
@@ -100,6 +101,9 @@ func (s *PackageService) loadPackage(packagePath, packageName string) *models.Pa
 		metadata.Stars = stars
 	}
 
+	// Load challenge details dynamically
+	challengeDetails := s.loadChallengeDetails(packagePath, metadata.LearningPath)
+
 	return &models.Package{
 		Name:             packageName,
 		DisplayName:      metadata.DisplayName,
@@ -115,6 +119,170 @@ func (s *PackageService) loadPackage(packagePath, packageName string) *models.Pa
 		Tags:             metadata.Tags,
 		EstimatedTime:    metadata.EstimatedTime,
 		RealWorldUsage:   metadata.RealWorldUsage,
+		ChallengeDetails: challengeDetails,
+	}
+}
+
+// loadChallengeDetails dynamically loads metadata for each challenge in the learning path
+func (s *PackageService) loadChallengeDetails(packagePath string, learningPath []string) map[string]*models.ChallengeInfo {
+	challengeDetails := make(map[string]*models.ChallengeInfo)
+
+	for i, challengeID := range learningPath {
+		challengePath := filepath.Join(packagePath, challengeID)
+
+		// Check if challenge directory exists
+		if _, err := os.Stat(challengePath); os.IsNotExist(err) {
+			// Challenge doesn't exist yet, mark as coming soon
+			challengeDetails[challengeID] = &models.ChallengeInfo{
+				ID:            challengeID,
+				Title:         s.generateTitleFromID(challengeID),
+				Description:   "Coming soon",
+				Difficulty:    s.inferDifficultyFromOrder(i),
+				EstimatedTime: s.inferEstimatedTime(challengeID),
+				Status:        "coming-soon",
+				Order:         i + 1,
+				Icon:          s.inferIconFromID(challengeID),
+			}
+			continue
+		}
+
+		// Try to load challenge metadata
+		metadata := s.loadChallengeMetadata(challengePath)
+		if metadata != nil {
+			challengeDetails[challengeID] = &models.ChallengeInfo{
+				ID:                  challengeID,
+				Title:               metadata.Title,
+				Description:         metadata.ShortDescription,
+				Difficulty:          metadata.Difficulty,
+				EstimatedTime:       metadata.EstimatedTime,
+				LearningObjectives:  metadata.LearningObjectives,
+				Prerequisites:       metadata.Prerequisites,
+				Tags:                metadata.Tags,
+				RealWorldConnection: metadata.RealWorldConnection,
+				Icon:                metadata.Icon,
+				Status:              "available",
+				Order:               i + 1,
+			}
+		} else {
+			// Fallback to generated metadata
+			challengeDetails[challengeID] = &models.ChallengeInfo{
+				ID:            challengeID,
+				Title:         s.generateTitleFromID(challengeID),
+				Description:   s.generateDescriptionFromReadme(challengePath),
+				Difficulty:    s.inferDifficultyFromOrder(i),
+				EstimatedTime: s.inferEstimatedTime(challengeID),
+				Status:        "available",
+				Order:         i + 1,
+				Icon:          s.inferIconFromID(challengeID),
+			}
+		}
+	}
+
+	return challengeDetails
+}
+
+// loadChallengeMetadata loads metadata from challenge directory
+func (s *PackageService) loadChallengeMetadata(challengePath string) *models.ChallengeMetadata {
+	metadataPath := filepath.Join(challengePath, "metadata.json")
+
+	// Check if metadata.json exists
+	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	metadataBytes, err := os.ReadFile(metadataPath)
+	if err != nil {
+		return nil
+	}
+
+	var metadata models.ChallengeMetadata
+	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+		return nil
+	}
+
+	return &metadata
+}
+
+// Helper functions for generating metadata when not available
+
+func (s *PackageService) generateTitleFromID(challengeID string) string {
+	// Remove "challenge-N-" prefix and convert to title case
+	parts := strings.Split(challengeID, "-")
+	if len(parts) >= 3 {
+		title := strings.Join(parts[2:], " ")
+		return strings.Title(strings.ReplaceAll(title, "-", " "))
+	}
+	return strings.Title(strings.ReplaceAll(challengeID, "-", " "))
+}
+
+func (s *PackageService) generateDescriptionFromReadme(challengePath string) string {
+	readmePath := filepath.Join(challengePath, "README.md")
+	content, err := os.ReadFile(readmePath)
+	if err != nil {
+		return "Challenge content available"
+	}
+
+	// Extract first paragraph as description
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "---") {
+			if len(line) > 120 {
+				return line[:120] + "..."
+			}
+			return line
+		}
+	}
+
+	return "Learn practical implementation techniques"
+}
+
+func (s *PackageService) inferDifficultyFromOrder(order int) string {
+	switch {
+	case order < 2:
+		return "Beginner"
+	case order < 4:
+		return "Intermediate"
+	default:
+		return "Advanced"
+	}
+}
+
+func (s *PackageService) inferEstimatedTime(challengeID string) string {
+	switch {
+	case strings.Contains(challengeID, "basic"):
+		return "30-45 min"
+	case strings.Contains(challengeID, "middleware"):
+		return "45-60 min"
+	case strings.Contains(challengeID, "validation") || strings.Contains(challengeID, "error"):
+		return "60-90 min"
+	case strings.Contains(challengeID, "auth"):
+		return "90-120 min"
+	case strings.Contains(challengeID, "file") || strings.Contains(challengeID, "upload"):
+		return "60-90 min"
+	default:
+		return "45-60 min"
+	}
+}
+
+func (s *PackageService) inferIconFromID(challengeID string) string {
+	switch {
+	case strings.Contains(challengeID, "basic") || strings.Contains(challengeID, "routing"):
+		return "bi-play-circle"
+	case strings.Contains(challengeID, "middleware"):
+		return "bi-layers"
+	case strings.Contains(challengeID, "validation") || strings.Contains(challengeID, "error"):
+		return "bi-shield-check"
+	case strings.Contains(challengeID, "auth"):
+		return "bi-person-lock"
+	case strings.Contains(challengeID, "file") || strings.Contains(challengeID, "upload"):
+		return "bi-cloud-upload"
+	case strings.Contains(challengeID, "database") || strings.Contains(challengeID, "db"):
+		return "bi-database"
+	case strings.Contains(challengeID, "cli"):
+		return "bi-terminal"
+	default:
+		return "bi-code-slash"
 	}
 }
 

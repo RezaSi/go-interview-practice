@@ -67,6 +67,25 @@ func (h *WebHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 	// Get packages for the Package Mastery tab
 	packages := h.packageService.GetPackages()
 
+	// Convert packages map to sorted slice by stars (descending)
+	type PackageWithName struct {
+		Name string
+		*models.Package
+	}
+
+	var packagesList []*PackageWithName
+	for name, pkg := range packages {
+		packagesList = append(packagesList, &PackageWithName{
+			Name:    name,
+			Package: pkg,
+		})
+	}
+
+	// Sort by stars descending (highest first)
+	sort.Slice(packagesList, func(i, j int) bool {
+		return packagesList[i].Stars > packagesList[j].Stars
+	})
+
 	// Get the username from cookie if available
 	username := h.getUsernameFromCookie(r)
 
@@ -84,14 +103,14 @@ func (h *WebHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Add package challenge attempts to userAttempt for UI consistency
-		if ginPackage, exists := packages["gin"]; exists {
-			packageAttemptCount := 0
-			for i, challengeID := range ginPackage.LearningPath {
-				attempted := h.hasUserAttemptedPackageChallenge(username, "gin", challengeID)
+		for packageName, pkg := range packages {
+			for i, challengeID := range pkg.LearningPath {
+				attempted := h.hasUserAttemptedPackageChallenge(username, packageName, challengeID)
 				if attempted {
-					// Use negative IDs for package challenges to avoid conflicts
-					userAttempt.AttemptedIDs[-(i + 1)] = true
-					packageAttemptCount++
+					// Use negative IDs for package challenges to avoid conflicts with classic challenges
+					// Create unique negative ID based on package and challenge index
+					packageChallengeID := -(1000 + i*10 + len(packageName)) // Ensure unique negative IDs
+					userAttempt.AttemptedIDs[packageChallengeID] = true
 				}
 			}
 		}
@@ -102,11 +121,13 @@ func (h *WebHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 		Username     string
 		UserAttempts *models.UserAttemptedChallenges
 		Packages     map[string]*models.Package
+		PackagesList []*PackageWithName
 	}{
 		Challenges:   challengeList,
 		Username:     username,
 		UserAttempts: userAttempt,
 		Packages:     packages,
+		PackagesList: packagesList,
 	}
 
 	err = tmpl.ExecuteTemplate(w, "base", data)
@@ -308,63 +329,11 @@ func (h *WebHandler) PackageDetailPage(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Strings(challengeIDs)
 
-	// Create ordered slice with enhanced data
-	for i, id := range challengeIDs {
-		originalChallenge := challengesMap[id]
-
-		// Create a copy of the challenge to avoid modifying the original
-		challenge := &models.PackageChallenge{
-			ID:                  originalChallenge.ID,
-			PackageName:         originalChallenge.PackageName,
-			Title:               originalChallenge.Title,
-			Description:         originalChallenge.Description,
-			Difficulty:          originalChallenge.Difficulty,
-			LearningObjectives:  originalChallenge.LearningObjectives,
-			Template:            originalChallenge.Template,
-			TestFile:            originalChallenge.TestFile,
-			LearningMaterials:   originalChallenge.LearningMaterials,
-			Hints:               originalChallenge.Hints,
-			Requirements:        originalChallenge.Requirements,
-			BonusPoints:         originalChallenge.BonusPoints,
-			RealWorldConnection: originalChallenge.RealWorldConnection,
-			EstimatedTime:       originalChallenge.EstimatedTime,
+	// Convert map to sorted slice using learning path order
+	for _, challengeID := range pkg.LearningPath {
+		if challenge, exists := challengesMap[challengeID]; exists {
+			challenges = append(challenges, challenge)
 		}
-
-		// Add missing estimated time based on challenge complexity
-		if challenge.EstimatedTime == "" {
-			switch {
-			case strings.Contains(id, "basic-routing"):
-				challenge.EstimatedTime = "30-45 min"
-			case strings.Contains(id, "middleware"):
-				challenge.EstimatedTime = "45-60 min"
-			case strings.Contains(id, "validation"):
-				challenge.EstimatedTime = "60-90 min"
-			case strings.Contains(id, "authentication"):
-				challenge.EstimatedTime = "90-120 min"
-			case strings.Contains(id, "file-upload"):
-				challenge.EstimatedTime = "60-90 min"
-			default:
-				challenge.EstimatedTime = "45-60 min"
-			}
-		}
-
-		// Set difficulty based on challenge progression
-		switch i {
-		case 0:
-			challenge.Difficulty = "Beginner"
-		case 1:
-			challenge.Difficulty = "Beginner"
-		case 2:
-			challenge.Difficulty = "Intermediate"
-		case 3:
-			challenge.Difficulty = "Intermediate"
-		case 4:
-			challenge.Difficulty = "Advanced"
-		default:
-			challenge.Difficulty = "Intermediate"
-		}
-
-		challenges = append(challenges, challenge)
 	}
 
 	tmpl, err := template.New("").Funcs(utils.GetTemplateFuncs()).ParseFS(h.content, "templates/base.html", "templates/package_detail.html")
