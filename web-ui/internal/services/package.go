@@ -344,18 +344,21 @@ func (s *PackageService) loadChallenge(challengePath, challengeName string) *mod
 		hints = "No hints available for this challenge."
 	}
 
-	// Use the full README content for both description and learning materials
-	// This gives individual challenge pages the same detailed content as classic challenges
+	// Load learning materials from learning.md (same as classic challenges)
+	learningMaterials := s.readFileContent(filepath.Join(challengePath, "learning.md"))
+	if learningMaterials == "" {
+		learningMaterials = "*No learning materials available for this challenge yet.*"
+	}
 
 	return &models.PackageChallenge{
 		ID:                challengeName,
 		Title:             title,
-		Description:       readmeContent, // Use README content directly
+		Description:       readmeContent, // Use README content for description
 		Difficulty:        "Beginner",    // Could be parsed from README or metadata
 		Template:          template,
 		TestFile:          testFile,
 		Hints:             hints,
-		LearningMaterials: readmeContent, // Full content in learning materials tab
+		LearningMaterials: learningMaterials, // Use learning.md for learning materials tab
 	}
 }
 
