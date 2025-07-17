@@ -68,14 +68,22 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link px-4 py-2 fw-semibold" 
+                        <button class="nav-link px-4 py-2 fw-semibold position-relative" 
                                 id="package-tab" 
                                 data-bs-toggle="pill" 
                                 data-bs-target="#package-challenges" 
                                 type="button" 
-                                role="tab">
+                                role="tab"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-bs-title="🚀 New! Try real-world package challenges"
+                                data-bs-custom-class="package-tooltip">
                             <i class="bi bi-box-seam me-2"></i>Package Mastery
                             <span class="badge bg-success ms-2">{{len .PackagesList}}</span>
+                            <!-- Permanent pulsing indicator -->
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle new-indicator" id="package-new-indicator" style="margin-left: -8px; margin-top: 2px;">
+                                <span class="visually-hidden">New</span>
+                            </span>
                         </button>
                     </li>
                 </ul>
@@ -291,6 +299,80 @@
         </div> <!-- End package challenges tab (already closed above) -->
     </div> <!-- End tab content -->
 </div> <!-- End challenges section -->
+
+<!-- Package Tips Modal -->
+<div class="modal fade" id="packageTipsModal" tabindex="-1" aria-labelledby="packageTipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-primary text-white border-0">
+                <h5 class="modal-title d-flex align-items-center" id="packageTipsModalLabel">
+                    <i class="bi bi-lightbulb-fill text-warning me-2 fs-4"></i>
+                    Welcome to Package Mastery!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="fw-bold mb-3">🚀 Master Real-World Go Packages</h6>
+                        <p class="mb-3">Package challenges are different from classic algorithm challenges - they focus on practical skills with popular Go packages used in production environments.</p>
+                        
+                        <div class="mb-4">
+                            <h6 class="fw-semibold text-primary mb-2">What makes Package Challenges unique:</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Hands-on Experience:</strong> Work with real packages like Gin, Cobra, GORM
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Progressive Learning:</strong> Challenges build on each other in a structured path
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Production Skills:</strong> Learn patterns and best practices used in industry
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Rich Learning Materials:</strong> Detailed explanations, examples, and documentation
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Pro Tip:</strong> Start with packages you're curious about, or follow the popularity ranking to learn the most widely-used Go packages first!
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-box-seam text-primary mb-3" style="font-size: 4rem;"></i>
+                        <div class="bg-light rounded p-3">
+                            <small class="text-muted d-block mb-2">Currently Available:</small>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <span class="badge bg-success">Gin</span>
+                                <span class="badge bg-primary">Cobra</span>
+                                <span class="badge bg-warning text-dark">GORM</span>
+                            </div>
+                            <small class="text-muted d-block mt-2">More packages coming soon!</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="dontShowAgain">
+                    <label class="form-check-label text-muted" for="dontShowAgain">
+                        Don't show this again
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary ms-auto" data-bs-dismiss="modal">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Let's Start Learning!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{end}}
 
 {{define "scripts"}}
@@ -565,6 +647,58 @@
         }
 
         // Packages are now pre-sorted by Go backend in popularity order
+        
+        // Package Tips Modal Logic
+        const packageTab = document.getElementById('package-tab');
+        const packageTipsModal = new bootstrap.Modal(document.getElementById('packageTipsModal'));
+        const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+        // Check if user has seen the package tips before
+        const hasSeenPackageTips = localStorage.getItem('hasSeenPackageTips') === 'true';
+        
+        // Initialize tooltip only for first-time users
+        let tooltip = null;
+        if (!hasSeenPackageTips) {
+            tooltip = new bootstrap.Tooltip(packageTab);
+            
+            // Show tooltip briefly on page load to draw attention
+            setTimeout(() => {
+                tooltip.show();
+                setTimeout(() => {
+                    tooltip.hide();
+                }, 3000); // Hide after 3 seconds
+            }, 1000); // Show after 1 second
+        }
+        
+        // Show tips modal when Package Mastery tab is clicked for the first time
+        packageTab.addEventListener('click', function() {
+            // Dispose tooltip after first click (but keep the NEW badge)
+            if (tooltip) {
+                tooltip.dispose();
+                tooltip = null;
+            }
+            
+            if (!hasSeenPackageTips) {
+                // Small delay to let the tab switch animation complete
+                setTimeout(() => {
+                    packageTipsModal.show();
+                }, 300);
+            }
+        });
+        
+        // Handle modal close and save preference
+        document.getElementById('packageTipsModal').addEventListener('hidden.bs.modal', function() {
+            const shouldNotShowAgain = dontShowAgainCheckbox.checked;
+            if (shouldNotShowAgain) {
+                localStorage.setItem('hasSeenPackageTips', 'true');
+            } else {
+                // If they didn't check "don't show again", mark as seen for this session only
+                localStorage.setItem('hasSeenPackageTips', 'true');
+            }
+        });
+        
+        // Reset tips option (for development/testing - remove in production)
+        // Uncomment the next line to reset the tips state for testing
+        // localStorage.removeItem('hasSeenPackageTips');
     });
 </script>
 
@@ -640,6 +774,34 @@
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Permanent pulsing indicator */
+    .new-indicator {
+        animation: pulse-warning 2s infinite;
+        z-index: 10;
+    }
+    
+    @keyframes pulse-warning {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+        }
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+    }
+    
+    /* Custom tooltip styles */
+    .package-tooltip {
+        --bs-tooltip-bg: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        --bs-tooltip-color: white;
+        font-size: 0.875rem;
     }
 </style>
 {{end}} 
