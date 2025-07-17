@@ -275,13 +275,23 @@ Review the learning materials to deepen your understanding of the concepts used.
 
 ## Contributing
 
-We welcome contributions! To add a new challenge:
+We welcome contributions! You can contribute in several ways:
 
+**Submit Solutions:**
+- Solve existing classic or package challenges
+- Submit your solutions via pull request
+
+**Add New Challenges:**
+- **Classic Challenges:** Algorithm and data structure problems
+- **Package Challenges:** Framework-specific practical applications (Gin, Cobra, GORM, etc.)
+
+**Quick Steps:**
 1. Fork the repository
-2. Create a new challenge following our template structure
-3. Submit a pull request
+2. Choose challenge type (classic or package-based)
+3. Follow our template structure
+4. Submit a pull request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on both challenge types.
 
 ## License
 

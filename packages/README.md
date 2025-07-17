@@ -166,11 +166,30 @@ Use Bootstrap Icons for challenges:
 
 ## Contributing
 
-1. Follow the directory structure exactly
-2. Include all required files
-3. Test challenges thoroughly
-4. Write clear documentation
-5. Use appropriate difficulty levels
-6. Ensure learning objectives are clear
+For detailed contribution guidelines for package challenges, see [CONTRIBUTING.md](../CONTRIBUTING.md#package-challenges-frameworklibrary-focused).
+
+### Quick Guidelines
+
+1. **Follow the Directory Structure** - Use the exact structure shown above
+2. **Include All Required Files** - README.md, solution-template.go, tests, and hints
+3. **Create Working Solutions** - Include a complete solution in submissions/RezaSi/
+4. **Test Thoroughly** - Ensure all tests pass and edge cases are covered
+5. **Write Clear Documentation** - Provide comprehensive learning materials
+6. **Use Appropriate Difficulty** - Match difficulty to target audience
+7. **Ensure Learning Objectives** - Each challenge should have clear educational goals
+8. **Follow Package Conventions** - Use consistent naming and structure
+9. **Include Dependencies** - Set up proper go.mod with all required packages
+10. **Create Executable Scripts** - Provide run_tests.sh for validation
+
+### Template Files Included
+
+The system provides template files for:
+- **metadata.json** - Challenge metadata structure
+- **go.mod** - Module configuration with dependencies  
+- **solution-template.go** - Code template with TODOs
+- **solution-template_test.go** - Comprehensive test suite
+- **learning.md** - Educational content (400+ lines recommended)
+- **hints.md** - Step-by-step guidance
+- **run_tests.sh** - Testing and validation script
 
 The system will automatically detect and display your new package challenges! 
