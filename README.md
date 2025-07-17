@@ -95,7 +95,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **2** | **2** pkgs | 🌱 Package Beginner | **cobra**: 1 • **gin**: 1 |
 
 <div align="center">
 
@@ -105,6 +105,12 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 ### 📦 Per-Package Progress
 
+#### Cobra Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/2 | 🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ 50% |
+
 #### Gin Package
 
 | Rank | Developer | Completed | Progress |
@@ -113,11 +119,11 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 ### 📊 Package Challenge Statistics
 
-- **Total Package Challenges Available**: 9
+- **Total Package Challenges Available**: 7
 - **Active Package Learners**: 1
 - **Available Packages**: 3 (cobra, gin, gorm)
 
-- **Most Package Challenges Solved**: 1 by RezaSi
+- **Most Package Challenges Solved**: 2 by RezaSi
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
