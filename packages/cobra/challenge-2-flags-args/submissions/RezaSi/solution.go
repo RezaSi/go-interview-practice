@@ -319,7 +319,7 @@ func readDirectory(dirPath string) ([]FileInfo, error) {
 	return files, nil
 }
 
-// validateFileName checks if filename is valid.
+// validateFileName checks if filename is valid
 func validateFileName(filename string) error {
 	if filename == "" {
 		return fmt.Errorf("filename cannot be empty")
