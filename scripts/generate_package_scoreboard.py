@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to generate the main package scoreboard for README.md by aggregating data from all package challenge scoreboards.
+Script to generate the package scoreboard for README.md by aggregating data from all package challenge scoreboards.
 """
 
 import os
@@ -103,10 +103,14 @@ def generate_package_scoreboard():
     package_completions = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'challenges': []}))
     overall_completions = defaultdict(lambda: {'count': 0, 'packages': set()})
     
-    # Find all package directories
-    packages_dir = Path('packages')
-    if not packages_dir.exists():
-        packages_dir = Path('../packages')
+    # Get the root directory (handle running from different locations)
+    current_dir = Path('.')
+    if 'scripts' in str(current_dir.absolute()):
+        # If running from scripts directory, go up one level
+        current_dir = current_dir.parent
+    
+    # Find packages directory
+    packages_dir = current_dir / 'packages'
     
     if not packages_dir.exists():
         print("❌ No packages directory found!")
@@ -225,7 +229,7 @@ def generate_package_scoreboard():
         markdown_lines.append("")
     
     markdown_lines.extend([
-        "---",
+        "<!-- END_PACKAGE_LEADERBOARD -->",
         ""
     ])
     
@@ -320,7 +324,13 @@ def generate_package_html_leaderboard(top_users, package_completions):
 def update_readme_with_package_scoreboard(scoreboard_content):
     """Update README.md with the new package scoreboard content."""
     
-    readme_path = 'README.md'
+    # Get the root directory (handle running from different locations)
+    current_dir = Path('.')
+    if 'scripts' in str(current_dir.absolute()):
+        # If running from scripts directory, go up one level
+        current_dir = current_dir.parent
+    
+    readme_path = current_dir / 'README.md'
     
     try:
         with open(readme_path, 'r') as f:
@@ -329,26 +339,28 @@ def update_readme_with_package_scoreboard(scoreboard_content):
         print("README.md not found!", file=sys.stderr)
         return False
     
-    # Define markers for the package scoreboard section
+    # Define specific markers for the package scoreboard section
     start_marker = "## 🚀 Package Challenges Leaderboard"
-    end_marker = "## Key Features"
+    end_marker = "<!-- END_PACKAGE_LEADERBOARD -->"
     
     # Find the positions of markers
     start_pos = content.find(start_marker)
     end_pos = content.find(end_marker)
     
     if start_pos == -1:
-        # If package scoreboard doesn't exist, insert after classic leaderboard
-        classic_end = content.find("---", content.find("## 🏆 Top 10 Leaderboard"))
-        if classic_end == -1:
+        # If package scoreboard doesn't exist, insert after classic leaderboard or before key features
+        classic_end = content.find("<!-- END_CLASSIC_LEADERBOARD -->")
+        key_features_pos = content.find("## Key Features")
+        
+        if classic_end != -1:
+            # Insert after classic leaderboard
+            insertion_point = content.find('\n', classic_end) + 1
+        elif key_features_pos != -1:
             # Fallback to before Key Features
-            key_features_pos = content.find("## Key Features")
-            if key_features_pos == -1:
-                print("Could not find insertion point in README.md", file=sys.stderr)
-                return False
             insertion_point = key_features_pos
         else:
-            insertion_point = classic_end + 4  # After "---\n"
+            print("Could not find insertion point in README.md", file=sys.stderr)
+            return False
         
         # Insert the new package scoreboard
         new_content = (content[:insertion_point] + 
@@ -356,11 +368,26 @@ def update_readme_with_package_scoreboard(scoreboard_content):
                       content[insertion_point:])
     else:
         if end_pos == -1:
-            end_pos = len(content)
+            # If start marker exists but no end marker, find next section
+            next_section_patterns = [
+                "## Key Features",
+                "## Getting Started",
+                "## Challenge Categories"
+            ]
+            
+            end_pos = len(content)  # Default to end of file
+            for pattern in next_section_patterns:
+                pattern_pos = content.find(pattern, start_pos + len(start_marker))
+                if pattern_pos != -1:
+                    end_pos = pattern_pos
+                    break
+        else:
+            # Include the end marker in replacement
+            end_pos = content.find('\n', end_pos) + 1
         
         # Replace existing package scoreboard section
         new_content = (content[:start_pos] + 
-                      scoreboard_content + '\n' + 
+                      scoreboard_content + 
                       content[end_pos:])
     
     # Write the updated content
@@ -376,7 +403,7 @@ def update_readme_with_package_scoreboard(scoreboard_content):
 
 def main():
     """Main function to generate and update the package scoreboard."""
-    print("Generating package scoreboard...")
+    print("Generating package challenges scoreboard...")
     
     scoreboard_content = generate_package_scoreboard()
     
