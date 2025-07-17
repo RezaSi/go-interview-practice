@@ -7,9 +7,11 @@ on:
       - completed
     branches:
       - main
+      - package-challenges
   push:
     branches:
       - main
+      - package-challenges
     paths:
       - 'packages/*/challenge-*/SCOREBOARD.md'
   schedule:

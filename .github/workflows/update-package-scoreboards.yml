@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - package-challenges
     paths:
       - 'packages/*/challenge-*/submissions/**'
 
