@@ -58,7 +58,41 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 > **Note**: The data below is automatically updated by GitHub Actions when challenge scoreboards change.
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
+|:---:## 🚀 Package Challenges Leaderboard
+
+Master Go packages through hands-on challenges! Each package offers a structured learning path with real-world scenarios.
+
+> **Note**: The data below is automatically updated by GitHub Actions when package challenge scoreboards change.
+
+| 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
+| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+
+<div align="center">
+
+🚀 **Package Challenges** - Learn Go packages through practical, real-world scenarios
+
+</div>
+
+### 📦 Per-Package Progress
+
+#### Gin Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+
+### 📊 Package Challenge Statistics
+
+- **Total Package Challenges Available**: 9
+- **Active Package Learners**: 1
+- **Available Packages**: 3 (cobra, gin, gorm)
+
+- **Most Package Challenges Solved**: 1 by RezaSi
+
+---
+
+|:---:|:---:|:---:|:---:|:---|
 | 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **24**/30 | **80.0%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅✅⬜✅ |
 | 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜✅✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
