@@ -14,7 +14,7 @@ import (
 func TestClientRegistration(t *testing.T) {
 	server := NewOAuth2Server()
 
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -27,7 +27,7 @@ func TestClientRegistration(t *testing.T) {
 	}
 
 	// Try to register a client with the same ID
-	duplicateClient := &OAuth2Client{
+	duplicateClient := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "different-secret",
 		RedirectURIs:  []string{"https://different.example.com/callback"},
@@ -70,7 +70,7 @@ func TestAuthorizationEndpoint(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -191,7 +191,7 @@ func TestTokenEndpoint(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -377,7 +377,7 @@ func TestRefreshToken(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
