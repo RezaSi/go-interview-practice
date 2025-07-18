@@ -1,0 +1,42 @@
+{
+  "title": "Basic CLI Application",
+  "description": "Build a foundational command-line application using Cobra framework with basic commands, flags, and arguments handling.",
+  "short_description": "Create your first CLI tool with Cobra framework fundamentals",
+  "difficulty": "Beginner",
+  "estimated_time": "30-45 min",
+  "learning_objectives": [
+    "Understand Cobra CLI framework basics",
+    "Create root and sub-commands",
+    "Handle command-line flags and arguments",
+    "Implement command help and usage",
+    "Structure CLI application properly"
+  ],
+  "prerequisites": [
+    "Basic Go syntax",
+    "Command-line interface concepts",
+    "Understanding of CLI tools"
+  ],
+  "tags": [
+    "cli",
+    "commands",
+    "flags",
+    "arguments",
+    "terminal"
+  ],
+  "real_world_connection": "CLI tools are essential for DevOps, automation, build systems, and developer tooling across the industry.",
+  "requirements": [
+    "Create a root command with proper help",
+    "Implement subcommands for different operations",
+    "Add persistent and local flags",
+    "Handle positional arguments",
+    "Provide meaningful command descriptions",
+    "Implement proper error handling"
+  ],
+  "bonus_points": [
+    "Add command aliases",
+    "Implement configuration file support",
+    "Add shell completion"
+  ],
+  "icon": "bi-terminal",
+  "order": 1
+} 
