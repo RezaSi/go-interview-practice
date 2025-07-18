@@ -10,8 +10,9 @@ Welcome to the **Go Interview Practice** repository! Master Go programming and a
 ### Interactive Challenge Platform
 Our comprehensive web interface provides everything you need to practice and master Go programming:
 
+
 <div align="center">
-  <video src="https://github.com/user-attachments/assets/b715a4b7-de39-40b2-94bc-2a74e344e51a" controls width="90%"></video>
+  <video src="https://github.com/user-attachments/assets/23468aab-a032-4326-9d05-84de86c9128c" controls width="90%"></video>
   <p><em>A brief introduction to the project</em></p>
 </div>
 
