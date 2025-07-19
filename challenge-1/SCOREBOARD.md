@@ -4,6 +4,7 @@
 | 0xJaskirat | 6 | 6 |
 | AliNazariii | 6 | 6 |
 | Gandook | 6 | 6 |
+| JunLog | 6 | 6 |
 | K1tten2005 | 6 | 6 |
 | KhaledMosaad | 6 | 6 |
 | Mamsheikh | 6 | 6 |
@@ -11,6 +12,7 @@
 | PolinaSvet | 6 | 6 |
 | RezaSi | 6 | 6 |
 | Seokky | 6 | 6 |
+| Ward-R | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
 | ZaharBorisenko | 6 | 6 |
 | ZakirAvrora | 6 | 6 |
@@ -18,7 +20,9 @@
 | ashwinipatankar | 6 | 6 |
 | bmeverett | 6 | 6 |
 | deloz | 6 | 6 |
+| diyorich | 6 | 6 |
 | hodgechung | 6 | 6 |
+| jasonnfeng | 6 | 6 |
 | jersonzc | 6 | 6 |
 | krmaxwell | 6 | 6 |
 | lajosbnk | 6 | 6 |
@@ -31,5 +35,6 @@
 | skx | 6 | 6 |
 | sultaAann | 6 | 6 |
 | suminitgo | 6 | 6 |
+| sytayav | 6 | 6 |
 | timlkko | 6 | 6 |
 | y1hao | 6 | 6 |
