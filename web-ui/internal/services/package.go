@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -350,11 +351,28 @@ func (s *PackageService) loadChallenge(challengePath, challengeName string) *mod
 		learningMaterials = "*No learning materials available for this challenge yet.*"
 	}
 
+	// Determine difficulty - try to load from metadata first, then infer from challenge name
+	difficulty := "Beginner" // default fallback
+
+	// Try to load metadata.json for difficulty
+	metadata := s.loadChallengeMetadata(challengePath)
+	if metadata != nil && metadata.Difficulty != "" {
+		difficulty = metadata.Difficulty
+	} else {
+		// Infer difficulty from challenge name/order
+		// Extract challenge number from name (e.g., "challenge-1-basic-routing" -> 1)
+		if len(parts) >= 2 {
+			if challengeNum, err := strconv.Atoi(parts[1]); err == nil {
+				difficulty = s.inferDifficultyFromOrder(challengeNum - 1) // Convert to 0-based index
+			}
+		}
+	}
+
 	return &models.PackageChallenge{
 		ID:                challengeName,
 		Title:             title,
 		Description:       readmeContent, // Use README content for description
-		Difficulty:        "Beginner",    // Could be parsed from README or metadata
+		Difficulty:        difficulty,
 		Template:          template,
 		TestFile:          testFile,
 		Hints:             hints,
