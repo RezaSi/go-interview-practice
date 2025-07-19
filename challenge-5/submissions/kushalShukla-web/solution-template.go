@@ -18,7 +18,7 @@ func AuthMiddleware(h http.Handler) http.Handler {
 		if s == "" || s != validToken {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(""))
-			return
+		return 
 		}
 		// 		new, err := jwt.Parse(ne, func(k *jwt.Token) (any, error) {
 		// 			//if varifietoken == "" {
@@ -30,10 +30,11 @@ func AuthMiddleware(h http.Handler) http.Handler {
 		//             w.WriteHeader(http.StatusUnauthorized)
 		// 			http.Error(w, "Error while decoding", http.StatusUnauthorized)
 		// 		}
-		w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusOK)
 		h.ServeHTTP(w, re)
 	})
 } // syntax is very importan please mug up this.
+
 
 // helloHandler returns "Hello!" on GET /hello
 func helloHandler(w http.ResponseWriter, r *http.Request) {
