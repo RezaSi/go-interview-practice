@@ -12,9 +12,11 @@
 | RezaSi | 7 | 7 |
 | Seokky | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
+| adwantay | 7 | 7 |
 | arslanoktay | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
 | deloz | 7 | 7 |
+| jasonnfeng | 7 | 7 |
 | jersonzc | 7 | 7 |
 | krmaxwell | 7 | 7 |
 | lajosbnk | 7 | 7 |

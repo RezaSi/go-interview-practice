@@ -24,8 +24,8 @@ permissions:
 jobs:
   update-main-package-scoreboard:
     runs-on: ubuntu-latest
-    # Only run if workflow_run was successful, or if triggered by other events
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    # Only run if workflow_run was successful, or if triggered by other events, AND only on main repo
+    if: ${{ github.repository == 'RezaSi/go-interview-practice' && (github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run') }}
 
     steps:
       - name: Check out repository

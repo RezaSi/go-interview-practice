@@ -13,6 +13,7 @@ permissions:
 jobs:
   update-package-scoreboards:
     runs-on: ubuntu-latest
+    if: github.repository == 'RezaSi/go-interview-practice'
 
     steps:
       - name: Check out repository
