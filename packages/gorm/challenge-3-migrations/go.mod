@@ -1,4 +1,4 @@
-module gorm-crud
+module gorm-migrations
 
 go 1.21
 

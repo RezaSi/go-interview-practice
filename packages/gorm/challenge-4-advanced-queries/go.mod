@@ -1,4 +1,4 @@
-module gorm-crud
+module gorm-advanced-queries
 
 go 1.21
 

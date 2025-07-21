@@ -1,4 +1,4 @@
-module gorm-crud
+module gorm-associations
 
 go 1.21
 

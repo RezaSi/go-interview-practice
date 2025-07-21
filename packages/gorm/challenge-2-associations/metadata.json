@@ -1,0 +1,45 @@
+{
+  "title": "Associations & Relationships",
+  "description": "Build a blog system using GORM that demonstrates database relationships including one-to-many and many-to-many associations between users, posts, and tags.",
+  "short_description": "Learn GORM associations and build a blog system with relationships",
+  "difficulty": "Intermediate",
+  "estimated_time": "45-60 min",
+  "learning_objectives": [
+    "Understand GORM associations and relationships",
+    "Implement one-to-many relationships",
+    "Implement many-to-many relationships",
+    "Use preloading for efficient queries",
+    "Manage foreign key constraints",
+    "Work with junction tables"
+  ],
+  "prerequisites": [
+    "Basic GORM CRUD operations",
+    "Understanding of database relationships",
+    "SQL foreign key concepts"
+  ],
+  "tags": [
+    "associations",
+    "relationships",
+    "foreign-keys",
+    "preloading",
+    "many-to-many"
+  ],
+  "real_world_connection": "Blog systems and content management platforms commonly use these relationship patterns to organize users, content, and categorization.",
+  "requirements": [
+    "Implement User-Post one-to-many relationship",
+    "Implement Post-Tag many-to-many relationship",
+    "Create users with associated posts",
+    "Create posts with multiple tags",
+    "Query users with their posts using preloading",
+    "Query posts by tag",
+    "Add tags to existing posts",
+    "Load posts with user and tag associations"
+  ],
+  "bonus_points": [
+    "Implement cascade operations",
+    "Add validation for relationship constraints",
+    "Implement soft deletes for posts"
+  ],
+  "icon": "bi-diagram-3",
+  "order": 2
+} 
