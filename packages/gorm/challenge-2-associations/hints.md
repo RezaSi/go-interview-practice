@@ -1,50 +1,120 @@
 # Hints for GORM Associations Challenge
 
-## General Tips
+## Hint 1: Database Connection & Migration
 
-1. **Start with the database connection** - Make sure your `ConnectDB()` function properly connects to SQLite and auto-migrates all models.
+Start with the database connection - Make sure your `ConnectDB()` function properly connects to SQLite and auto-migrates all models (User, Post, Tag).
 
-2. **Understand the relationships** - This challenge involves one-to-many (User-Post) and many-to-many (Post-Tag) relationships.
+```go
+func ConnectDB() (*gorm.DB, error) {
+    db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    
+    err = db.AutoMigrate(&User{}, &Post{}, &Tag{})
+    return db, err
+}
+```
 
-3. **Use transactions** - When creating related records, consider using transactions to ensure data consistency.
+## Hint 2: Understanding Relationships
 
-## Function-Specific Hints
+This challenge involves one-to-many (User→Posts) and many-to-many (Post↔Tags) relationships. The User model has a slice of Posts, and Posts have both a User and a slice of Tags.
 
-### ConnectDB()
-- Use `gorm.Open()` with SQLite driver
-- Call `AutoMigrate()` for all your models (User, Post, Tag)
-- Don't forget to handle errors
+## Hint 3: Creating User with Posts
 
-### CreateUserWithPosts()
-- Use GORM's association mode to create user and posts together
-- The posts will be automatically associated with the user
-- Make sure to set the `UserID` field in posts
+Use GORM's association mode to create user and posts together. The posts will be automatically associated with the user:
 
-### GetUserWithPosts()
-- Use `Preload("Posts")` to load the user's posts
-- Use `First()` to get a single user by ID
-- Handle the case where user doesn't exist
+```go
+func CreateUserWithPosts(db *gorm.DB, user *User) error {
+    return db.Create(user).Error
+}
+```
 
-### CreatePostWithTags()
-- First, find or create tags by name
-- Use `Association("Tags").Append()` to associate tags with the post
-- Consider using a transaction for this operation
+## Hint 4: Preloading Related Data
 
-### GetPostsByTag()
-- Use `Joins()` to join posts with tags through the junction table
-- Use `Where()` to filter by tag name
-- Use `Preload()` to load related data if needed
+Use `Preload("Posts")` to load the user's posts. Use `First()` to get a single user by ID:
 
-### AddTagsToPost()
-- Find the post first
-- Find or create the tags by name
-- Use `Association("Tags").Append()` to add tags
-- Handle duplicate tags gracefully
+```go
+func GetUserWithPosts(db *gorm.DB, userID uint) (*User, error) {
+    var user User
+    err := db.Preload("Posts").First(&user, userID).Error
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+```
 
-### GetPostWithUserAndTags()
-- Use `Preload("User")` and `Preload("Tags")` together
-- Use `First()` to get a single post by ID
-- Handle the case where post doesn't exist
+## Hint 5: Creating Posts with Tags
+
+First, find or create tags by name, then associate them with the post:
+
+```go
+func CreatePostWithTags(db *gorm.DB, post *Post, tagNames []string) error {
+    // Create the post first
+    if err := db.Create(post).Error; err != nil {
+        return err
+    }
+    
+    // Find or create tags and associate them
+    for _, name := range tagNames {
+        var tag Tag
+        db.FirstOrCreate(&tag, Tag{Name: name})
+        db.Model(post).Association("Tags").Append(&tag)
+    }
+    return nil
+}
+```
+
+## Hint 6: Querying Posts by Tag
+
+Use `Joins()` to join posts with tags through the junction table:
+
+```go
+func GetPostsByTag(db *gorm.DB, tagName string) ([]Post, error) {
+    var posts []Post
+    err := db.Joins("JOIN post_tags ON posts.id = post_tags.post_id").
+        Joins("JOIN tags ON post_tags.tag_id = tags.id").
+        Where("tags.name = ?", tagName).
+        Find(&posts).Error
+    return posts, err
+}
+```
+
+## Hint 7: Adding Tags to Existing Post
+
+Find the post first, then find or create tags and append them:
+
+```go
+func AddTagsToPost(db *gorm.DB, postID uint, tagNames []string) error {
+    var post Post
+    if err := db.First(&post, postID).Error; err != nil {
+        return err
+    }
+    
+    for _, name := range tagNames {
+        var tag Tag
+        db.FirstOrCreate(&tag, Tag{Name: name})
+        db.Model(&post).Association("Tags").Append(&tag)
+    }
+    return nil
+}
+```
+
+## Hint 8: Preloading Multiple Associations
+
+Use multiple `Preload()` calls to load both User and Tags:
+
+```go
+func GetPostWithUserAndTags(db *gorm.DB, postID uint) (*Post, error) {
+    var post Post
+    err := db.Preload("User").Preload("Tags").First(&post, postID).Error
+    if err != nil {
+        return nil, err
+    }
+    return &post, nil
+}
+```
 
 ## Common Patterns
 

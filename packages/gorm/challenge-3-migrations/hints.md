@@ -1,62 +1,190 @@
 # Hints for GORM Migrations Challenge
 
-## General Tips
+## Hint 1: Understanding Migration Versions
 
-1. **Understand migration versions** - Each migration should have a unique version number that represents the order of application.
+Each migration should have a unique version number that represents the order of application. Use a `MigrationVersion` table to track which migrations have been applied.
 
-2. **Use transactions** - Always wrap migrations in transactions to ensure atomicity.
+## Hint 2: Database Connection Setup
 
-3. **Track migration state** - Use a `MigrationVersion` table to track which migrations have been applied.
+Use `gorm.Open()` with SQLite driver. Don't auto-migrate all models here - let migrations handle schema changes:
 
-4. **Make migrations reversible** - Each migration should have a corresponding rollback operation.
+```go
+func ConnectDB() (*gorm.DB, error) {
+    db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    
+    // Create migration tracking table
+    db.AutoMigrate(&MigrationVersion{})
+    return db, nil
+}
+```
 
-## Function-Specific Hints
+## Hint 3: Running Migrations Safely
 
-### ConnectDB()
-- Use `gorm.Open()` with SQLite driver
-- Don't auto-migrate all models here - let migrations handle schema changes
-- Return the database connection
+Check if migration already exists, use transactions, and record the migration version after successful application:
 
-### RunMigration()
-- Check if migration already exists in `MigrationVersion` table
-- Use a switch statement to handle different migration versions
-- Wrap the entire operation in a transaction
-- Record the migration version after successful application
+```go
+func RunMigration(db *gorm.DB, version int) error {
+    // Check if already applied
+    var existing MigrationVersion
+    if err := db.Where("version = ?", version).First(&existing).Error; err == nil {
+        return nil // Already applied
+    }
+    
+    tx := db.Begin()
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
+    
+    // Apply migration based on version
+    switch version {
+    case 1:
+        if err := tx.AutoMigrate(&Product{}).Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+    case 2:
+        if err := tx.AutoMigrate(&Category{}).Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+    case 3:
+        if err := tx.Exec("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 0").Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+    }
+    
+    // Record migration
+    migration := MigrationVersion{Version: version, AppliedAt: time.Now()}
+    if err := tx.Create(&migration).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+    
+    return tx.Commit().Error
+}
+```
 
-### RollbackMigration()
-- Find the current migration version
-- Apply rollback operations in reverse order
-- Remove the migration record from `MigrationVersion` table
-- Use transactions for safety
+## Hint 4: Migration Rollback
 
-### GetMigrationVersion()
-- Query the `MigrationVersion` table for the highest version number
-- Return 0 if no migrations have been applied
-- Handle the case where the table doesn't exist yet
+Apply rollback operations in reverse order and remove the migration record:
 
-### SeedData()
-- Create sample categories first
-- Create sample products with proper category relationships
-- Use transactions to ensure data consistency
-- Check for existing data to avoid duplicates
+```go
+func RollbackMigration(db *gorm.DB, targetVersion int) error {
+    current, err := GetMigrationVersion(db)
+    if err != nil {
+        return err
+    }
+    
+    for version := current; version > targetVersion; version-- {
+        tx := db.Begin()
+        
+        switch version {
+        case 3:
+            tx.Exec("ALTER TABLE products DROP COLUMN stock")
+        case 2:
+            tx.Migrator().DropTable(&Category{})
+        case 1:
+            tx.Migrator().DropTable(&Product{})
+        }
+        
+        tx.Where("version = ?", version).Delete(&MigrationVersion{})
+        tx.Commit()
+    }
+    return nil
+}
+```
 
-### CreateProduct()
-- Validate required fields (name, price, category_id, sku)
-- Check if the category exists
-- Handle unique constraint violations for SKU
-- Use transactions if needed
+## Hint 5: Tracking Migration Version
 
-### GetProductsByCategory()
-- Use `Where()` to filter by category
-- Implement pagination with `Offset()` and `Limit()`
-- Count total records for pagination info
-- Preload related data if needed
+Query the `MigrationVersion` table for the highest version number:
 
-### UpdateProductStock()
-- Find the product first
-- Update the stock field
-- Validate stock quantity (should be non-negative)
-- Handle the case where product doesn't exist
+```go
+func GetMigrationVersion(db *gorm.DB) (int, error) {
+    var migration MigrationVersion
+    err := db.Order("version DESC").First(&migration).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return 0, nil
+        }
+        return 0, err
+    }
+    return migration.Version, nil
+}
+```
+
+## Hint 6: Data Seeding
+
+Create sample data with proper relationships and use transactions for consistency:
+
+```go
+func SeedData(db *gorm.DB) error {
+    categories := []Category{
+        {Name: "Technology", Description: "Tech products"},
+        {Name: "Sports", Description: "Sports equipment"},
+    }
+    
+    for _, cat := range categories {
+        db.Create(&cat)
+    }
+    
+    products := []Product{
+        {Name: "Laptop", Price: 999.99, CategoryID: 1, Stock: 10, SKU: "LAP-001"},
+        {Name: "Football", Price: 29.99, CategoryID: 2, Stock: 50, SKU: "SPT-001"},
+    }
+    
+    for _, prod := range products {
+        db.Create(&prod)
+    }
+    
+    return nil
+}
+```
+
+## Hint 7: Creating Products
+
+Validate required fields and check if the category exists:
+
+```go
+func CreateProduct(db *gorm.DB, product *Product) error {
+    // Validate required fields
+    if product.Name == "" || product.Price <= 0 || product.SKU == "" {
+        return errors.New("missing required fields")
+    }
+    
+    // Check if category exists
+    var category Category
+    if err := db.First(&category, product.CategoryID).Error; err != nil {
+        return errors.New("category not found")
+    }
+    
+    return db.Create(product).Error
+}
+```
+
+## Hint 8: Querying Products by Category
+
+Use `Where()` to filter and implement pagination:
+
+```go
+func GetProductsByCategory(db *gorm.DB, categoryID uint, page, pageSize int) ([]Product, int64, error) {
+    var products []Product
+    var total int64
+    
+    query := db.Where("category_id = ?", categoryID)
+    query.Model(&Product{}).Count(&total)
+    
+    offset := (page - 1) * pageSize
+    err := query.Offset(offset).Limit(pageSize).Find(&products).Error
+    
+    return products, total, err
+}
+```
 
 ## Migration Implementation Patterns
 

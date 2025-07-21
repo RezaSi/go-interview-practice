@@ -1,69 +1,174 @@
 # Hints for GORM Advanced Queries Challenge
 
-## General Tips
+## Hint 1: Database Connection & Data Model
 
-1. **Understand the data model** - This challenge involves Users, Posts, and Likes with complex relationships.
+This challenge involves Users, Posts, and Likes with complex relationships. Use `gorm.Open()` with SQLite driver and auto-migrate all models:
 
-2. **Use aggregations effectively** - Many functions require counting, grouping, and mathematical operations.
+```go
+func ConnectDB() (*gorm.DB, error) {
+    db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    
+    err = db.AutoMigrate(&User{}, &Post{}, &Like{})
+    return db, err
+}
+```
 
-3. **Optimize for performance** - Use proper indexing, limit result sets, and avoid N+1 queries.
+## Hint 2: Top Users by Post Count
 
-4. **Handle edge cases** - Consider empty results, invalid inputs, and error conditions.
+Use aggregations with joins, grouping, and ordering:
 
-## Function-Specific Hints
+```go
+func GetTopUsersByPostCount(db *gorm.DB, limit int) ([]User, error) {
+    var users []User
+    err := db.Joins("LEFT JOIN posts ON users.id = posts.user_id").
+        Group("users.id").
+        Order("COUNT(posts.id) DESC").
+        Limit(limit).
+        Find(&users).Error
+    return users, err
+}
+```
 
-### ConnectDB()
-- Use `gorm.Open()` with SQLite driver
-- Auto-migrate all models (User, Post, Like)
-- Return the database connection
+## Hint 3: Posts by Category with Pagination
 
-### GetTopUsersByPostCount()
-- Use `Joins()` to join users with posts
-- Use `Group()` to group by user
-- Use `Select()` to include count in results
-- Use `Order()` to sort by post count descending
-- Use `Limit()` to restrict results
+Use `Where()` to filter, `Preload()` for user info, and implement pagination:
 
-### GetPostsByCategoryWithUserInfo()
-- Use `Where()` to filter by category
-- Use `Preload("User")` to load user information
-- Implement pagination with `Offset()` and `Limit()`
-- Use `Count()` to get total count for pagination
-- Handle the case where category doesn't exist
+```go
+func GetPostsByCategoryWithUserInfo(db *gorm.DB, category string, page, pageSize int) ([]Post, int64, error) {
+    var posts []Post
+    var total int64
+    
+    query := db.Where("category = ?", category)
+    query.Model(&Post{}).Count(&total)
+    
+    offset := (page - 1) * pageSize
+    err := query.Preload("User").Offset(offset).Limit(pageSize).Find(&posts).Error
+    
+    return posts, total, err
+}
+```
 
-### GetUserEngagementStats()
-- Calculate multiple metrics in one function
-- Use `Count()` for post count
-- Use `Joins()` and `Count()` for likes received
-- Use `Select("AVG(view_count)")` for average views
-- Return a map with all statistics
+## Hint 4: User Engagement Statistics
 
-### GetPopularPostsByLikes()
-- Use `Joins()` to join posts with likes
-- Use `Where()` to filter by time period
-- Use `Group()` to group by post
-- Use `Order()` to sort by like count
-- Use `Limit()` to restrict results
+Calculate multiple metrics in one function using different query methods:
 
-### GetCountryUserStats()
-- Use `Select()` with aggregation functions
-- Use `Group("country")` to group by country
-- Use `Scan()` to map results to struct
-- Return slice of maps with country statistics
+```go
+func GetUserEngagementStats(db *gorm.DB, userID uint) (map[string]interface{}, error) {
+    stats := make(map[string]interface{})
+    
+    // Post count
+    var postCount int64
+    db.Model(&Post{}).Where("user_id = ?", userID).Count(&postCount)
+    stats["post_count"] = postCount
+    
+    // Likes received
+    var likesReceived int64
+    db.Model(&Like{}).Joins("JOIN posts ON likes.post_id = posts.id").
+        Where("posts.user_id = ?", userID).Count(&likesReceived)
+    stats["likes_received"] = likesReceived
+    
+    // Average views
+    var avgViews float64
+    db.Model(&Post{}).Select("AVG(view_count)").Where("user_id = ?", userID).Scan(&avgViews)
+    stats["average_views"] = avgViews
+    
+    return stats, nil
+}
+```
 
-### SearchPostsByContent()
-- Use `Where()` with `LIKE` operator
-- Search in both title and content fields
-- Use `OR` conditions for multiple fields
-- Use `Limit()` to restrict results
-- Consider case-insensitive search
+## Hint 5: Popular Posts by Likes in Time Period
 
-### GetUserRecommendations()
-- Find users with similar interests (categories)
-- Use subqueries to find users who like similar posts
-- Exclude the current user from results
-- Use `Limit()` to restrict recommendations
-- Consider using `DISTINCT` to avoid duplicates
+Use joins with time filtering and aggregation:
+
+```go
+func GetPopularPostsByLikes(db *gorm.DB, days int, limit int) ([]Post, error) {
+    var posts []Post
+    cutoffDate := time.Now().AddDate(0, 0, -days)
+    
+    err := db.Joins("LEFT JOIN likes ON posts.id = likes.post_id").
+        Where("posts.created_at >= ?", cutoffDate).
+        Group("posts.id").
+        Order("COUNT(likes.id) DESC").
+        Limit(limit).
+        Find(&posts).Error
+    
+    return posts, err
+}
+```
+
+## Hint 6: Country User Statistics
+
+Use `Select()` with aggregation functions and `Group()`:
+
+```go
+func GetCountryUserStats(db *gorm.DB) ([]map[string]interface{}, error) {
+    var results []struct {
+        Country   string
+        UserCount int64
+        AvgAge    float64
+    }
+    
+    err := db.Model(&User{}).
+        Select("country, COUNT(*) as user_count, AVG(age) as avg_age").
+        Group("country").
+        Scan(&results).Error
+    
+    var stats []map[string]interface{}
+    for _, result := range results {
+        stat := map[string]interface{}{
+            "country":    result.Country,
+            "user_count": result.UserCount,
+            "avg_age":    result.AvgAge,
+        }
+        stats = append(stats, stat)
+    }
+    
+    return stats, err
+}
+```
+
+## Hint 7: Search Posts by Content
+
+Use `Where()` with `LIKE` operator for multiple fields:
+
+```go
+func SearchPostsByContent(db *gorm.DB, query string, limit int) ([]Post, error) {
+    var posts []Post
+    searchPattern := "%" + query + "%"
+    
+    err := db.Where("title LIKE ? OR content LIKE ?", searchPattern, searchPattern).
+        Limit(limit).
+        Find(&posts).Error
+    
+    return posts, err
+}
+```
+
+## Hint 8: User Recommendations
+
+Use subqueries to find users with similar interests:
+
+```go
+func GetUserRecommendations(db *gorm.DB, userID uint, limit int) ([]User, error) {
+    var users []User
+    
+    // Find users who liked posts in similar categories as the current user
+    err := db.Where("id != ? AND id IN (?)", userID,
+        db.Model(&Like{}).
+            Select("DISTINCT likes.user_id").
+            Joins("JOIN posts ON likes.post_id = posts.id").
+            Joins("JOIN posts p2 ON p2.category = posts.category").
+            Joins("JOIN likes l2 ON l2.post_id = p2.id").
+            Where("l2.user_id = ?", userID)).
+        Limit(limit).
+        Find(&users).Error
+    
+    return users, err
+}
+```
 
 ## Query Patterns
 

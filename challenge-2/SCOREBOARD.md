@@ -11,6 +11,7 @@
 | PolinaSvet | 7 | 7 |
 | RezaSi | 7 | 7 |
 | Seokky | 7 | 7 |
+| YounesBouchbouk | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
 | adwantay | 7 | 7 |
 | arslanoktay | 7 | 7 |

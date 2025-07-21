@@ -1,44 +1,83 @@
 # Hints for GORM CRUD Operations Challenge
 
-## General Tips
+## Hint 1: Database Connection Setup
 
-1. **Start with the database connection** - Make sure your `ConnectDB()` function properly connects to SQLite and auto-migrates the User model.
+Start with the database connection - Make sure your `ConnectDB()` function properly connects to SQLite and auto-migrates the User model.
 
-2. **Understand GORM basics** - This challenge focuses on fundamental CRUD operations, so focus on getting the basics right.
+Use `gorm.Open()` with SQLite driver, call `AutoMigrate(&User{})` to create the table, and return the database connection and any error.
 
-3. **Handle errors properly** - Always check for errors after database operations and return appropriate error messages.
+```go
+import "gorm.io/driver/sqlite"
 
-## Function-Specific Hints
+func ConnectDB() (*gorm.DB, error) {
+    db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    if err != nil {
+        return nil, err
+    }
+    err = db.AutoMigrate(&User{})
+    return db, err
+}
+```
 
-### ConnectDB()
-- Use `gorm.Open()` with SQLite driver
-- Call `AutoMigrate(&User{})` to create the table
-- Return the database connection and any error
+## Hint 2: Creating Users
 
-### CreateUser()
-- Use `db.Create(user)` to insert the user
-- Check for errors after the operation
-- The user's ID will be automatically set after creation
+Use `db.Create(user)` to insert the user. Check for errors after the operation. The user's ID will be automatically set after creation.
 
-### GetUserByID()
-- Use `db.First(&user, id)` to find a user by ID
-- Handle the case where user doesn't exist (return error)
-- Return a pointer to the user
+```go
+func CreateUser(db *gorm.DB, user *User) error {
+    result := db.Create(user)
+    return result.Error
+}
+```
 
-### GetAllUsers()
-- Use `db.Find(&users)` to get all users
-- Return a slice of users
-- Handle empty results (return empty slice, not nil)
+## Hint 3: Reading Users by ID
 
-### UpdateUser()
-- Use `db.Save(user)` to update the user
-- Make sure the user has a valid ID
-- Handle the case where user doesn't exist
+Use `db.First(&user, id)` to find a user by ID. Handle the case where user doesn't exist and return a pointer to the user.
 
-### DeleteUser()
-- Use `db.Delete(&User{}, id)` to delete by ID
-- Handle the case where user doesn't exist
-- Return appropriate error messages
+```go
+func GetUserByID(db *gorm.DB, id uint) (*User, error) {
+    var user User
+    result := db.First(&user, id)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return &user, nil
+}
+```
+
+## Hint 4: Reading All Users
+
+Use `db.Find(&users)` to get all users. Return a slice of users and handle empty results (return empty slice, not nil).
+
+```go
+func GetAllUsers(db *gorm.DB) ([]User, error) {
+    var users []User
+    result := db.Find(&users)
+    return users, result.Error
+}
+```
+
+## Hint 5: Updating Users
+
+Use `db.Save(user)` to update the user. Make sure the user has a valid ID and handle the case where user doesn't exist.
+
+```go
+func UpdateUser(db *gorm.DB, user *User) error {
+    result := db.Save(user)
+    return result.Error
+}
+```
+
+## Hint 6: Deleting Users
+
+Use `db.Delete(&User{}, id)` to delete by ID. Handle the case where user doesn't exist and return appropriate error messages.
+
+```go
+func DeleteUser(db *gorm.DB, id uint) error {
+    result := db.Delete(&User{}, id)
+    return result.Error
+}
+```
 
 ## Common Patterns
 
