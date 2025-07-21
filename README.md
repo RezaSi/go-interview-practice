@@ -61,14 +61,14 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
 | 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **24**/30 | **80.0%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅✅⬜✅ |
-| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **17**/30 | **56.7%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 🥉 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **15**/30 | **50.0%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅⬜⬜⬜⬜✅⬜⬜⬜ |
-| 4 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 5 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **13**/30 | **43.3%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
-| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **12**/30 | **40.0%** | Advanced | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜⬜✅⬜⬜⬜ |
-| 7 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
-| 8 | <img src="https://github.com/lanmanul.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lanmanul](https://github.com/lanmanul)** | **10**/30 | **33.3%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 9 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **9**/30 | **30.0%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 🥈 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 🥉 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **19**/30 | **63.3%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 4 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
+| 5 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
+| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **13**/30 | **43.3%** | Advanced | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅⬜✅⬜⬜✅⬜⬜⬜ |
+| 7 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **12**/30 | **40.0%** | Advanced | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
+| 8 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
+| 9 | <img src="https://github.com/lanmanul.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lanmanul](https://github.com/lanmanul)** | **10**/30 | **33.3%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
 | 10 | <img src="https://github.com/JunLog.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JunLog](https://github.com/JunLog)** | **7**/30 | **23.3%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
 
 <div align="center">
@@ -84,7 +84,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 42
+- **Active Developers**: 46
 - **Most Challenges Solved**: 24 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -96,7 +96,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **2** | **2** pkgs | 🌱 Package Beginner | **cobra**: 1 • **gin**: 1 |
+| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
 
 <div align="center">
 
@@ -118,13 +118,19 @@ Master Go packages through hands-on challenges! Each package offers a structured
 |:---:|:---:|:---:|:---|
 | 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 
+#### Gorm Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+
 ### 📊 Package Challenge Statistics
 
-- **Total Package Challenges Available**: 7
+- **Total Package Challenges Available**: 10
 - **Active Package Learners**: 1
 - **Available Packages**: 3 (cobra, gin, gorm)
 
-- **Most Package Challenges Solved**: 2 by RezaSi
+- **Most Package Challenges Solved**: 3 by RezaSi
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
