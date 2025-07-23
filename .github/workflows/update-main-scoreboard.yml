@@ -7,11 +7,6 @@ on:
       - completed
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths:
-      - 'challenge-*/SCOREBOARD.md'
   schedule:
     # Run daily at 00:00 UTC to catch any missed updates
     - cron: '0 0 * * *'
@@ -20,6 +15,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-scoreboards
+  cancel-in-progress: false
 
 jobs:
   update-main-scoreboard:
