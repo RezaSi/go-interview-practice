@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +22,7 @@ type APIHandler struct {
 	scoreboardService *services.ScoreboardService
 	userService       *services.UserService
 	executionService  *services.ExecutionService
+	packageService    *services.PackageService
 	submissions       []models.Submission
 }
 
@@ -29,12 +32,14 @@ func NewAPIHandler(
 	scoreboardService *services.ScoreboardService,
 	userService *services.UserService,
 	executionService *services.ExecutionService,
+	packageService *services.PackageService,
 ) *APIHandler {
 	return &APIHandler{
 		challengeService:  challengeService,
 		scoreboardService: scoreboardService,
 		userService:       userService,
 		executionService:  executionService,
+		packageService:    packageService,
 		submissions:       make([]models.Submission, 0),
 	}
 }
@@ -540,4 +545,233 @@ func (h *APIHandler) calculateMainLeaderboard() []LeaderboardUser {
 	}
 
 	return leaderboard
+}
+
+// HandlePackageChallenge handles package challenge test and submit requests
+func (h *APIHandler) HandlePackageChallenge(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse URL path: /api/packages/{packageName}/{challengeId}/{action}
+	path := strings.TrimPrefix(r.URL.Path, "/api/packages/")
+	parts := strings.Split(path, "/")
+
+	if len(parts) != 3 {
+		http.Error(w, "Invalid URL format. Expected: /api/packages/{packageName}/{challengeId}/{action}", http.StatusBadRequest)
+		return
+	}
+
+	packageName := parts[0]
+	challengeId := parts[1]
+	action := parts[2] // "test" or "submit"
+
+	// Validate action
+	if action != "test" && action != "submit" {
+		http.Error(w, "Invalid action. Must be 'test' or 'submit'", http.StatusBadRequest)
+		return
+	}
+
+	// Parse request body
+	var request struct {
+		Code     string `json:"code"`
+		Username string `json:"username"`
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	err = json.Unmarshal(body, &request)
+	if err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	if request.Code == "" {
+		http.Error(w, "Code is required", http.StatusBadRequest)
+		return
+	}
+
+	// Use the existing package service
+	packageService := h.packageService
+
+	challenge, err := packageService.GetPackageChallenge(packageName, challengeId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Challenge not found: %v", err), http.StatusNotFound)
+		return
+	}
+
+	// Convert PackageChallenge to Challenge format for ExecutionService
+	challengeForExecution := &models.Challenge{
+		ID:       0, // Package challenges don't use numeric IDs
+		Title:    challenge.Title,
+		TestFile: challenge.TestFile,
+	}
+
+	// Run the actual tests using ExecutionService
+	result := h.executionService.RunCode(request.Code, challengeForExecution)
+
+	// Format response
+	response := map[string]interface{}{
+		"success":      result.Passed,
+		"execution_ms": result.ExecutionMs,
+		"output":       result.Output,
+	}
+
+	// Count passed tests from output for display
+	testsPassed, testsTotal := h.parseTestResults(result.Output)
+	response["tests_passed"] = testsPassed
+	response["tests_total"] = testsTotal
+
+	if action == "submit" && result.Passed {
+		response["message"] = "Solution submitted successfully!"
+		response["show_pr_instructions"] = true
+
+		// Set username cookie if provided
+		if request.Username != "" {
+			h.setUsernameCookie(w, request.Username)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// parseTestResults parses Go test output to count passed and total tests
+func (h *APIHandler) parseTestResults(output string) (passed int, total int) {
+	lines := strings.Split(output, "\n")
+
+	for _, line := range lines {
+		// Look for test result lines like "--- PASS: TestGetUsers" or "--- FAIL: TestCreateUser"
+		if strings.Contains(line, "--- PASS:") {
+			passed++
+			total++
+		} else if strings.Contains(line, "--- FAIL:") {
+			total++
+		}
+	}
+
+	// If no individual test results found, check for overall result
+	if total == 0 {
+		if strings.Contains(output, "PASS") && !strings.Contains(output, "FAIL") {
+			// Assume basic success case
+			passed = 1
+			total = 1
+		} else if strings.Contains(output, "FAIL") {
+			// Assume basic failure case
+			passed = 0
+			total = 1
+		}
+	}
+
+	return passed, total
+}
+
+// SavePackageChallengeToFilesystem saves a package challenge submission to the filesystem
+func (h *APIHandler) SavePackageChallengeToFilesystem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		Username    string `json:"username"`
+		PackageName string `json:"packageName"`
+		ChallengeID string `json:"challengeId"`
+		Code        string `json:"code"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	if request.Username == "" {
+		http.Error(w, "Username is required", http.StatusBadRequest)
+		return
+	}
+
+	// Set username cookie
+	h.setUsernameCookie(w, request.Username)
+
+	// Validate challenge exists
+	_, err = h.packageService.GetPackageChallenge(request.PackageName, request.ChallengeID)
+	if err != nil {
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	// Save to filesystem
+	response := h.savePackageChallengeToFilesystem(request)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// savePackageChallengeToFilesystem handles the actual file saving for package challenges
+func (h *APIHandler) savePackageChallengeToFilesystem(request struct {
+	Username    string `json:"username"`
+	PackageName string `json:"packageName"`
+	ChallengeID string `json:"challengeId"`
+	Code        string `json:"code"`
+}) services.SaveSubmissionResponse {
+	// Get working directory for correct relative paths
+	workDir, _ := os.Getwd()
+
+	// Try different path approaches to handle potential path issues
+	var submissionDir string
+	var fileSaved bool
+
+	// Try multiple path options for package challenges
+	pathOptions := []string{
+		// Option 1: From web-ui directory (standard case)
+		filepath.Join("..", "packages", request.PackageName, request.ChallengeID, "submissions", request.Username),
+		// Option 2: From root workspace
+		filepath.Join("packages", request.PackageName, request.ChallengeID, "submissions", request.Username),
+		// Option 3: Absolute path from detected workspace root
+		filepath.Join(workDir, "..", "packages", request.PackageName, request.ChallengeID, "submissions", request.Username),
+	}
+
+	for _, dirPath := range pathOptions {
+		err := os.MkdirAll(dirPath, 0755)
+		if err != nil {
+			continue
+		}
+
+		solutionFile := filepath.Join(dirPath, "solution.go")
+		err = ioutil.WriteFile(solutionFile, []byte(request.Code), 0644)
+		if err != nil {
+			continue
+		}
+
+		submissionDir = dirPath
+		fileSaved = true
+		break
+	}
+
+	if !fileSaved {
+		return services.SaveSubmissionResponse{
+			Success: false,
+			Message: "Failed to save solution to any available path",
+		}
+	}
+
+	// Return success response with git commands
+	relativePath := filepath.Join("packages", request.PackageName, request.ChallengeID, "submissions", request.Username, "solution.go")
+	return services.SaveSubmissionResponse{
+		Success:  true,
+		Message:  "Solution saved to filesystem",
+		FilePath: filepath.Join(submissionDir, "solution.go"),
+		GitCommands: []string{
+			"cd " + filepath.Join(workDir, ".."),
+			fmt.Sprintf("git add %s", relativePath),
+			fmt.Sprintf("git commit -m \"Add solution for %s %s by %s\"", request.PackageName, request.ChallengeID, request.Username),
+			"git push origin main",
+		},
+	}
 }

@@ -1,0 +1,45 @@
+{
+  "title": "Database Migrations",
+  "description": "Build an e-commerce system using GORM that demonstrates database migrations, schema evolution, and version control for database changes.",
+  "short_description": "Learn GORM migrations and build an e-commerce system with schema evolution",
+  "difficulty": "Intermediate",
+  "estimated_time": "60-90 min",
+  "learning_objectives": [
+    "Understand database migrations and version control",
+    "Implement schema evolution with GORM",
+    "Handle migration rollbacks",
+    "Manage database seeding",
+    "Work with evolving data models",
+    "Handle migration conflicts and errors"
+  ],
+  "prerequisites": [
+    "Basic GORM CRUD operations",
+    "Understanding of database schema design",
+    "GORM associations knowledge"
+  ],
+  "tags": [
+    "migrations",
+    "schema-evolution",
+    "version-control",
+    "database-design",
+    "e-commerce"
+  ],
+  "real_world_connection": "E-commerce platforms require frequent schema changes to add new features like inventory tracking, categories, and product variants.",
+  "requirements": [
+    "Implement version-controlled database migrations",
+    "Create schema evolution for products and categories",
+    "Handle migration rollbacks",
+    "Track migration versions",
+    "Seed database with initial data",
+    "Create products with category relationships",
+    "Query products by category",
+    "Update product inventory"
+  ],
+  "bonus_points": [
+    "Implement data migration scripts",
+    "Add migration validation",
+    "Create migration testing framework"
+  ],
+  "icon": "bi-arrow-clockwise",
+  "order": 3
+} 

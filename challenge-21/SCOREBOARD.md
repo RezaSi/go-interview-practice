@@ -2,9 +2,12 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 32 | 32 |
+| JunLog | 32 | 32 |
 | KhaledMosaad | 32 | 32 |
 | MYK12397 | 32 | 32 |
+| PolinaSvet | 32 | 32 |
 | RezaSi | 32 | 32 |
+| ZaharBorisenko | 32 | 32 |
 | ashwinipatankar | 32 | 32 |
 | lanmanul | 32 | 32 |
 | mick4711 | 32 | 32 |

@@ -7,11 +7,6 @@ on:
       - completed
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths:
-      - 'challenge-*/SCOREBOARD.md'
   schedule:
     # Run daily at 00:00 UTC to catch any missed updates
     - cron: '0 0 * * *'
@@ -21,11 +16,15 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-scoreboards
+  cancel-in-progress: false
+
 jobs:
   update-main-scoreboard:
     runs-on: ubuntu-latest
-    # Only run if workflow_run was successful, or if triggered by other events
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    # Only run if workflow_run was successful, or if triggered by other events, AND only on main repo
+    if: ${{ github.repository == 'RezaSi/go-interview-practice' && (github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run') }}
 
     steps:
       - name: Check out repository

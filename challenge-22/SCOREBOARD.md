@@ -2,7 +2,9 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 23 | 23 |
+| JunLog | 23 | 23 |
 | KhaledMosaad | 23 | 23 |
+| PolinaSvet | 23 | 23 |
 | RezaSi | 23 | 23 |
 | YounesBouchbouk | 23 | 23 |
 | ashwinipatankar | 23 | 23 |

@@ -10,9 +10,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-scoreboards
+  cancel-in-progress: false
+
 jobs:
   update-scoreboards:
     runs-on: ubuntu-latest
+    if: github.repository == 'RezaSi/go-interview-practice'
 
     steps:
       - name: Check out repository
