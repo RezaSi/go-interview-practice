@@ -2,6 +2,22 @@
 
 This directory contains package-specific coding challenges for popular Go libraries and frameworks. The system is designed to be completely dynamic, allowing easy addition of new packages without requiring code changes.
 
+## Available Packages
+
+### 🗄️ [GORM](./gorm/) - ORM Library
+**5 Challenges** | Beginner to Advanced | **6-8 hours**
+- Database operations, associations, migrations, advanced queries, and generics API
+
+### 🌐 [Gin](./gin/) - Web Framework  
+**5 Challenges** | Beginner to Advanced | **6-8 hours**
+- HTTP routing, middleware, authentication, file handling, and testing
+
+### ⚡ [Cobra](./cobra/) - CLI Framework
+**4 Challenges** | Beginner to Advanced | **4-6 hours**
+- Command-line applications, flags, subcommands, data persistence, and advanced patterns
+
+*More packages coming soon...*
+
 ## Directory Structure
 
 ```

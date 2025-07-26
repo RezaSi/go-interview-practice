@@ -80,7 +80,7 @@ func (s *Stack[T]) Pop() (T, error) {
 // Peek returns the top element without removing it
 // Returns an error if the stack is empty
 func (s *Stack[T]) Peek() (T, error) {
-	// TODO: Implement this method
+	
 	var zero T
 	if s.head == nil && s.tail == nil {
 		return zero, ErrEmptyCollection
