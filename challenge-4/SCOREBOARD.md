@@ -2,6 +2,8 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AliNazariii | 22 | 22 |
+| PolinaSvet | 22 | 22 |
+| Quavke | 22 | 22 |
 | RezaSi | 22 | 22 |
 | arslanoktay | 22 | 22 |
 | jersonzc | 22 | 22 |
