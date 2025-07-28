@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 7 | 7 |
+| JackDalberg | 7 | 7 |
 | JunLog | 7 | 7 |
 | KhaledMosaad | 7 | 7 |
 | MYK12397 | 7 | 7 |

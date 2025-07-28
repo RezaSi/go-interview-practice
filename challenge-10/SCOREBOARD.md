@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 54 | 54 |
+| JackDalberg | 54 | 54 |
 | PolinaSvet | 54 | 54 |
 | RezaSi | 54 | 54 |
 | ahmedpyarali2 | 54 | 54 |
