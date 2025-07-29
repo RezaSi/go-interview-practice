@@ -67,7 +67,7 @@ func UpdateUser(db *gorm.DB, user *User) error {
 	return nil
 }
 
-// DeleteUser removes a user from the database by their ID
+// DeleteUser removes a user from the database by their ID.
 func DeleteUser(db *gorm.DB, id uint) error {
 	result := db.Delete(&User{}, id)
 	if result.RowsAffected == 0 {

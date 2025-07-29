@@ -1,4 +1,172 @@
 {{define "content"}}
+<style>
+.editor-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: white !important;
+    padding: 20px !important;
+}
+
+.editor-fullscreen .editor-container {
+    height: calc(100vh - 80px) !important;
+}
+
+.editor-toolbar {
+    transition: all 0.2s ease;
+}
+
+.editor-toolbar:hover {
+    background: rgba(255,255,255,1) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Editor Status Bar Styling */
+.editor-status-bar {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.editor-status-bar:hover {
+    background: rgba(248,249,250,1) !important;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+/* Custom Tooltip Styling */
+.tooltip {
+    z-index: 10001 !important; /* Above editor toolbar */
+}
+
+.tooltip .tooltip-inner {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+}
+
+.tooltip .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+    border-left-color: #ffffff !important;
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #ffffff !important;
+}
+
+/* Spinning animation for reset button */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Enhanced Editor Button Styling */
+#reset-editor-btn, #fullscreen-btn {
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#reset-editor-btn:hover, #fullscreen-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+#reset-editor-btn:active, #fullscreen-btn:active {
+    transform: translateY(0);
+}
+
+#reset-editor-btn:disabled, #fullscreen-btn:disabled {
+    transform: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#reset-editor-btn::before, #fullscreen-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+#reset-editor-btn:hover::before, #fullscreen-btn:hover::before {
+    left: 100%;
+}
+
+/* Custom reset modal styling */
+.reset-modal .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.reset-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.reset-modal .modal-title {
+    font-weight: 600;
+}
+
+.reset-modal .btn-close {
+    filter: invert(1);
+}
+
+.reset-modal .code-preview {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.reset-modal .btn-reset-confirm {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    border: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.reset-modal .btn-reset-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+</style>
 <div class="row mb-4">
     <div class="col">
         <nav aria-label="breadcrumb">
@@ -62,7 +230,47 @@
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="solution" role="tabpanel">
-                        <div id="editor" class="editor-container"></div>
+                                                    <div class="editor-wrapper position-relative">
+                            <!-- Editor Toolbar -->
+                            <div class="editor-toolbar position-absolute top-0 end-0 p-2 d-flex align-items-center gap-2" style="z-index: 10; background: rgba(255,255,255,0.95); border-radius: 0 0 0 8px; border-left: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
+                                <!-- Save Status -->
+                                <span id="save-indicator" class="badge bg-success d-none">
+                                    <i class="bi bi-check2"></i> Saved
+                                </span>
+                                <span id="saving-indicator" class="badge bg-warning d-none">
+                                    <i class="bi bi-arrow-repeat"></i> Saving...
+                                </span>
+
+                                <!-- Fullscreen Button -->
+                                <button class="btn btn-outline-primary btn-sm" id="fullscreen-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Enter fullscreen mode (ESC to exit)">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+
+                                <!-- Reset Button -->
+                                <button class="btn btn-outline-primary btn-sm" id="reset-editor-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Reset code to original template">
+                                    <span id="reset-icon">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </span>
+                                    <span id="reset-spinner" class="d-none">
+                                        <i class="bi bi-arrow-repeat spin"></i>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <!-- Editor Status Bar -->
+                            <div class="editor-status-bar position-absolute bottom-0 end-0 px-2 py-1" style="z-index: 10; background: rgba(248,249,250,0.95); border-radius: 4px 0 0 0; border-left: 1px solid #dee2e6; border-top: 1px solid #dee2e6;">
+                                <small class="text-muted" id="editor-position">
+                                    <i class="bi bi-cursor-text me-1"></i>
+                                    Ln <span id="line-number">1</span>, Col <span id="col-number">1</span>
+                                </small>
+                            </div>
+
+                            <div id="editor" class="editor-container"></div>
+                        </div>
                     </div>
                     <div class="tab-pane fade" id="tests" role="tabpanel">
                         <div id="test-editor" class="editor-container"></div>
@@ -161,6 +369,80 @@
         </div>
     </div>
 </div>
+
+<!-- Premium Sponsors Section -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="text-center py-3">
+            <div class="sponsors-container" id="challenge-premium-sponsors">
+                <!-- Premium sponsor logos will appear here -->
+                <div class="text-muted">
+                    <i class="bi bi-building me-2"></i>
+                    <span class="small">
+                        <a href="https://github.com/sponsors/RezaSi" target="_blank" class="text-decoration-none text-muted">
+                            Sponsored by our premium partners
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div class="modal fade reset-modal" id="resetModal" tabindex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Reset Code to Original Template
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <p class="mb-2"><strong>Are you sure you want to reset your code?</strong></p>
+                    <p class="text-muted small mb-3">This action will permanently delete all your changes and restore the original template.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-danger mb-2">
+                        <i class="bi bi-trash me-1"></i>What will be lost:
+                    </h6>
+                    <ul class="list-unstyled small text-muted mb-0">
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>All your current code changes</li>
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>Auto-saved progress in browser</li>
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>Any work since your last submission</li>
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-success mb-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>What will be restored:
+                    </h6>
+                    <div class="code-preview p-2">
+                        <div class="small text-muted mb-1">Original template preview:</div>
+                        <pre id="template-preview" class="mb-0"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger btn-reset-confirm" id="confirmResetBtn">
+                    <span id="confirm-reset-text">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Code
+                    </span>
+                    <span id="confirm-reset-spinner" class="d-none">
+                        <i class="bi bi-arrow-repeat spin me-1"></i>Resetting...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{end}}
 
 {{define "scripts"}}
@@ -212,6 +494,207 @@
         }
         
         editor.clearSelection();
+
+        // Auto-save functionality with visual indicators
+        let saveTimeout;
+        let isOriginalTemplate = true;
+        
+        // Check if we have saved code to determine initial state
+        const savedCode = localStorage.getItem(`challenge_${challengeData.id}_code`);
+        if (savedCode && !existingSolution) {
+            editor.setValue(savedCode, 1);
+            isOriginalTemplate = false;
+            showSaveIndicator();
+        }
+        
+                editor.session.on('change', function() {
+            clearTimeout(saveTimeout);
+            isOriginalTemplate = false;
+
+            // Show saving indicator
+            showSavingIndicator();
+
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem(`challenge_${challengeData.id}_code`, editor.getValue());
+                showSaveIndicator();
+            }, 1000);
+        });
+
+        // Update line/column numbers on cursor movement
+        editor.selection.on('changeCursor', function() {
+            updateEditorPosition();
+        });
+
+        // Initial position update
+        updateEditorPosition();
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Reset button functionality
+        document.getElementById('reset-editor-btn').addEventListener('click', function() {
+            // Show template preview in modal
+            const templatePreview = document.getElementById('template-preview');
+            const previewText = existingSolution || challengeData.template;
+            templatePreview.textContent = previewText.substring(0, 200) + (previewText.length > 200 ? '...' : '');
+            
+            // Show the custom modal
+            const resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+            resetModal.show();
+        });
+
+        // Confirm reset button in modal
+        document.getElementById('confirmResetBtn').addEventListener('click', function() {
+            const resetButton = document.getElementById('reset-editor-btn');
+            const resetIcon = document.getElementById('reset-icon');
+            const resetSpinner = document.getElementById('reset-spinner');
+            const confirmText = document.getElementById('confirm-reset-text');
+            const confirmSpinner = document.getElementById('confirm-reset-spinner');
+            
+            // Show loading states
+            resetIcon.classList.add('d-none');
+            resetSpinner.classList.remove('d-none');
+            confirmText.classList.add('d-none');
+            confirmSpinner.classList.remove('d-none');
+            resetButton.disabled = true;
+            this.disabled = true;
+            
+            // Simulate reset process with delay for better UX
+            setTimeout(() => {
+                // Clear saved code
+                localStorage.removeItem(`challenge_${challengeData.id}_code`);
+                
+                // Reset to template
+                if (existingSolution) {
+                    editor.setValue(existingSolution);
+                } else {
+                    editor.setValue(challengeData.template);
+                }
+                editor.clearSelection();
+                
+                isOriginalTemplate = true;
+                hideSaveIndicators();
+                
+                // Hide modal
+                const resetModal = bootstrap.Modal.getInstance(document.getElementById('resetModal'));
+                resetModal.hide();
+                
+                // Reset button states
+                resetIcon.classList.remove('d-none');
+                resetSpinner.classList.add('d-none');
+                confirmText.classList.remove('d-none');
+                confirmSpinner.classList.add('d-none');
+                resetButton.disabled = false;
+                this.disabled = false;
+                
+                // Show success message
+                setTimeout(() => {
+                    showToast('Success', 'Code successfully reset to original template', 'success');
+                }, 200);
+            }, 800); // Small delay for better UX feedback
+        });
+
+        // Fullscreen functionality
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const editorWrapper = document.querySelector('.editor-wrapper');
+            const icon = this.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(this);
+            
+            if (!document.fullscreenElement && !editorWrapper.classList.contains('editor-fullscreen')) {
+                // Enter fullscreen mode
+                editorWrapper.classList.add('editor-fullscreen');
+                icon.className = 'bi bi-fullscreen-exit';
+                this.setAttribute('data-bs-original-title', 'Exit fullscreen mode (ESC)');
+                if (tooltip) {
+                    tooltip.dispose();
+                    new bootstrap.Tooltip(this, { 
+                        title: 'Exit fullscreen mode (ESC)',
+                        placement: 'top'
+                    });
+                }
+                
+                // Resize editor to fit fullscreen
+                setTimeout(() => {
+                    editor.resize();
+                }, 100);
+                
+                // Add escape key listener
+                document.addEventListener('keydown', handleEscapeKey);
+            } else {
+                // Exit fullscreen mode
+                exitFullscreen();
+            }
+        });
+
+        function exitFullscreen() {
+            const editorWrapper = document.querySelector('.editor-wrapper');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const icon = fullscreenBtn.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(fullscreenBtn);
+            
+            editorWrapper.classList.remove('editor-fullscreen');
+            icon.className = 'bi bi-arrows-fullscreen';
+            fullscreenBtn.setAttribute('data-bs-original-title', 'Enter fullscreen mode (ESC to exit)');
+            if (tooltip) {
+                tooltip.dispose();
+                new bootstrap.Tooltip(fullscreenBtn, { 
+                    title: 'Enter fullscreen mode (ESC to exit)',
+                    placement: 'top'
+                });
+            }
+            
+            // Resize editor back to normal
+            setTimeout(() => {
+                editor.resize();
+            }, 100);
+            
+            // Remove escape key listener
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+
+        function handleEscapeKey(event) {
+            if (event.key === 'Escape') {
+                exitFullscreen();
+            }
+        }
+
+        // Helper functions for save indicators
+        function showSavingIndicator() {
+            document.getElementById('saving-indicator').classList.remove('d-none');
+            document.getElementById('save-indicator').classList.add('d-none');
+        }
+        
+        function showSaveIndicator() {
+            document.getElementById('saving-indicator').classList.add('d-none');
+            document.getElementById('save-indicator').classList.remove('d-none');
+            
+            // Hide save indicator after 2 seconds
+            setTimeout(() => {
+                if (!isOriginalTemplate) {
+                    document.getElementById('save-indicator').classList.add('d-none');
+                }
+            }, 2000);
+        }
+        
+        function hideSaveIndicators() {
+            document.getElementById('saving-indicator').classList.add('d-none');
+            document.getElementById('save-indicator').classList.add('d-none');
+        }
+
+        // Update line and column numbers in status bar
+        function updateEditorPosition() {
+            if (!editor) return;
+            
+            const cursor = editor.getCursorPosition();
+            const lineNumber = cursor.row + 1; // Ace uses 0-based indexing
+            const colNumber = cursor.column + 1;
+            
+            document.getElementById('line-number').textContent = lineNumber;
+            document.getElementById('col-number').textContent = colNumber;
+        }
 
         // Initialize code editor for tests
         const testEditor = ace.edit("test-editor");

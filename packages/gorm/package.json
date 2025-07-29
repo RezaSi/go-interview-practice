@@ -13,7 +13,8 @@
     "challenge-1-crud-operations",
     "challenge-2-associations",
     "challenge-3-migrations",
-    "challenge-4-advanced-queries"
+    "challenge-4-advanced-queries",
+    "challenge-5-generics"
   ],
   "tags": ["database", "orm", "sql", "mysql", "postgresql", "sqlite"],
   "estimated_time": "4-6 hours",

@@ -171,6 +171,7 @@ func TestAuthMiddleware(t *testing.T) {
 	// Test without API key
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/articles", nil)
+	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 401, w.Code)
@@ -178,6 +179,7 @@ func TestAuthMiddleware(t *testing.T) {
 	// Test with invalid API key
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/articles", nil)
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-Key", "invalid-key")
 	router.ServeHTTP(w, req)
 
