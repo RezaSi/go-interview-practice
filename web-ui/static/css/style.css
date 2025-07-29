@@ -889,6 +889,88 @@
     margin: 0;
 }
 
+/* Sponsor Button Styles */
+.btn-sponsor {
+    background: linear-gradient(135deg, #ea4aaa 0%, #ff6b9d 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(234, 74, 170, 0.3) !important;
+    text-decoration: none !important;
+}
+
+.btn-sponsor:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(234, 74, 170, 0.4) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.btn-sponsor:focus {
+    outline: none !important;
+    box-shadow: 0 4px 8px rgba(234, 74, 170, 0.4), 0 0 0 3px rgba(234, 74, 170, 0.2) !important;
+}
+
+.btn-sponsor:active {
+    transform: translateY(0) !important;
+}
+
+/* GitHub Stats Section */
+.github-stats {
+    gap: 1rem;
+    max-width: 300px;
+    margin: 0 auto;
+    justify-content: center !important;
+}
+
+/* Premium Sponsors Section */
+.sponsors-container {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.sponsor-logo {
+    height: 50px;
+    max-width: 150px;
+    object-fit: contain;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.sponsor-logo:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+@media (max-width: 576px) {
+    .github-stats {
+        gap: 0.75rem;
+    }
+    
+    .btn-sponsor {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    .sponsors-container {
+        gap: 1rem;
+    }
+    
+    .sponsor-logo {
+        height: 40px;
+        max-width: 120px;
+    }
+}
+
 @media (max-width: 768px) {
     .prerequisites-container,
     .usage-container {
