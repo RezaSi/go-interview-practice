@@ -273,5 +273,80 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update star counts
     updateStarCounts();
 
+    // Video Modal Functionality
+    const videoModal = document.getElementById('videoModal');
+    const videoIntroBtn = document.getElementById('videoIntroBtn');
+    const videoModalClose = document.getElementById('videoModalClose');
+    const videoModalCloseBtn = document.getElementById('videoModalCloseBtn');
+    const videoModalOverlay = document.getElementById('videoModalOverlay');
+    const videoPlayer = document.getElementById('videoPlayer');
+
+    // Open video modal
+    function openVideoModal() {
+        videoModal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        
+        // Auto-play video if supported
+        if (videoPlayer) {
+            videoPlayer.currentTime = 0; // Reset to beginning
+            videoPlayer.play().catch(error => {
+                console.log('Auto-play was prevented:', error);
+                // Auto-play might be blocked by browser policy
+            });
+        }
+        
+        // Track analytics (optional)
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'video_intro_opened', {
+                'event_category': 'engagement',
+                'event_label': 'video_introduction'
+            });
+        }
+    }
+
+    // Close video modal
+    function closeVideoModal() {
+        videoModal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scrolling
+        
+        // Pause and reset video
+        if (videoPlayer) {
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+        }
+        
+        // Track analytics (optional)
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'video_intro_closed', {
+                'event_category': 'engagement',
+                'event_label': 'video_introduction'
+            });
+        }
+    }
+
+    // Event listeners for video modal
+    if (videoIntroBtn) {
+        videoIntroBtn.addEventListener('click', openVideoModal);
+    }
+
+    if (videoModalClose) {
+        videoModalClose.addEventListener('click', closeVideoModal);
+    }
+
+    if (videoModalCloseBtn) {
+        videoModalCloseBtn.addEventListener('click', closeVideoModal);
+    }
+
+    if (videoModalOverlay) {
+        videoModalOverlay.addEventListener('click', closeVideoModal);
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && videoModal.classList.contains('active')) {
+            closeVideoModal();
+        }
+    });
+
     console.log('🚀 Go Interview Practice - Landing page loaded successfully!');
 }); 
