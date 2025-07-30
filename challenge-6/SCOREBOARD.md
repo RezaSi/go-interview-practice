@@ -1,6 +1,7 @@
 # Scoreboard for challenge-6
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| AkifhanIlgaz | 7 | 7 |
 | Gandook | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JunLog | 7 | 7 |

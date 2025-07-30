@@ -81,8 +81,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🥈 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 🥉 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 4 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 5 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **15**/30 | **50.0%** | Expert | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
+| 5 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜⬜✅✅✅⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
+| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 7 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 8 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
 | 9 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **12**/30 | **40.0%** | Advanced | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
@@ -101,7 +101,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 57
+- **Active Developers**: 60
 - **Most Challenges Solved**: 28 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -327,42 +327,6 @@ We welcome contributions! You can contribute in several ways:
 4. Submit a pull request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on both challenge types.
-
-## 💖 Support This Project
-
-Help keep Go education free and accessible! Your sponsorship enables me to create more challenges, maintain the platform, and support the community.
-
-### GitHub Sponsors
-
-**🥉 $5/month - Go Supporter**
-- Sponsor badge on your profile
-- Early access to new challenges (24 hours before public release)
-- Priority support and your name in contributors section
-
-**🚀 $25/month - Go Package Champion** 
-- All supporter benefits plus:
-- **Custom package tutorial creation** with 4-6 progressive challenges
-- **Ongoing maintenance** when your package updates
-- Your package featured prominently on the platform
-
-**💎 $200/month - Premium Business Sponsor**
-- All previous benefits plus:
-- **Company logo placement** on README, homepage, and challenge pages
-- Monthly social media mentions and priority partnership
-- Quarterly strategy calls and recruitment opportunities
-
-**☕ $10 - Buy Me a Coffee** *(One-time)*
-- Show appreciation for the free educational content
-- Support continued development with a simple coffee
-
-**💎 $100 - Package Challenge Creation** *(One-time)*
-- Complete learning path for your Go package (one-time creation, no ongoing updates)
-
-[**🎯 Become a Sponsor**](https://github.com/sponsors/RezaSi)
-
-*Your support helps maintain 30+ challenges, the web platform, and keeps everything free for the community!*
-
----
 
 ## 🏢 Premium Business Sponsors
 
