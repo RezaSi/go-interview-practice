@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 0xJaskirat | 6 | 6 |
+| AkifhanIlgaz | 6 | 6 |
 | AliNazariii | 6 | 6 |
 | Ashutosh652 | 6 | 6 |
 | Gandook | 6 | 6 |
@@ -38,6 +39,7 @@
 | mick4711 | 6 | 6 |
 | naeswer | 6 | 6 |
 | odelbos | 6 | 6 |
+| perekoshik | 6 | 6 |
 | puffyguy | 6 | 6 |
 | quangtran666 | 6 | 6 |
 | s20055232 | 6 | 6 |

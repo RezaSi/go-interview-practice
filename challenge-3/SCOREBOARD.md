@@ -1,6 +1,7 @@
 # Scoreboard for challenge-3
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| AkifhanIlgaz | 5 | 5 |
 | AliNazariii | 5 | 5 |
 | Gandook | 5 | 5 |
 | IBraveMonkey | 5 | 5 |
