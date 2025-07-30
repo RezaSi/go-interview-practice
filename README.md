@@ -113,9 +113,9 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
-| 🥈 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
-| 🥉 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 2 • **gorm**: 3 |
+| 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
+| 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
 
 <div align="center">
 
@@ -136,14 +136,15 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
-| 🥈 | **[odelbos](https://github.com/odelbos)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 2/4 | 🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ 50% |
+| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 
 #### Gorm Package
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 1/5 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/5 | 🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% |
+| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/5 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% |
 
 ### 📊 Package Challenge Statistics
 
@@ -151,7 +152,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Active Package Learners**: 3
 - **Available Packages**: 3 (cobra, gin, gorm)
 
-- **Most Package Challenges Solved**: 3 by RezaSi
+- **Most Package Challenges Solved**: 5 by odelbos
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
