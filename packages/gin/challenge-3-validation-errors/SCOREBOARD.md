@@ -1,4 +1,5 @@
-# Scoreboard for Gin Challenge 3: JSON API with Validation & Error Handling
+# Scoreboard for gin challenge-3-validation-errors
 
 | Username   | Passed Tests | Total Tests |
-|------------|--------------|-------------| 
+|------------|--------------|-------------|
+| odelbos | 58 | 58 |
