@@ -1,6 +1,7 @@
 # Scoreboard for challenge-2
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| AkifhanIlgaz | 7 | 7 |
 | AliNazariii | 7 | 7 |
 | Gandook | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
@@ -19,6 +20,7 @@
 | arslanoktay | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
 | deloz | 7 | 7 |
+| igorek890 | 7 | 7 |
 | ilder | 7 | 7 |
 | ingingX | 7 | 7 |
 | jasonnfeng | 7 | 7 |
@@ -29,6 +31,7 @@
 | lanmanul | 7 | 7 |
 | mick4711 | 7 | 7 |
 | odelbos | 7 | 7 |
+| perekoshik | 7 | 7 |
 | setarehabhari | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
 | skx | 7 | 7 |

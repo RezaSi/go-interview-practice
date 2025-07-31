@@ -205,7 +205,8 @@ func TestSearchPostsByContent(t *testing.T) {
 	// Test search with multiple results
 	posts, err = SearchPostsByContent(db, "Content", 5)
 	assert.NoError(t, err)
-	assert.Len(t, posts, 6) // All posts contain "Content"
+	// There are 6 posts containing "Content" but we queried with a limit of 5
+	assert.Len(t, posts, 5)
 }
 
 func TestGetUserRecommendations(t *testing.T) {
