@@ -2,7 +2,7 @@
   "id": "challenge-5-generics",
   "title": "The Generics Way",
   "description": "Master GORM's new Generics API for type-safe, high-performance database operations",
-  "difficulty": "advanced",
+  "difficulty": "Advanced",
   "estimated_time": "90-120 minutes",
   "topics": [
     "GORM Generics API",

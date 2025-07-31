@@ -2,6 +2,8 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 32 | 32 |
+| IBraveMonkey | 32 | 32 |
+| JackDalberg | 32 | 32 |
 | JunLog | 32 | 32 |
 | KhaledMosaad | 32 | 32 |
 | MYK12397 | 32 | 32 |
@@ -12,4 +14,5 @@
 | lanmanul | 32 | 32 |
 | mick4711 | 32 | 32 |
 | odelbos | 32 | 32 |
+| tmsankaram | 32 | 32 |
 | y1hao | 32 | 32 |

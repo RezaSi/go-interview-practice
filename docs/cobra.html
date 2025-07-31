@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cobra CLI Challenges - Go Interview Practice</title>
+    <meta name="description" content="Master Cobra CLI framework through interactive Go challenges. Build powerful command-line applications with flags, subcommands, and more.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">
+                <i class="bi bi-code-square me-2"></i>Go Interview Practice
+            </a>
+            <div class="d-flex gap-2">
+                <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-github me-1"></i>GitHub
+                </a>
+                <a href="https://github.com/sponsors/RezaSi" class="btn btn-sponsor btn-sm">
+                    <i class="bi bi-heart-fill me-1"></i>Sponsor
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient">
+        <div class="container">
+            <div class="row align-items-center min-vh-100 py-5">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="package-header mb-4">
+                        <div class="package-icon cobra-gradient">
+                            <i class="bi bi-terminal"></i>
+                        </div>
+                        <h1 class="hero-title fw-bold mb-3">
+                            Master <span class="text-gradient">Cobra CLI Framework</span>
+                        </h1>
+                        <p class="lead mb-4 text-muted">
+                            Learn Go's most popular CLI library through hands-on command-line challenges. Build powerful tools used by Docker, Kubernetes, and GitHub CLI.
+                        </p>
+                    </div>
+
+                    <!-- Package Stats -->
+                    <div class="package-stats mb-4">
+                        <div class="stat-item">
+                            <i class="bi bi-star-fill text-warning me-1"></i>
+                            <strong data-github-url="https://github.com/spf13/cobra">41K+</strong> GitHub Stars
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-command me-1"></i>
+                            <strong>Modern</strong> CLI Framework
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-trophy me-1"></i>
+                            <strong>4 Challenges</strong>
+                        </div>
+                    </div>
+
+                    <!-- CTA Buttons -->
+                    <div class="cta-buttons justify-content-center mb-4">
+                        <a href="https://github.com/RezaSi/go-interview-practice" 
+                           class="btn btn-primary">
+                            <i class="bi bi-github me-2"></i>Start Cobra Challenges
+                        </a>
+                        <a href="https://cobra.dev/" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-book me-2"></i>Cobra Documentation
+                        </a>
+                    </div>
+
+                    <!-- Package Path -->
+                    <div class="package-path">
+                        <small class="text-muted">
+                            <i class="bi bi-folder me-1"></i>
+                            Path: <code>/packages/cobra</code> in the repository
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What You'll Learn -->
+    <section class="learning-section py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold mb-3">Why Master Cobra CLI?</h2>
+                    <p class="lead text-muted">Build command-line tools used by Docker, Kubernetes, and GitHub</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new cobra-gradient">
+                                <i class="bi bi-command"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Command Structure</h4>
+                            <p class="text-muted mb-3">Build hierarchical commands with subcommands like Docker and kubectl.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Hierarchical commands</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Subcommand organization</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new cobra-gradient">
+                                <i class="bi bi-flag"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Flags & Arguments</h4>
+                            <p class="text-muted mb-3">Handle global flags, persistent flags, and command arguments with validation.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Global & persistent flags</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Argument validation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenge Preview -->
+    <section class="challenges-section py-5 bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold mb-3">Challenge Roadmap</h2>
+                    <p class="lead text-muted">From simple commands to production-ready CLI tools</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">1</div>
+                        <h6>Basic CLI App</h6>
+                        <p class="small text-muted">Setup Cobra and create your first command</p>
+                        <div class="difficulty beginner">Beginner</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">2</div>
+                        <h6>Flags & Arguments</h6>
+                        <p class="small text-muted">Handle user input with flags and args</p>
+                        <div class="difficulty intermediate">Intermediate</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">3</div>
+                        <h6>Subcommands & Persistence</h6>
+                        <p class="small text-muted">Build nested commands with shared state</p>
+                        <div class="difficulty intermediate">Intermediate</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">4</div>
+                        <h6>Advanced Features</h6>
+                        <p class="small text-muted">Configuration, completion, and packaging</p>
+                        <div class="difficulty advanced">Advanced</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="https://github.com/RezaSi/go-interview-practice" 
+                   class="btn btn-primary btn-lg pulse">
+                    <i class="bi bi-github me-2"></i>Start Your CLI Journey
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer py-4 bg-dark text-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">Part of <a href="index.html" class="text-light">Go Interview Practice</a> • 30+ Go Challenges</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                        <a href="https://github.com/RezaSi/go-interview-practice" class="text-light me-3">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                        <a href="https://github.com/sponsors/RezaSi" class="text-light">
+                            <i class="bi bi-heart-fill"></i> Sponsor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/script.js"></script>
+</body>
+</html> 

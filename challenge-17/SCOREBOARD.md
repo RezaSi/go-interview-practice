@@ -2,9 +2,12 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 18 | 18 |
+| IBraveMonkey | 18 | 18 |
+| JackDalberg | 18 | 18 |
 | KhaledMosaad | 18 | 18 |
 | MYK12397 | 18 | 18 |
 | RezaSi | 18 | 18 |
+| ZaharBorisenko | 18 | 18 |
 | ashwinipatankar | 18 | 18 |
 | lanmanul | 18 | 18 |
 | mick4711 | 18 | 18 |

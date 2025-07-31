@@ -50,7 +50,8 @@ jobs:
           echo "$CHANGED_FILES"
           
           # Check if any files outside of submissions directories are modified
-          NON_SUBMISSION_FILES=$(echo "$CHANGED_FILES" | grep -v -E "challenge-[0-9]+/submissions/" || true)
+          # Allow both regular challenge submissions and package challenge submissions
+          NON_SUBMISSION_FILES=$(echo "$CHANGED_FILES" | grep -v -E "(challenge-[0-9]+/submissions/|packages/[^/]+/challenge-[^/]+/submissions/)" || true)
           
           # Check for manual approval in PR labels or comments
           MANUAL_APPROVAL_GRANTED="false"
@@ -72,10 +73,16 @@ jobs:
           fi
           
           # Extract challenges that were modified (either submissions or other files)
-          CHANGED_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "^challenge-[0-9]+/" | sed 's|/.*||' | sort -u || true)
+          # Include both regular challenges and package challenges
+          REGULAR_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "^challenge-[0-9]+/" | sed 's|/.*||' || true)
+          PACKAGE_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "^packages/[^/]+/challenge-[^/]+/" | sed -E 's|^(packages/[^/]+/challenge-[^/]+)/.*|\1|' || true)
+          CHANGED_CHALLENGES=$(echo -e "$REGULAR_CHALLENGES\n$PACKAGE_CHALLENGES" | grep -v '^$' | sort -u || true)
           
           # Extract submission directories that were modified  
-          MODIFIED_SUBMISSION_DIRS=$(echo "$CHANGED_FILES" | grep -E "challenge-[0-9]+/submissions/" | cut -d'/' -f3 | sort -u || true)
+          # Include both regular challenge submissions and package challenge submissions
+          REGULAR_SUBMISSION_DIRS=$(echo "$CHANGED_FILES" | grep -E "challenge-[0-9]+/submissions/" | cut -d'/' -f3 || true)
+          PACKAGE_SUBMISSION_DIRS=$(echo "$CHANGED_FILES" | grep -E "packages/[^/]+/challenge-[^/]+/submissions/" | cut -d'/' -f5 || true)
+          MODIFIED_SUBMISSION_DIRS=$(echo -e "$REGULAR_SUBMISSION_DIRS\n$PACKAGE_SUBMISSION_DIRS" | grep -v '^$' | sort -u || true)
           
           if [ -n "$CHANGED_CHALLENGES" ]; then
             echo "Changed challenges: $CHANGED_CHALLENGES"
@@ -124,7 +131,16 @@ jobs:
           USERNAME_LOWER=$(echo "$USERNAME" | tr '[:upper:]' '[:lower:]')
           INVALID_FILES=""
           for FILE in $CHANGED_FILES; do
+            # Check regular challenge submissions
             if [[ "$FILE" =~ ^challenge-[0-9]+/submissions/([^/]+)/ ]]; then
+              SUBMISSION_USER="${BASH_REMATCH[1]}"
+              SUBMISSION_USER_LOWER=$(echo "$SUBMISSION_USER" | tr '[:upper:]' '[:lower:]')
+              if [ "$SUBMISSION_USER_LOWER" != "$USERNAME_LOWER" ]; then
+                INVALID_FILES="$INVALID_FILES $FILE"
+              fi
+            fi
+            # Check package challenge submissions
+            if [[ "$FILE" =~ ^packages/[^/]+/challenge-[^/]+/submissions/([^/]+)/ ]]; then
               SUBMISSION_USER="${BASH_REMATCH[1]}"
               SUBMISSION_USER_LOWER=$(echo "$SUBMISSION_USER" | tr '[:upper:]' '[:lower:]')
               if [ "$SUBMISSION_USER_LOWER" != "$USERNAME_LOWER" ]; then
@@ -143,6 +159,7 @@ jobs:
               echo "$INVALID_FILES"
             fi
             echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
+            echo "✅ Allowed directories: challenge-*/submissions/$USERNAME or packages/*/challenge-*/submissions/$USERNAME"
             echo "validation_passed=false" >> $GITHUB_OUTPUT
             echo "validation_needed=true" >> $GITHUB_OUTPUT
             exit 1
@@ -170,7 +187,7 @@ jobs:
           echo "🚨 MANUAL APPROVAL REQUIRED 🚨"
           echo ""
           echo "🔍 This PR modifies files outside of submission directories"
-          echo "📝 Files modified outside challenge-*/submissions/ need admin review"
+          echo "📝 Files modified outside challenge-*/submissions/ or packages/*/challenge-*/submissions/ need admin review"
           echo ""
           echo "📢 @RezaSi - Please review and approve this PR by:"
           echo "   1. ✅ Reviewing the changes carefully"
@@ -216,18 +233,69 @@ jobs:
         working-directory: ${{ matrix.challenge }}
         run: |
           USERNAME="${{ github.event.pull_request.user.login }}"
-          SUBMISSION_DIR="submissions/$USERNAME"
-          if [ -d "$SUBMISSION_DIR" ]; then
-            echo "Testing submission from $USERNAME"
-            cp "$SUBMISSION_DIR"/*.go .
-            
-            # Handle dependencies if go.mod exists
-            if [ -f "go.mod" ]; then
-              echo "Found go.mod file, downloading dependencies..."
-              go mod tidy
+          
+          # Check if this is a package challenge or regular challenge
+          if [[ "${{ matrix.challenge }}" =~ ^packages/ ]]; then
+            # Package challenge
+            SUBMISSION_DIR="submissions/$USERNAME"
+            if [ -d "$SUBMISSION_DIR" ]; then
+              echo "Testing package challenge submission from $USERNAME"
+              
+              # Create a temporary directory for testing
+              TEMP_DIR=$(mktemp -d)
+              
+              # Copy the user's solution file and test file to temp directory
+              cp "$SUBMISSION_DIR/solution.go" "$TEMP_DIR/"
+              cp "solution-template_test.go" "$TEMP_DIR/"
+              
+              # Copy go.mod if it exists
+              if [ -f "go.mod" ]; then
+                cp "go.mod" "$TEMP_DIR/"
+              fi
+              
+              # Rename solution.go to solution-template.go for the test
+              mv "$TEMP_DIR/solution.go" "$TEMP_DIR/solution-template.go"
+              
+              # Navigate to temp directory
+              pushd "$TEMP_DIR" > /dev/null
+              
+                              # Handle dependencies if go.mod exists
+              if [ -f "go.mod" ]; then
+                echo "Found go.mod file, downloading dependencies..."
+                # Update module name to avoid conflicts
+                sed -i 's/^module .*/module challenge/' go.mod
+                go mod tidy
+              else
+                go mod init challenge
+              fi
+              
+              # Run tests
+              go test -v
+              TEST_EXIT_CODE=$?
+              
+              # Return to original directory and cleanup
+              popd > /dev/null
+              rm -rf "$TEMP_DIR"
+              
+              exit $TEST_EXIT_CODE
+            else
+              echo "No submission found for $USERNAME in package challenge ${{ matrix.challenge }}"
             fi
-            
-            go test -v
           else
-            echo "No submission found for $USERNAME in ${{ matrix.challenge }}"
+            # Regular challenge
+            SUBMISSION_DIR="submissions/$USERNAME"
+            if [ -d "$SUBMISSION_DIR" ]; then
+              echo "Testing submission from $USERNAME"
+              cp "$SUBMISSION_DIR"/*.go .
+              
+              # Handle dependencies if go.mod exists
+              if [ -f "go.mod" ]; then
+                echo "Found go.mod file, downloading dependencies..."
+                go mod tidy
+              fi
+              
+              go test -v
+            else
+              echo "No submission found for $USERNAME in ${{ matrix.challenge }}"
+            fi
           fi

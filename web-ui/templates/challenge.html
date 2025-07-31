@@ -24,6 +24,57 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+/* Editor Status Bar Styling */
+.editor-status-bar {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.editor-status-bar:hover {
+    background: rgba(248,249,250,1) !important;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+/* Custom Tooltip Styling */
+.tooltip {
+    z-index: 10001 !important; /* Above editor toolbar */
+}
+
+.tooltip .tooltip-inner {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+}
+
+.tooltip .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+    border-left-color: #ffffff !important;
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #ffffff !important;
+}
+
 /* Spinning animation for reset button */
 .spin {
     animation: spin 1s linear infinite;
@@ -34,38 +85,30 @@
     to { transform: rotate(360deg); }
 }
 
-/* Enhanced Reset Button Styling */
-#reset-editor-btn {
-    background: linear-gradient(135deg, #6c757d, #5a6268);
-    border: none;
-    color: white;
+/* Enhanced Editor Button Styling */
+#reset-editor-btn, #fullscreen-btn {
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
-#reset-editor-btn:hover {
-    background: linear-gradient(135deg, #5a6268, #495057);
+#reset-editor-btn:hover, #fullscreen-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-    color: white;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
 }
 
-#reset-editor-btn:active {
+#reset-editor-btn:active, #fullscreen-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
 }
 
-#reset-editor-btn:disabled {
-    background: linear-gradient(135deg, #adb5bd, #95a0a8);
+#reset-editor-btn:disabled, #fullscreen-btn:disabled {
     transform: none;
-    box-shadow: 0 1px 2px rgba(108, 117, 125, 0.1);
     cursor: not-allowed;
+    opacity: 0.6;
 }
 
-#reset-editor-btn::before {
+#reset-editor-btn::before, #fullscreen-btn::before {
     content: '';
     position: absolute;
     top: 0;
@@ -76,7 +119,7 @@
     transition: left 0.5s;
 }
 
-#reset-editor-btn:hover::before {
+#reset-editor-btn:hover::before, #fullscreen-btn:hover::before {
     left: 100%;
 }
 
@@ -187,7 +230,7 @@
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="solution" role="tabpanel">
-                        <div class="editor-wrapper position-relative">
+                                                    <div class="editor-wrapper position-relative">
                             <!-- Editor Toolbar -->
                             <div class="editor-toolbar position-absolute top-0 end-0 p-2 d-flex align-items-center gap-2" style="z-index: 10; background: rgba(255,255,255,0.95); border-radius: 0 0 0 8px; border-left: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
                                 <!-- Save Status -->
@@ -197,14 +240,18 @@
                                 <span id="saving-indicator" class="badge bg-warning d-none">
                                     <i class="bi bi-arrow-repeat"></i> Saving...
                                 </span>
-                                
+
                                 <!-- Fullscreen Button -->
-                                <button class="btn btn-outline-primary btn-sm" id="fullscreen-btn" title="Toggle fullscreen editor">
+                                <button class="btn btn-outline-primary btn-sm" id="fullscreen-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Enter fullscreen mode (ESC to exit)">
                                     <i class="bi bi-arrows-fullscreen"></i>
                                 </button>
-                                
+
                                 <!-- Reset Button -->
-                                <button class="btn btn-outline-secondary btn-sm" id="reset-editor-btn" title="Reset to original template">
+                                <button class="btn btn-outline-primary btn-sm" id="reset-editor-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Reset code to original template">
                                     <span id="reset-icon">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </span>
@@ -213,7 +260,15 @@
                                     </span>
                                 </button>
                             </div>
-                            
+
+                            <!-- Editor Status Bar -->
+                            <div class="editor-status-bar position-absolute bottom-0 end-0 px-2 py-1" style="z-index: 10; background: rgba(248,249,250,0.95); border-radius: 4px 0 0 0; border-left: 1px solid #dee2e6; border-top: 1px solid #dee2e6;">
+                                <small class="text-muted" id="editor-position">
+                                    <i class="bi bi-cursor-text me-1"></i>
+                                    Ln <span id="line-number">1</span>, Col <span id="col-number">1</span>
+                                </small>
+                            </div>
+
                             <div id="editor" class="editor-container"></div>
                         </div>
                     </div>
@@ -309,6 +364,25 @@
                             Message content
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Sponsors Section -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="text-center py-3">
+            <div class="sponsors-container" id="challenge-premium-sponsors">
+                <!-- Premium sponsor logos will appear here -->
+                <div class="text-muted">
+                    <i class="bi bi-building me-2"></i>
+                    <span class="small">
+                        <a href="https://github.com/sponsors/RezaSi" target="_blank" class="text-decoration-none text-muted">
+                            Sponsored by our premium partners
+                        </a>
+                    </span>
                 </div>
             </div>
         </div>
@@ -433,17 +507,31 @@
             showSaveIndicator();
         }
         
-        editor.session.on('change', function() {
+                editor.session.on('change', function() {
             clearTimeout(saveTimeout);
             isOriginalTemplate = false;
-            
+
             // Show saving indicator
             showSavingIndicator();
-            
+
             saveTimeout = setTimeout(() => {
                 localStorage.setItem(`challenge_${challengeData.id}_code`, editor.getValue());
                 showSaveIndicator();
             }, 1000);
+        });
+
+        // Update line/column numbers on cursor movement
+        editor.selection.on('changeCursor', function() {
+            updateEditorPosition();
+        });
+
+        // Initial position update
+        updateEditorPosition();
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
         // Reset button functionality
@@ -513,12 +601,20 @@
         document.getElementById('fullscreen-btn').addEventListener('click', function() {
             const editorWrapper = document.querySelector('.editor-wrapper');
             const icon = this.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(this);
             
             if (!document.fullscreenElement && !editorWrapper.classList.contains('editor-fullscreen')) {
                 // Enter fullscreen mode
                 editorWrapper.classList.add('editor-fullscreen');
                 icon.className = 'bi bi-fullscreen-exit';
-                this.title = 'Exit fullscreen';
+                this.setAttribute('data-bs-original-title', 'Exit fullscreen mode (ESC)');
+                if (tooltip) {
+                    tooltip.dispose();
+                    new bootstrap.Tooltip(this, { 
+                        title: 'Exit fullscreen mode (ESC)',
+                        placement: 'top'
+                    });
+                }
                 
                 // Resize editor to fit fullscreen
                 setTimeout(() => {
@@ -537,10 +633,18 @@
             const editorWrapper = document.querySelector('.editor-wrapper');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
             const icon = fullscreenBtn.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(fullscreenBtn);
             
             editorWrapper.classList.remove('editor-fullscreen');
             icon.className = 'bi bi-arrows-fullscreen';
-            fullscreenBtn.title = 'Toggle fullscreen editor';
+            fullscreenBtn.setAttribute('data-bs-original-title', 'Enter fullscreen mode (ESC to exit)');
+            if (tooltip) {
+                tooltip.dispose();
+                new bootstrap.Tooltip(fullscreenBtn, { 
+                    title: 'Enter fullscreen mode (ESC to exit)',
+                    placement: 'top'
+                });
+            }
             
             // Resize editor back to normal
             setTimeout(() => {
@@ -578,6 +682,18 @@
         function hideSaveIndicators() {
             document.getElementById('saving-indicator').classList.add('d-none');
             document.getElementById('save-indicator').classList.add('d-none');
+        }
+
+        // Update line and column numbers in status bar
+        function updateEditorPosition() {
+            if (!editor) return;
+            
+            const cursor = editor.getCursorPosition();
+            const lineNumber = cursor.row + 1; // Ace uses 0-based indexing
+            const colNumber = cursor.column + 1;
+            
+            document.getElementById('line-number').textContent = lineNumber;
+            document.getElementById('col-number').textContent = colNumber;
         }
 
         // Initialize code editor for tests

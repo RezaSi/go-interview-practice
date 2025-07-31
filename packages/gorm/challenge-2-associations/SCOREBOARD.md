@@ -1,5 +1,5 @@
-# Scoreboard
+# Scoreboard for gorm challenge-2-associations
 
-| Rank | User | Score | Date |
-|------|------|-------|------|
-| - | - | - | - | 
+| Username   | Passed Tests | Total Tests |
+|------------|--------------|-------------|
+| odelbos | 8 | 8 |

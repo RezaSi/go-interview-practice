@@ -1,4 +1,5 @@
-# Scoreboard for Gin Challenge 2: Middleware & Request/Response Handling
+# Scoreboard for gin challenge-2-middleware
 
 | Username   | Passed Tests | Total Tests |
-|------------|--------------|-------------| 
+|------------|--------------|-------------|
+| odelbos | 14 | 14 |
