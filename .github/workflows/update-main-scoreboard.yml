@@ -7,11 +7,6 @@ on:
       - completed
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths:
-      - 'challenge-*/SCOREBOARD.md'
   schedule:
     # Run daily at 00:00 UTC to catch any missed updates
     - cron: '0 0 * * *'
@@ -21,11 +16,15 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-main-scoreboard
+  cancel-in-progress: false
+
 jobs:
   update-main-scoreboard:
     runs-on: ubuntu-latest
-    # Only run if workflow_run was successful, or if triggered by other events
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    # Only run if workflow_run was successful, or if triggered by other events, AND only on main repo
+    if: ${{ github.repository == 'RezaSi/go-interview-practice' && (github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run') }}
 
     steps:
       - name: Check out repository
@@ -68,7 +67,42 @@ jobs:
           - Updated leaderboard rankings
           - Refreshed completion statistics
           - Synchronized with latest challenge scoreboards"
-          git push
+          
+          # Robust push with retry logic for concurrent workflows
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Push attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+            
+            # Pull latest changes before pushing
+            git fetch origin main
+            
+            # Check if we need to rebase
+            if ! git diff --quiet HEAD origin/main; then
+              echo "Remote has new changes, rebasing..."
+              git rebase origin/main || {
+                echo "Rebase failed, trying merge strategy..."
+                git rebase --abort 2>/dev/null || true
+                git merge origin/main -m "Merge remote changes before main scoreboard update"
+              }
+            fi
+            
+            # Try to push
+            if git push origin main; then
+              echo "✅ Successfully pushed changes"
+              break
+            else
+              echo "❌ Push failed, retrying in $((RETRY_COUNT + 1)) seconds..."
+              sleep $((RETRY_COUNT + 1))
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            fi
+          done
+          
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "🚨 Failed to push after $MAX_RETRIES attempts"
+            exit 1
+          fi
 
       - name: Create summary
         if: steps.verify-changed-files.outputs.changed == 'true'

@@ -1,6 +1,23 @@
 
 # Go Interview Practice
 
+<div align="center">
+
+[![GitHub Stars](https://img.shields.io/github/stars/RezaSi/go-interview-practice?style=for-the-badge&logo=github&color=yellow)](https://github.com/RezaSi/go-interview-practice/stargazers)
+[![Go Version](https://img.shields.io/badge/Go-1.19+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
+[![Challenges](https://img.shields.io/badge/Challenges-30+-brightgreen?style=for-the-badge&logo=checkmarx)](https://github.com/RezaSi/go-interview-practice)
+
+<a href="https://trendshift.io/repositories/14255" target="_blank">
+<img src="https://trendshift.io/api/badge/repositories/14255" alt="RezaSi%2Fgo-interview-practice | Trendshift" style="width: 250px;" width="250"/>
+</a>
+
+<br/>
+
+<br/>
+</div>
+
+
+
 Welcome to the **Go Interview Practice** repository! Master Go programming and ace your technical interviews with our interactive coding challenges.
 
 ---
@@ -10,8 +27,9 @@ Welcome to the **Go Interview Practice** repository! Master Go programming and a
 ### Interactive Challenge Platform
 Our comprehensive web interface provides everything you need to practice and master Go programming:
 
+
 <div align="center">
-  <video src="https://github.com/user-attachments/assets/b715a4b7-de39-40b2-94bc-2a74e344e51a" controls width="90%"></video>
+  <video src="https://github.com/user-attachments/assets/23468aab-a032-4326-9d05-84de86c9128c" controls width="90%"></video>
   <p><em>A brief introduction to the project</em></p>
 </div>
 
@@ -59,16 +77,16 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **15**/30 | **50.0%** | Expert | ✅✅✅⬜⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
-| 4 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **12**/30 | **40.0%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅⬜⬜⬜✅ |
-| 5 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
-| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **7**/30 | **23.3%** | Intermediate | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 7 | <img src="https://github.com/AliNazariii.png" width="24" height="24" style="border-radius: 50%;"><br/>**[AliNazariii](https://github.com/AliNazariii)** | **4**/30 | **13.3%** | Beginner | ✅✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 8 | <img src="https://github.com/lajosbnk.png" width="24" height="24" style="border-radius: 50%;"><br/>**[lajosbnk](https://github.com/lajosbnk)** | **4**/30 | **13.3%** | Beginner | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 9 | <img src="https://github.com/skx.png" width="24" height="24" style="border-radius: 50%;"><br/>**[skx](https://github.com/skx)** | **4**/30 | **13.3%** | Beginner | ✅✅⬜⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
-| 10 | <img src="https://github.com/MuraliMohan-2000.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MuraliMohan-2000](https://github.com/MuraliMohan-2000)** | **3**/30 | **10.0%** | Beginner | ✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **28**/30 | **93.3%** | Master | ✅✅✅✅✅✅✅✅✅✅✅⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 🥉 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 4 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 5 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **17**/30 | **56.7%** | Expert | ✅✅✅✅⬜✅✅✅⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
+| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **16**/30 | **53.3%** | Expert | ✅✅✅⬜✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 7 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
+| 8 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
+| 9 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **12**/30 | **40.0%** | Advanced | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜⬜✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 10 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
 
 <div align="center">
 
@@ -83,11 +101,60 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 24
-- **Most Challenges Solved**: 21 by odelbos
+- **Active Developers**: 61
+- **Most Challenges Solved**: 28 by odelbos
 
----
+<!-- END_CLASSIC_LEADERBOARD -->
+## 🚀 Package Challenges Leaderboard
 
+Master Go packages through hands-on challenges! Each package offers a structured learning path with real-world scenarios.
+
+> **Note**: The data below is automatically updated by GitHub Actions when package challenge scoreboards change.
+
+| 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
+|:---:|:---:|:---:|:---:|:---:|:---|
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **6** | **2** pkgs | 💪 Package Advanced | **gin**: 3 • **gorm**: 3 |
+| 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
+| 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
+
+<div align="center">
+
+🚀 **Package Challenges** - Learn Go packages through practical, real-world scenarios
+
+</div>
+
+### 📦 Per-Package Progress
+
+#### Cobra Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[ashwinipatankar](https://github.com/ashwinipatankar)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+
+#### Gin Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+
+#### Gorm Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/5 | 🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% |
+| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/5 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% |
+
+### 📊 Package Challenge Statistics
+
+- **Total Package Challenges Available**: 13
+- **Active Package Learners**: 3
+- **Available Packages**: 3 (cobra, gin, gorm)
+
+- **Most Package Challenges Solved**: 6 by odelbos
+
+<!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
 
 - **Interactive Web UI** - Code, test, and submit solutions in your browser
@@ -243,13 +310,40 @@ Review the learning materials to deepen your understanding of the concepts used.
 
 ## Contributing
 
-We welcome contributions! To add a new challenge:
+We welcome contributions! You can contribute in several ways:
 
+**Submit Solutions:**
+- Solve existing classic or package challenges
+- Submit your solutions via pull request
+
+**Add New Challenges:**
+- **Classic Challenges:** Algorithm and data structure problems
+- **Package Challenges:** Framework-specific practical applications (Gin, Cobra, GORM, etc.)
+
+**Quick Steps:**
 1. Fork the repository
-2. Create a new challenge following our template structure
-3. Submit a pull request
+2. Choose challenge type (classic or package-based)
+3. Follow our template structure
+4. Submit a pull request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on both challenge types.
+
+## 🏢 Premium Business Sponsors
+
+*Thank you to our premium sponsors who make this project possible!*
+
+<!-- 
+Premium sponsor logos will appear here when we have them. Format:
+<div align="center">
+<a href="https://company-website.com" target="_blank">
+<img src="https://company-logo-url.com/logo.png" alt="Company Name" height="60" style="margin: 0 20px;">
+</a>
+</div>
+-->
+
+*Interested in premium sponsorship? [Contact us](https://github.com/sponsors/RezaSi) to feature your company logo here and on our platform!*
+
+---
 
 ## License
 

@@ -1,0 +1,1174 @@
+{{define "content"}}
+<style>
+.editor-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: white !important;
+    padding: 20px !important;
+}
+
+.editor-fullscreen .editor-container {
+    height: calc(100vh - 80px) !important;
+}
+
+.editor-toolbar {
+    transition: all 0.2s ease;
+}
+
+.editor-toolbar:hover {
+    background: rgba(255,255,255,1) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Editor Status Bar Styling */
+.editor-status-bar {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 11px;
+    transition: all 0.2s ease;
+}
+
+.editor-status-bar:hover {
+    background: rgba(248,249,250,1) !important;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+/* Custom Tooltip Styling */
+.tooltip {
+    z-index: 10001 !important; /* Above editor toolbar */
+}
+
+.tooltip .tooltip-inner {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+}
+
+.tooltip .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+    border-left-color: #ffffff !important;
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #ffffff !important;
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #ffffff !important;
+}
+
+/* Spinning animation for reset button */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Ensure toasts appear above editor */
+.toast-container {
+    z-index: 10000 !important;
+}
+
+/* Enhanced Editor Button Styling */
+#reset-editor-btn, #fullscreen-btn {
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#reset-editor-btn:hover, #fullscreen-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+#reset-editor-btn:active, #fullscreen-btn:active {
+    transform: translateY(0);
+}
+
+#reset-editor-btn:disabled, #fullscreen-btn:disabled {
+    transform: none;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#reset-editor-btn::before, #fullscreen-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+#reset-editor-btn:hover::before, #fullscreen-btn:hover::before {
+    left: 100%;
+}
+
+/* Custom reset modal styling */
+.reset-modal .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.reset-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.reset-modal .modal-title {
+    font-weight: 600;
+}
+
+.reset-modal .btn-close {
+    filter: invert(1);
+}
+
+.reset-modal .code-preview {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.reset-modal .btn-reset-confirm {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    border: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.reset-modal .btn-reset-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+</style>
+<!-- Debug info: Template and TestFile content should be loaded below -->
+<!-- Hidden elements to store content safely -->
+<script type="text/plain" id="template-content">{{.Challenge.Template}}</script>
+<script type="text/plain" id="testfile-content">{{.Challenge.TestFile}}</script>
+<script type="text/plain" id="learning-content">{{.Challenge.LearningMaterials}}</script>
+<script type="text/plain" id="hints-content">{{.Challenge.Hints}}</script>
+<script type="text/plain" id="has-attempted">{{if .HasAttempted}}true{{else}}false{{end}}</script>
+<script type="text/plain" id="existing-solution">{{.ExistingSolution}}</script>
+
+
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Challenges</a></li>
+                <li class="breadcrumb-item"><a href="/packages/{{.Package.Name}}">{{.Package.DisplayName}}</a></li>
+                <li class="breadcrumb-item active">{{.Challenge.Title}}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{.Package.DisplayName}}: {{.Challenge.Title}}</h5>
+                <span class="badge bg-primary badge-{{.Challenge.Difficulty | lower}}">{{.Challenge.Difficulty}}</span>
+            </div>
+            <div class="card-body">
+                {{if .HasAttempted}}
+                <div class="alert alert-success mb-3">
+                    <i class="bi bi-check-circle-fill"></i> You've previously attempted this challenge.
+                    {{if .ExistingSolution}}
+                    <br>Your existing solution has been loaded in the editor.
+                    {{end}}
+                </div>
+                {{end}}
+                
+                <div class="markdown-content" id="challenge-description">
+                    {{.Challenge.Description | markdown}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="editorTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="solution-tab" data-bs-toggle="tab" href="#solution" role="tab">Solution</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tests-tab" data-bs-toggle="tab" href="#tests" role="tab">Tests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="results-tab" data-bs-toggle="tab" href="#results" role="tab">Results</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="hints-tab" data-bs-toggle="tab" href="#hints" role="tab">
+                            <i class="bi bi-lightbulb me-1"></i>Hints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="learning-tab" data-bs-toggle="tab" href="#learning" role="tab">Learnings</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="solution" role="tabpanel">
+                                                    <div class="editor-wrapper position-relative">
+                            <!-- Editor Toolbar -->
+                            <div class="editor-toolbar position-absolute top-0 end-0 p-2 d-flex align-items-center gap-2" style="z-index: 10; background: rgba(255,255,255,0.95); border-radius: 0 0 0 8px; border-left: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6;">
+                                <!-- Save Status -->
+                                <span id="save-indicator" class="badge bg-success d-none">
+                                    <i class="bi bi-check2"></i> Saved
+                                </span>
+                                <span id="saving-indicator" class="badge bg-warning d-none">
+                                    <i class="bi bi-arrow-repeat"></i> Saving...
+                                </span>
+
+                                <!-- Fullscreen Button -->
+                                <button class="btn btn-outline-primary btn-sm" id="fullscreen-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Enter fullscreen mode (ESC to exit)">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+
+                                <!-- Reset Button -->
+                                <button class="btn btn-outline-primary btn-sm" id="reset-editor-btn" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Reset code to original template">
+                                    <span id="reset-icon">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </span>
+                                    <span id="reset-spinner" class="d-none">
+                                        <i class="bi bi-arrow-repeat spin"></i>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <!-- Editor Status Bar -->
+                            <div class="editor-status-bar position-absolute bottom-0 end-0 px-2 py-1" style="z-index: 10; background: rgba(248,249,250,0.95); border-radius: 4px 0 0 0; border-left: 1px solid #dee2e6; border-top: 1px solid #dee2e6;">
+                                <small class="text-muted" id="editor-position">
+                                    <i class="bi bi-cursor-text me-1"></i>
+                                    Ln <span id="line-number">1</span>, Col <span id="col-number">1</span>
+                                </small>
+                            </div>
+
+                            <div id="editor" class="editor-container"></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tests" role="tabpanel">
+                        <div id="test-editor" class="editor-container"></div>
+                    </div>
+                    <div class="tab-pane fade" id="results" role="tabpanel">
+                        <div id="test-results" class="p-3">
+                            <div class="alert alert-info">Run your code to see test results.</div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="hints" role="tabpanel">
+                        <div id="hints-content" class="p-3">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-lightbulb" style="font-size: 2.5rem; color: #ffc107;"></i>
+                                <h5 class="mb-2">Progressive Hints</h5>
+                                <p class="text-muted mb-3">Click "Show Next Hint" to reveal hints one by one</p>
+                            </div>
+                            
+                            <div id="hints-container">
+                                <!-- Hints will be dynamically loaded here -->
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button class="btn btn-outline-warning" id="show-hint-btn">
+                                    <i class="bi bi-lightbulb me-2"></i>Show Next Hint
+                                </button>
+                                <button class="btn btn-outline-secondary ms-2 d-none" id="reset-hints-btn">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Hints
+                                </button>
+                            </div>
+                            
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <span id="hints-progress">0</span> of <span id="total-hints">0</span> hints revealed
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="learning" role="tabpanel">
+                        <div id="learning-materials" class="p-3 markdown-content">
+                            <!-- Learning materials will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <button class="btn btn-primary" id="run-button">
+                        <span class="spinner-border spinner-border-sm d-none" id="run-spinner" role="status" aria-hidden="true"></span>
+                        <span id="run-text">Run Tests</span>
+                    </button>
+                    <button class="btn btn-success" id="submit-button">
+                        <span class="spinner-border spinner-border-sm d-none" id="submit-spinner" role="status" aria-hidden="true"></span>
+                        <span id="submit-text">Submit Solution</span>
+                    </button>
+                </div>
+                
+                <!-- Status message toast -->
+                <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+                    <div id="statusToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header">
+                            <strong class="me-auto" id="toast-title">Notification</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body" id="toast-message">
+                            Message content
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Sponsors Section -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="text-center py-3">
+            <div class="sponsors-container" id="package-challenge-premium-sponsors">
+                <!-- Premium sponsor logos will appear here -->
+                <div class="text-muted">
+                    <i class="bi bi-building me-2"></i>
+                    <span class="small">
+                        <a href="https://github.com/sponsors/RezaSi" target="_blank" class="text-decoration-none text-muted">
+                            Sponsored by our premium partners
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div class="modal fade reset-modal" id="resetModal" tabindex="-1" aria-labelledby="resetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Reset Code to Original Template
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <p class="mb-2"><strong>Are you sure you want to reset your code?</strong></p>
+                    <p class="text-muted small mb-3">This action will permanently delete all your changes and restore the original template.</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-danger mb-2">
+                        <i class="bi bi-trash me-1"></i>What will be lost:
+                    </h6>
+                    <ul class="list-unstyled small text-muted mb-0">
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>All your current code changes</li>
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>Auto-saved progress in browser</li>
+                        <li><i class="bi bi-x-circle text-danger me-1"></i>Any work since your last submission</li>
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-success mb-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>What will be restored:
+                    </h6>
+                    <div class="code-preview p-2">
+                        <div class="small text-muted mb-1">Original template preview:</div>
+                        <pre id="template-preview" class="mb-0"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger btn-reset-confirm" id="confirmResetBtn">
+                    <span id="confirm-reset-text">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Code
+                    </span>
+                    <span id="confirm-reset-spinner" class="d-none">
+                        <i class="bi bi-arrow-repeat spin me-1"></i>Resetting...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{end}}
+
+{{define "scripts"}}
+<script>
+    // Helper function to decode HTML entities
+    function decodeHtmlEntities(text) {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        return textarea.value;
+    }
+
+    // Global challenge data variable
+    let challengeData = {};
+
+    // User data and existing solution
+    const hasAttempted = document.getElementById('has-attempted').textContent === 'true';
+    const existingSolution = decodeHtmlEntities(document.getElementById('existing-solution').textContent) || null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store username in localStorage if provided by server
+        const serverUsername = '{{.Username}}';
+        if (serverUsername && serverUsername !== '') {
+            localStorage.setItem('githubUsername', serverUsername);
+        }
+        
+        // Initialize challenge data from server (loaded from hidden elements)
+        challengeData = {
+            packageName: "{{.Package.Name}}",
+            challengeId: "{{.Challenge.ID}}", // Keep as string for API calls
+            challengeIdForHighlighting: "{{.Package.Name}}_{{.Challenge.ID}}", // Use unique string for highlighting storage
+            title: "{{.Challenge.Title}}",
+            description: `{{.Challenge.Description}}`,
+            template: decodeHtmlEntities(document.getElementById('template-content').textContent),
+            testFile: decodeHtmlEntities(document.getElementById('testfile-content').textContent),
+            learningMaterials: decodeHtmlEntities(document.getElementById('learning-content').textContent),
+            hints: decodeHtmlEntities(document.getElementById('hints-content').textContent)
+        };
+        // Initialize Markdown for description (description is already rendered server-side)
+        // Just highlight any code blocks in the rendered content
+        hljs.highlightAll();
+
+        // Initialize Markdown for learning materials
+        const learningElement = document.getElementById('learning-materials');
+        renderMarkdown(challengeData.learningMaterials, learningElement);
+
+        // Initialize learning materials highlighting
+        initLearningMaterials('learning-materials', challengeData.challengeIdForHighlighting);
+
+        // Initialize hints system
+        initializeHints(challengeData.hints);
+
+        // Initialize code editor for solution
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/chrome");
+        editor.session.setMode("ace/mode/golang");
+        
+        // Load content from template or existing solution
+        if (existingSolution) {
+            editor.setValue(existingSolution);
+        } else {
+            editor.setValue(challengeData.template);
+        }
+        
+        editor.clearSelection();
+
+        // Initialize code editor for tests
+        const testEditor = ace.edit("test-editor");
+        testEditor.setTheme("ace/theme/chrome");
+        testEditor.session.setMode("ace/mode/golang");
+        testEditor.setValue(challengeData.testFile);
+        testEditor.setReadOnly(true);
+        testEditor.clearSelection();
+
+        // Button event listeners
+        document.getElementById('run-button').addEventListener('click', function() {
+            runCode(false);
+        });
+
+        document.getElementById('submit-button').addEventListener('click', function() {
+            runCode(true);
+        });
+
+        // Auto-save functionality with visual indicators
+        let saveTimeout;
+        let isOriginalTemplate = true;
+        
+        // Check if we have saved code to determine initial state
+        const savedCode = localStorage.getItem(`package_challenge_${challengeData.packageName}_${challengeData.challengeId}`);
+        if (savedCode && !existingSolution) {
+            editor.setValue(savedCode, 1);
+            isOriginalTemplate = false;
+            showSaveIndicator();
+        }
+        
+                 editor.session.on('change', function() {
+            clearTimeout(saveTimeout);
+            isOriginalTemplate = false;
+
+            // Show saving indicator
+            showSavingIndicator();
+
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem(`package_challenge_${challengeData.packageName}_${challengeData.challengeId}`, editor.getValue());
+                showSaveIndicator();
+            }, 1000);
+        });
+
+        // Update line/column numbers on cursor movement
+        editor.selection.on('changeCursor', function() {
+            updateEditorPosition();
+        });
+
+        // Initial position update
+        updateEditorPosition();
+
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Reset button functionality
+        document.getElementById('reset-editor-btn').addEventListener('click', function() {
+            // Show template preview in modal
+            const templatePreview = document.getElementById('template-preview');
+            const previewText = existingSolution || challengeData.template;
+            templatePreview.textContent = previewText.substring(0, 200) + (previewText.length > 200 ? '...' : '');
+            
+            // Show the custom modal
+            const resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+            resetModal.show();
+        });
+
+        // Confirm reset button in modal
+        document.getElementById('confirmResetBtn').addEventListener('click', function() {
+            const resetButton = document.getElementById('reset-editor-btn');
+            const resetIcon = document.getElementById('reset-icon');
+            const resetSpinner = document.getElementById('reset-spinner');
+            const confirmText = document.getElementById('confirm-reset-text');
+            const confirmSpinner = document.getElementById('confirm-reset-spinner');
+            
+            // Show loading states
+            resetIcon.classList.add('d-none');
+            resetSpinner.classList.remove('d-none');
+            confirmText.classList.add('d-none');
+            confirmSpinner.classList.remove('d-none');
+            resetButton.disabled = true;
+            this.disabled = true;
+            
+            // Simulate reset process with delay for better UX
+            setTimeout(() => {
+                // Clear saved code
+                localStorage.removeItem(`package_challenge_${challengeData.packageName}_${challengeData.challengeId}`);
+                
+                // Reset to template
+                if (existingSolution) {
+                    editor.setValue(existingSolution);
+                } else {
+                    editor.setValue(challengeData.template);
+                }
+                editor.clearSelection();
+                
+                isOriginalTemplate = true;
+                hideSaveIndicators();
+                
+                // Hide modal
+                const resetModal = bootstrap.Modal.getInstance(document.getElementById('resetModal'));
+                resetModal.hide();
+                
+                // Reset button states
+                resetIcon.classList.remove('d-none');
+                resetSpinner.classList.add('d-none');
+                confirmText.classList.remove('d-none');
+                confirmSpinner.classList.add('d-none');
+                resetButton.disabled = false;
+                this.disabled = false;
+                
+                // Show success message with higher z-index
+                setTimeout(() => {
+                    showToast('Success', 'Code successfully reset to original template', 'success');
+                }, 200);
+            }, 800); // Small delay for better UX feedback
+        });
+
+        // Fullscreen functionality
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const editorWrapper = document.querySelector('.editor-wrapper');
+            const icon = this.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(this);
+            
+            if (!document.fullscreenElement && !editorWrapper.classList.contains('editor-fullscreen')) {
+                // Enter fullscreen mode
+                editorWrapper.classList.add('editor-fullscreen');
+                icon.className = 'bi bi-fullscreen-exit';
+                this.setAttribute('data-bs-original-title', 'Exit fullscreen mode (ESC)');
+                if (tooltip) {
+                    tooltip.dispose();
+                    new bootstrap.Tooltip(this, { 
+                        title: 'Exit fullscreen mode (ESC)',
+                        placement: 'top'
+                    });
+                }
+                
+                // Resize editor to fit fullscreen
+                setTimeout(() => {
+                    editor.resize();
+                    updateEditorPosition(); // Update position after resize
+                }, 100);
+                
+                // Add escape key listener
+                document.addEventListener('keydown', handleEscapeKey);
+            } else {
+                // Exit fullscreen mode
+                exitFullscreen();
+            }
+        });
+
+        function exitFullscreen() {
+            const editorWrapper = document.querySelector('.editor-wrapper');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const icon = fullscreenBtn.querySelector('i');
+            const tooltip = bootstrap.Tooltip.getInstance(fullscreenBtn);
+            
+            editorWrapper.classList.remove('editor-fullscreen');
+            icon.className = 'bi bi-arrows-fullscreen';
+            fullscreenBtn.setAttribute('data-bs-original-title', 'Enter fullscreen mode (ESC to exit)');
+            if (tooltip) {
+                tooltip.dispose();
+                new bootstrap.Tooltip(fullscreenBtn, { 
+                    title: 'Enter fullscreen mode (ESC to exit)',
+                    placement: 'top'
+                });
+            }
+            
+            // Resize editor back to normal
+            setTimeout(() => {
+                editor.resize();
+                updateEditorPosition(); // Update position after resize
+            }, 100);
+            
+            // Remove escape key listener
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+
+        function handleEscapeKey(event) {
+            if (event.key === 'Escape') {
+                exitFullscreen();
+            }
+        }
+
+        // Helper functions for save indicators
+        function showSavingIndicator() {
+            document.getElementById('saving-indicator').classList.remove('d-none');
+            document.getElementById('save-indicator').classList.add('d-none');
+        }
+        
+        function showSaveIndicator() {
+            document.getElementById('saving-indicator').classList.add('d-none');
+            document.getElementById('save-indicator').classList.remove('d-none');
+            
+            // Hide save indicator after 2 seconds
+            setTimeout(() => {
+                if (!isOriginalTemplate) {
+                    document.getElementById('save-indicator').classList.add('d-none');
+                }
+            }, 2000);
+        }
+        
+        function hideSaveIndicators() {
+            document.getElementById('saving-indicator').classList.add('d-none');
+            document.getElementById('save-indicator').classList.add('d-none');
+        }
+
+        // Update line and column numbers in status bar
+        function updateEditorPosition() {
+            if (!editor) return;
+            
+            const cursor = editor.getCursorPosition();
+            const lineNumber = cursor.row + 1; // Ace uses 0-based indexing
+            const colNumber = cursor.column + 1;
+            
+            document.getElementById('line-number').textContent = lineNumber;
+            document.getElementById('col-number').textContent = colNumber;
+        }
+    });
+
+    function runCode(isSubmit) {
+        const runButton = document.getElementById('run-button');
+        const submitButton = document.getElementById('submit-button');
+        const runSpinner = document.getElementById('run-spinner');
+        const submitSpinner = document.getElementById('submit-spinner');
+        const runText = document.getElementById('run-text');
+        const submitText = document.getElementById('submit-text');
+        const testResults = document.getElementById('test-results');
+        
+        // Show loading state
+        if (isSubmit) {
+            submitSpinner.classList.remove('d-none');
+            submitText.textContent = 'Submitting...';
+            submitButton.disabled = true;
+        } else {
+            runSpinner.classList.remove('d-none');
+            runText.textContent = 'Running...';
+            runButton.disabled = true;
+        }
+        
+        // Switch to results tab
+        const resultsTab = document.getElementById('results-tab');
+        resultsTab.click();
+        
+        testResults.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm me-2"></div>Running tests...</div>';
+        
+        const startTime = Date.now();
+        const code = ace.edit("editor").getValue();
+        const username = getUsernameFromStorage() || 'anonymous';
+        
+        fetch(`/api/packages/${challengeData.packageName}/${challengeData.challengeId}/${isSubmit ? 'submit' : 'test'}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code: code,
+                username: username
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            
+            displayTestResults(data, duration, isSubmit);
+            showToast(
+                data.success ? 'Success!' : 'Failed',
+                data.success ? 
+                    (isSubmit ? 'Solution submitted successfully!' : 'All tests passed!') : 
+                    'Some tests failed. Check the results tab.',
+                data.success ? 'success' : 'danger'
+            );
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            testResults.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> Failed to run tests. Please try again.
+                </div>
+            `;
+            showToast('Error', 'Failed to run tests. Please try again.', 'danger');
+        })
+        .finally(() => {
+            // Reset button states
+            runSpinner.classList.add('d-none');
+            submitSpinner.classList.add('d-none');
+            runText.textContent = 'Run Tests';
+            submitText.textContent = 'Submit Solution';
+            runButton.disabled = false;
+            submitButton.disabled = false;
+        });
+    }
+
+    function displayTestResults(data, duration, isSubmit) {
+        const testResults = document.getElementById('test-results');
+        
+        let html = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">${isSubmit ? 'Submission' : 'Test'} Results</h6>
+                <small class="text-muted">Execution time: ${duration}ms</small>
+            </div>
+        `;
+        
+        if (data.success) {
+            html += `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>All tests passed!</strong>
+                    ${data.tests_passed || 0}/${data.tests_total || 0} tests successful
+                </div>
+            `;
+            
+            // Show PR instructions for successful submissions
+            if (isSubmit && data.show_pr_instructions) {
+                const username = getUsernameFromStorage() || 'anonymous';
+                html += `
+                    <div class="alert alert-success mb-3">
+                        <h4 class="alert-heading">Solution Submitted Successfully! 🎉</h4>
+                        <p>All tests passed. Follow the instructions below to submit your solution to the public scoreboard.</p>
+                    </div>
+                    
+                    <div class="alert alert-info mb-3">
+                        <h5>🚀 Next Steps: Create a Pull Request</h5>
+                        <p class="mb-3">To contribute your solution to the project and appear on the public scoreboard, follow these steps:</p>
+                        
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-primary" id="save-filesystem-btn">💾 Save to Filesystem</button>
+                            <button class="btn btn-secondary" id="copy-commands-btn">📋 Copy Git Commands</button>
+                        </div>
+                        
+                        <div class="accordion" id="submissionAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step1" aria-expanded="true">
+                                        <strong>Step 1: Save Your Solution Locally</strong>
+                                    </button>
+                                </h2>
+                                <div id="step1" class="accordion-collapse collapse show" data-bs-parent="#submissionAccordion">
+                                    <div class="accordion-body">
+                                        <p>Click "💾 Save to Filesystem" above to save your solution directly to the correct location.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">
+                                        <strong>Step 2: Commit and Push to Your Fork</strong>
+                                    </button>
+                                </h2>
+                                <div id="step2" class="accordion-collapse collapse" data-bs-parent="#submissionAccordion">
+                                    <div class="accordion-body">
+                                        <p>Run these Git commands to save your changes to your forked repository:</p>
+                                        <div class="bg-dark text-light p-3 rounded">
+                                            <pre><code>$ cd ../../../
+$ git add packages/${challengeData.packageName}/${challengeData.challengeId}/submissions/${username}/
+$ git commit -m "Add solution for ${challengeData.packageName} ${challengeData.challengeId} by ${username}"
+$ git push origin main</code></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">
+                                        <strong>Step 3: Create Pull Request on GitHub</strong>
+                                    </button>
+                                </h2>
+                                <div id="step3" class="accordion-collapse collapse" data-bs-parent="#submissionAccordion">
+                                    <div class="accordion-body">
+                                        <ol>
+                                            <li>Go to your forked repository on GitHub: <code>https://github.com/${username}/go-interview-practice</code></li>
+                                            <li>You should see a banner saying "This branch is X commits ahead of RezaSi:main"</li>
+                                            <li>Click the <strong>"Contribute"</strong> button next to it</li>
+                                            <li>Click <strong>"Open pull request"</strong></li>
+                                            <li>Add a title like: <code>Add solution for ${challengeData.packageName} ${challengeData.challengeId} by ${username}</code></li>
+                                            <li>Click <strong>"Create pull request"</strong></li>
+                                        </ol>
+                                        <div class="alert alert-success mt-3">
+                                            <strong>🎉 That's it!</strong> Your solution will be reviewed and merged, appearing on the public scoreboard.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listeners for the buttons after HTML is inserted
+                setTimeout(() => {
+                    const saveFilesystemBtn = document.getElementById('save-filesystem-btn');
+                    const copyCommandsBtn = document.getElementById('copy-commands-btn');
+                    
+                    if (saveFilesystemBtn) {
+                        saveFilesystemBtn.addEventListener('click', function() {
+                            this.disabled = true;
+                            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                            
+                            fetch('/api/packages-save-to-filesystem', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    username: username,
+                                    packageName: challengeData.packageName,
+                                    challengeId: challengeData.challengeId,
+                                    code: ace.edit("editor").getValue()
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    showToast('Success', 'Solution saved to filesystem!', 'success');
+                                    
+                                    // Show comprehensive next steps including PR creation
+                                    let nextStepsHtml = `
+                                        <div class="mt-3 p-3 bg-light rounded">
+                                            <h6>✅ Solution Saved! Next Steps:</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">1. Commit & Push to Your Fork:</h6>
+                                                    <div class="bg-dark text-light p-2 rounded small">
+                                                        <pre><code>cd ../../../
+git add packages/${challengeData.packageName}/${challengeData.challengeId}/submissions/${username}/
+git commit -m "Add solution for ${challengeData.packageName} ${challengeData.challengeId} by ${username}"
+git push origin main</code></pre>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="text-success">2. Create Pull Request:</h6>
+                                                    <ol class="small">
+                                                        <li>Go to <a href="https://github.com/${username}/go-interview-practice" target="_blank">your fork on GitHub</a></li>
+                                                        <li>Click the "Contribute" button</li>
+                                                        <li>Click "Open pull request"</li>
+                                                        <li>Add title: "Add solution for ${challengeData.packageName} ${challengeData.challengeId}"</li>
+                                                        <li>Submit your PR! 🎉</li>
+                                                    </ol>
+                                                </div>
+                                            </div>
+                                            <div class="alert alert-info mt-2 small">
+                                                <strong>🔗 Direct Link:</strong> After pushing, GitHub will often show a banner with a direct "Compare & pull request" button for convenience.
+                                            </div>
+                                        </div>
+                                    `;
+                                    
+                                    // Insert after the button
+                                    this.parentNode.insertAdjacentHTML('afterend', nextStepsHtml);
+                                } else {
+                                    showToast('Error', data.message || 'Failed to save to filesystem', 'error');
+                                }
+                                
+                                this.disabled = false;
+                                this.textContent = 'Saved!';
+                                setTimeout(() => {
+                                    this.textContent = '💾 Save to Filesystem';
+                                }, 2000);
+                            })
+                            .catch(error => {
+                                showToast('Error', 'Failed to save: ' + error.message, 'error');
+                                this.disabled = false;
+                                this.textContent = '💾 Save to Filesystem';
+                            });
+                        });
+                    }
+                    
+                    if (copyCommandsBtn) {
+                        copyCommandsBtn.addEventListener('click', function() {
+                            const commands = `cd ../../../
+git add packages/${challengeData.packageName}/${challengeData.challengeId}/submissions/${username}/
+git commit -m "Add solution for ${challengeData.packageName} ${challengeData.challengeId} by ${username}"
+git push origin main`;
+                            
+                            navigator.clipboard.writeText(commands).then(() => {
+                                showToast('Success', 'Git commands copied to clipboard!', 'success');
+                                this.textContent = '✅ Copied!';
+                                setTimeout(() => {
+                                    this.textContent = '📋 Copy Git Commands';
+                                }, 2000);
+                            }).catch(() => {
+                                showToast('Error', 'Failed to copy to clipboard', 'error');
+                            });
+                        });
+                    }
+                }, 100);
+            }
+        } else {
+            html += `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle-fill me-2"></i>
+                    <strong>Tests failed:</strong>
+                    ${data.tests_passed || 0}/${data.tests_total || 0} tests passed
+                </div>
+            `;
+        }
+        
+        if (data.output) {
+            html += `
+                <div class="mt-3">
+                    <h6>Output:</h6>
+                    <pre class="bg-light p-3 rounded"><code>${escapeHtml(data.output)}</code></pre>
+                </div>
+            `;
+        }
+        
+        if (data.error) {
+            html += `
+                <div class="mt-3">
+                    <h6>Error:</h6>
+                    <pre class="bg-light p-3 rounded text-danger"><code>${escapeHtml(data.error)}</code></pre>
+                </div>
+            `;
+        }
+        
+        testResults.innerHTML = html;
+    }
+
+    function showToast(title, message, type) {
+        const toastContainer = document.querySelector('.position-fixed.bottom-0.end-0');
+        const toast = document.getElementById('statusToast');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMessage = document.getElementById('toast-message');
+        
+        // Fix z-index issue
+        toastContainer.style.zIndex = '10000';
+        
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+        
+        // Update toast styling based on type
+        toast.className = 'toast';
+        if (type === 'success') {
+            toast.classList.add('bg-success', 'text-white');
+        } else if (type === 'danger' || type === 'error') {
+            toast.classList.add('bg-danger', 'text-white');
+        } else if (type === 'warning') {
+            toast.classList.add('bg-warning', 'text-dark');
+        } else {
+            toast.classList.add('bg-info', 'text-white');
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+        bsToast.show();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getUsernameFromStorage() {
+        return localStorage.getItem('githubUsername') || localStorage.getItem('username') || sessionStorage.getItem('username');
+    }
+
+    // Hints system functionality
+    function initializeHints(hintsMarkdown) {
+        const hintsContainer = document.getElementById('hints-container');
+        const showHintBtn = document.getElementById('show-hint-btn');
+        const resetHintsBtn = document.getElementById('reset-hints-btn');
+        const hintsProgress = document.getElementById('hints-progress');
+        const totalHints = document.getElementById('total-hints');
+        
+        if (!hintsContainer || !showHintBtn || !resetHintsBtn) return;
+        
+        // Parse hints from markdown
+        const hints = parseHintsFromMarkdown(hintsMarkdown);
+        let currentHintIndex = 0;
+        
+        // Update total hints count
+        totalHints.textContent = hints.length;
+        
+        // Show hint button functionality
+        showHintBtn.addEventListener('click', function() {
+            if (currentHintIndex < hints.length) {
+                showHint(hints[currentHintIndex], currentHintIndex + 1);
+                currentHintIndex++;
+                updateHintsProgress();
+                
+                // Show reset button when at least one hint is shown
+                if (currentHintIndex > 0) {
+                    resetHintsBtn.classList.remove('d-none');
+                }
+                
+                // Hide show button when all hints are revealed
+                if (currentHintIndex >= hints.length) {
+                    showHintBtn.classList.add('d-none');
+                }
+            }
+        });
+        
+        // Reset hints button functionality
+        resetHintsBtn.addEventListener('click', function() {
+            currentHintIndex = 0;
+            hintsContainer.innerHTML = '';
+            showHintBtn.classList.remove('d-none');
+            resetHintsBtn.classList.add('d-none');
+            updateHintsProgress();
+        });
+        
+        function showHint(hint, hintNumber) {
+            const hintElement = document.createElement('div');
+            hintElement.className = 'alert alert-info hint-item mb-3';
+            hintElement.style.animation = 'slideIn 0.3s ease-in-out';
+            hintElement.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="flex-shrink-0">
+                        <span class="badge bg-warning text-dark me-2">Hint ${hintNumber}</span>
+                    </div>
+                    <div class="flex-grow-1 markdown-content">
+                        ${hint.content}
+                    </div>
+                </div>
+            `;
+            hintsContainer.appendChild(hintElement);
+            
+            // Scroll hint into view
+            hintElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function updateHintsProgress() {
+            hintsProgress.textContent = currentHintIndex;
+        }
+        
+        function parseHintsFromMarkdown(markdown) {
+            if (!markdown || markdown.trim() === '' || markdown.includes('*No hints available')) {
+                return [];
+            }
+            
+            const hints = [];
+            const lines = markdown.split('\n');
+            let currentHint = null;
+            
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                
+                // Check if this is a hint header (## Hint N:)
+                const hintMatch = trimmedLine.match(/^##\s+Hint\s+\d+:\s*(.*)$/i);
+                if (hintMatch) {
+                    // Save previous hint if exists
+                    if (currentHint) {
+                        hints.push(currentHint);
+                    }
+                    
+                    // Start new hint
+                    currentHint = {
+                        title: hintMatch[1],
+                        content: ''
+                    };
+                } else if (currentHint && trimmedLine && !trimmedLine.startsWith('#')) {
+                    // Add content to current hint
+                    if (currentHint.content) {
+                        currentHint.content += '\n';
+                    }
+                    currentHint.content += line;
+                }
+            }
+            
+            // Add the last hint
+            if (currentHint) {
+                hints.push(currentHint);
+            }
+            
+            // Convert markdown content to HTML using proper markdown parser
+            hints.forEach(hint => {
+                const tempDiv = document.createElement('div');
+                renderMarkdown(hint.content.trim(), tempDiv);
+                hint.content = tempDiv.innerHTML;
+            });
+            
+            return hints;
+        }
+    }
+</script>
+{{end}} 

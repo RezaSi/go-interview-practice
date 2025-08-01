@@ -1,0 +1,126 @@
+name: Update Main Package Scoreboard
+
+on:
+  workflow_run:
+    workflows: ["Update Package Scoreboards"]
+    types:
+      - completed
+    branches:
+      - main
+  schedule:
+    # Run daily at 01:00 UTC to catch any missed updates (offset from classic scoreboard)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-main-package-scoreboard
+  cancel-in-progress: false
+
+jobs:
+  update-main-package-scoreboard:
+    runs-on: ubuntu-latest
+    # Only run if workflow_run was successful, or if triggered by other events, AND only on main repo
+    if: ${{ github.repository == 'RezaSi/go-interview-practice' && (github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run') }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Create scripts directory if it doesn't exist
+        run: mkdir -p scripts
+
+      - name: Generate main package scoreboard
+        run: |
+          echo "🚀 Generating main package scoreboard from all package challenge scoreboards..."
+          python3 scripts/generate_package_scoreboard.py
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Detected changes in package scoreboard data"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in package scoreboard data"
+          fi
+
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Auto-update main package scoreboard
+
+          - Updated package leaderboard rankings
+          - Refreshed package completion statistics  
+          - Synchronized with latest package challenge scoreboards"
+          
+          # Robust push with retry logic for concurrent workflows
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Push attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+            
+            # Pull latest changes before pushing
+            git fetch origin main
+            
+            # Check if we need to rebase
+            if ! git diff --quiet HEAD origin/main; then
+              echo "Remote has new changes, rebasing..."
+              git rebase origin/main || {
+                echo "Rebase failed, trying merge strategy..."
+                git rebase --abort 2>/dev/null || true
+                git merge origin/main -m "Merge remote changes before main package scoreboard update"
+              }
+            fi
+            
+            # Try to push
+            if git push origin main; then
+              echo "✅ Successfully pushed changes"
+              break
+            else
+              echo "❌ Push failed, retrying in $((RETRY_COUNT + 1)) seconds..."
+              sleep $((RETRY_COUNT + 1))
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            fi
+          done
+          
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "🚨 Failed to push after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+      - name: Create summary
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          echo "## 🚀 Main Package Scoreboard Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The main package leaderboard in README.md has been automatically updated with the latest package challenge completion data." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Update Details" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Processed all package challenge scoreboards" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 Updated package completion statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏅 Refreshed package achievement badges" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 Calculated new package completion rates" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Updated per-package progress tracking" >> $GITHUB_STEP_SUMMARY
+
+      - name: No changes summary
+        if: steps.verify-changed-files.outputs.changed == 'false'
+        run: |
+          echo "## ✅ Main Package Scoreboard Current" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The main package leaderboard is already up-to-date with the latest package challenge completion data." >> $GITHUB_STEP_SUMMARY 

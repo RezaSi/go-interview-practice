@@ -1,0 +1,236 @@
+name: Update Package Scoreboards
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/*/challenge-*/submissions/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-package-scoreboards
+  cancel-in-progress: false
+
+jobs:
+  update-package-scoreboards:
+    runs-on: ubuntu-latest
+    if: github.repository == 'RezaSi/go-interview-practice'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Need to compare with previous commit
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Detect changed package challenges
+        id: detect-changes
+        run: |
+          # Get list of changed files in this push
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Extract unique package challenge directories that have submission changes
+          CHANGED_PACKAGE_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "packages/[^/]+/challenge-[^/]+/submissions/" | sed 's|/submissions/.*||' | sort -u || true)
+          
+          if [ -z "$CHANGED_PACKAGE_CHALLENGES" ]; then
+            echo "No package challenge submissions were modified"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Package challenges with submission changes:"
+          echo "$CHANGED_PACKAGE_CHALLENGES"
+          
+          # Save challenges to file to avoid subshell issues
+          echo "$CHANGED_PACKAGE_CHALLENGES" > /tmp/changed_package_challenges.txt
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+      - name: Update scoreboards for changed package challenges
+        if: steps.detect-changes.outputs.has_changes == 'true'
+        run: |
+          echo "📊 Processing changed package challenges..."
+          
+          # Read challenges from file (avoids subshell issues)
+          while IFS= read -r challenge_dir; do
+            [ -n "$challenge_dir" ] || continue
+            echo "📊 Processing $challenge_dir"
+            
+            # Extract package name and challenge ID from path
+            PACKAGE_NAME=$(echo "$challenge_dir" | cut -d'/' -f2)
+            CHALLENGE_ID=$(echo "$challenge_dir" | cut -d'/' -f3)
+            
+            # Ensure go.mod exists and handle dependencies
+            if [ ! -f "$challenge_dir/go.mod" ]; then
+              echo "Creating go.mod for $challenge_dir"
+              (cd "$challenge_dir" && go mod init "$PACKAGE_NAME-$CHALLENGE_ID")
+            fi
+            
+            # Run go mod tidy to ensure dependencies are correct
+            (cd "$challenge_dir" && go mod tidy 2>/dev/null || true)
+
+            # Initialize scoreboard
+            scoreboard="$challenge_dir/SCOREBOARD.md"
+            echo "# Scoreboard for $PACKAGE_NAME $CHALLENGE_ID" > "$scoreboard"
+            echo "" >> "$scoreboard"
+            echo "| Username   | Passed Tests | Total Tests |" >> "$scoreboard"
+            echo "|------------|--------------|-------------|" >> "$scoreboard"
+
+            # Check if submissions directory exists
+            if [ ! -d "$challenge_dir/submissions" ]; then
+              echo "⚠️  No submissions directory found for $challenge_dir"
+              continue
+            fi
+
+            # Run tests for all submissions in this package challenge
+            for submission_dir in "$challenge_dir"/submissions/*/; do
+              [ -d "$submission_dir" ] || continue
+
+              USERNAME=$(basename "$submission_dir")
+              echo "🧪 Testing submission from $USERNAME"
+
+              # Backup existing solution files to avoid conflicts
+              temp_dir=$(mktemp -d)
+              cp "$challenge_dir"/*.go "$temp_dir/" 2>/dev/null || true
+
+              # Copy participant's solution.go file (package challenges use solution.go)
+              if [ -f "$submission_dir/solution.go" ]; then
+                # Rename to solution-template.go for the test
+                cp "$submission_dir/solution.go" "$challenge_dir/solution-template.go"
+              else
+                echo "⚠️  No solution.go found for $USERNAME"
+                continue
+              fi
+
+              # Run tests and capture output
+              (cd "$challenge_dir" && timeout 60 go test -v) > "$submission_dir/test_results.txt" 2>&1 || true
+
+              # Parse test results - ensure clean integer values
+              PASS_COUNT=$(grep -c "^[[:space:]]*--- PASS: " "$submission_dir/test_results.txt" 2>/dev/null || echo "0")
+              FAIL_COUNT=$(grep -c "^[[:space:]]*--- FAIL: " "$submission_dir/test_results.txt" 2>/dev/null || echo "0")
+              
+              # Clean variables and ensure they're integers
+              PASS_COUNT=$(echo "$PASS_COUNT" | tr -d '[:space:]' | grep -o '[0-9]*' | head -1)
+              FAIL_COUNT=$(echo "$FAIL_COUNT" | tr -d '[:space:]' | grep -o '[0-9]*' | head -1)
+              
+              # Default to 0 if empty
+              PASS_COUNT=${PASS_COUNT:-0}
+              FAIL_COUNT=${FAIL_COUNT:-0}
+              
+              TOTAL_TESTS=$((PASS_COUNT + FAIL_COUNT))
+
+              # If no tests found, check for other indicators
+              if [ "$TOTAL_TESTS" -eq 0 ]; then
+                if grep -q "PASS" "$submission_dir/test_results.txt" 2>/dev/null; then
+                  TOTAL_TESTS=1
+                  PASS_COUNT=1
+                elif grep -q "FAIL\|panic\|error" "$submission_dir/test_results.txt" 2>/dev/null; then
+                  TOTAL_TESTS=1
+                  PASS_COUNT=0
+                fi
+              fi
+
+              echo "   Results: $PASS_COUNT/$TOTAL_TESTS tests passed"
+              
+              # Update scoreboard
+              echo "| $USERNAME | $PASS_COUNT | $TOTAL_TESTS |" >> "$scoreboard"
+
+              # Restore original files
+              rm -f "$challenge_dir/solution-template.go"
+              cp "$temp_dir"/*.go "$challenge_dir/" 2>/dev/null || true
+              rm -rf "$temp_dir"
+            done
+
+            # Sort scoreboard by passed tests (descending)
+            if [ -s "$scoreboard" ] && [ $(wc -l < "$scoreboard") -gt 4 ]; then
+              temp_sorted=$(mktemp)
+              head -n 4 "$scoreboard" > "$temp_sorted"
+              tail -n +5 "$scoreboard" | sort -t '|' -k3,3nr >> "$temp_sorted"
+              mv "$temp_sorted" "$scoreboard"
+            fi
+            
+            echo "✅ Completed $challenge_dir"
+          done < /tmp/changed_package_challenges.txt
+
+      - name: Commit package scoreboard changes
+        if: steps.detect-changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          
+          # Get list of changed challenges
+          CHALLENGE_LIST=$(cat /tmp/changed_package_challenges.txt | tr '\n' ' ')
+          
+          # Add only the scoreboards for changed package challenges
+          while IFS= read -r challenge_dir; do
+            [ -n "$challenge_dir" ] || continue
+            git add "$challenge_dir/SCOREBOARD.md"
+          done < /tmp/changed_package_challenges.txt
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "📊 Update package scoreboards for: $CHALLENGE_LIST
+
+            - Updated test results for modified package submissions
+            - Refreshed completion statistics for package challenges"
+            
+            # Robust push with retry logic for concurrent workflows
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              echo "Push attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+              
+              # Pull latest changes before pushing
+              git fetch origin main
+              
+              # Check if we need to rebase
+              if ! git diff --quiet HEAD origin/main; then
+                echo "Remote has new changes, rebasing..."
+                git rebase origin/main || {
+                  echo "Rebase failed, trying merge strategy..."
+                  git rebase --abort 2>/dev/null || true
+                  git merge origin/main -m "Merge remote changes before package scoreboard update"
+                }
+              fi
+              
+              # Try to push
+              if git push origin main; then
+                echo "✅ Successfully pushed changes"
+                break
+              else
+                echo "❌ Push failed, retrying in $((RETRY_COUNT + 1)) seconds..."
+                sleep $((RETRY_COUNT + 1))
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+              fi
+            done
+            
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "🚨 Failed to push after $MAX_RETRIES attempts"
+              exit 1
+            fi
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: steps.detect-changes.outputs.has_changes == 'true'
+        run: |
+          CHALLENGE_COUNT=$(wc -l < /tmp/changed_package_challenges.txt)
+          echo "## 📊 Package Scoreboards Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Successfully updated scoreboards for **$CHALLENGE_COUNT** package challenge(s):" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          while IFS= read -r challenge_dir; do
+            [ -n "$challenge_dir" ] || continue
+            echo "- $challenge_dir" >> $GITHUB_STEP_SUMMARY
+          done < /tmp/changed_package_challenges.txt 

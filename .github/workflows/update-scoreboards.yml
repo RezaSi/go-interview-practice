@@ -10,9 +10,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-scoreboards-classic
+  cancel-in-progress: false
+
 jobs:
   update-scoreboards:
     runs-on: ubuntu-latest
+    if: github.repository == 'RezaSi/go-interview-practice'
 
     steps:
       - name: Check out repository
@@ -166,7 +171,42 @@ jobs:
 
             - Updated test results for modified submissions
             - Refreshed completion statistics"
-            git push
+            
+            # Robust push with retry logic for concurrent workflows
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              echo "Push attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+              
+              # Pull latest changes before pushing
+              git fetch origin main
+              
+              # Check if we need to rebase
+              if ! git diff --quiet HEAD origin/main; then
+                echo "Remote has new changes, rebasing..."
+                git rebase origin/main || {
+                  echo "Rebase failed, trying merge strategy..."
+                  git rebase --abort 2>/dev/null || true
+                  git merge origin/main -m "Merge remote changes before scoreboard update"
+                }
+              fi
+              
+              # Try to push
+              if git push origin main; then
+                echo "✅ Successfully pushed changes"
+                break
+              else
+                echo "❌ Push failed, retrying in $((RETRY_COUNT + 1)) seconds..."
+                sleep $((RETRY_COUNT + 1))
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+              fi
+            done
+            
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "🚨 Failed to push after $MAX_RETRIES attempts"
+              exit 1
+            fi
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

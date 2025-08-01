@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Interview Practice - Master Go Programming with Interactive Challenges</title>
+    <meta name="description" content="Master Go programming through 30+ interactive challenges. Practice algorithms, web frameworks, CLI tools, and database operations. Perfect for interview preparation.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-code-square me-2"></i>Go Interview Practice
+            </a>
+            <div class="d-flex gap-2">
+                <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-github me-1"></i>GitHub
+                </a>
+                <a href="https://github.com/sponsors/RezaSi" class="btn btn-sponsor btn-sm">
+                    <i class="bi bi-heart-fill me-1"></i>Sponsor
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient">
+        <div class="container">
+            <div class="row align-items-center min-vh-100 py-5">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1 class="hero-title fw-bold mb-4">
+                            Master <span class="text-gradient">Go Programming</span> Through Practice
+                        </h1>
+                        <p class="lead mb-4 text-muted">
+                            30+ interactive challenges covering algorithms, web frameworks, CLI tools, and database operations. 
+                            Perfect preparation for your next Go interview.
+                        </p>
+                        
+                        <!-- Stats -->
+                        <div class="stats-row mb-4">
+                            <div class="stat-item">
+                                <div class="stat-number">30+</div>
+                                <div class="stat-label">Challenges</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">57+</div>
+                                <div class="stat-label">Active Users</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">500+</div>
+                                <div class="stat-label">GitHub Stars</div>
+                            </div>
+                        </div>
+
+                                            <!-- CTA Buttons -->
+                    <div class="cta-buttons">
+                        <a href="https://github.com/RezaSi/go-interview-practice" 
+                           class="btn btn-primary btn-lg me-3">
+                            <i class="bi bi-github me-2"></i>Start Coding Now
+                        </a>
+                        <a href="https://github.com/RezaSi/go-interview-practice#-quick-start" 
+                           class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-book me-2"></i>Setup Guide
+                        </a>
+                    </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-visual">
+                        <div class="code-window">
+                            <div class="window-controls">
+                                <span class="control red"></span>
+                                <span class="control yellow"></span>
+                                <span class="control green"></span>
+                            </div>
+                            <div class="code-content">
+                                <pre><code class="go-code"><span class="go-keyword">package</span> <span class="go-package">main</span>
+
+<span class="go-keyword">import</span> (
+    <span class="go-string">"fmt"</span>
+    <span class="go-string">"github.com/gin-gonic/gin"</span>
+)
+
+<span class="go-keyword">func</span> <span class="go-function">main</span>() {
+    r := gin.<span class="go-function">Default</span>()
+    
+    r.<span class="go-function">GET</span>(<span class="go-string">"/api/challenges"</span>, <span class="go-keyword">func</span>(c *gin.Context) {
+        c.<span class="go-function">JSON</span>(<span class="go-number">200</span>, gin.H{
+            <span class="go-string">"message"</span>: <span class="go-string">"30+ Go challenges ready!"</span>,
+            <span class="go-string">"status"</span>:  <span class="go-string">"active"</span>,
+        })
+    })
+    
+    r.<span class="go-function">Run</span>(<span class="go-string">":8080"</span>)
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold mb-3">Why Developers Love Our Platform</h2>
+                    <p class="lead text-muted">The complete solution for mastering Go programming and acing interviews</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new lightning-gradient">
+                                <i class="bi bi-lightning-charge"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Zero Setup Required</h4>
+                            <p class="text-muted mb-3">
+                                Jump straight into coding with GitHub Codespaces. No local setup, no configuration headaches.
+                            </p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Instant browser coding</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Pre-configured environment</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new trophy-gradient">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Progressive Learning</h4>
+                            <p class="text-muted mb-3">
+                                Master Go from fundamentals to advanced concepts with our carefully structured challenge progression.
+                            </p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>30+ structured challenges</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Live leaderboards</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new industry-gradient">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Industry-Ready Skills</h4>
+                            <p class="text-muted mb-3">
+                                Practice with production frameworks like Gin, Cobra, and GORM used by top tech companies.
+                            </p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Real-world frameworks</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Interview preparation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenge Categories -->
+    <section class="categories-section py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold mb-3">Choose Your Learning Path</h2>
+                    <p class="lead text-muted">From beginner-friendly basics to production-ready frameworks</p>
+                </div>
+            </div>
+            
+            <div class="row g-4 mb-5">
+                <!-- Beginner Path -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="category-card-new beginner-theme">
+                        <div class="category-header">
+                            <div class="category-icon-new">
+                                <i class="bi bi-play-circle"></i>
+                            </div>
+                            <div class="category-badge beginner">Beginner</div>
+                        </div>
+                        <div class="category-content">
+                            <h4 class="fw-bold mb-2">Start Your Journey</h4>
+                            <p class="text-muted mb-3">Learn Go fundamentals through practice</p>
+                            <div class="category-stats">
+                                <div class="stat">
+                                    <span class="stat-number">8</span>
+                                    <span class="stat-label">Challenges</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">4-6h</span>
+                                    <span class="stat-label">Duration</span>
+                                </div>
+                            </div>
+                            <div class="category-topics">
+                                <span class="topic-tag">Variables</span>
+                                <span class="topic-tag">Functions</span>
+                                <span class="topic-tag">Structs</span>
+                                <span class="topic-tag">Interfaces</span>
+                            </div>
+                        </div>
+                        <div class="category-action">
+                            <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-category">
+                                Start Learning <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Intermediate Path -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="category-card-new intermediate-theme">
+                        <div class="category-header">
+                            <div class="category-icon-new">
+                                <i class="bi bi-gear-wide-connected"></i>
+                            </div>
+                            <div class="category-badge intermediate">Intermediate</div>
+                        </div>
+                        <div class="category-content">
+                            <h4 class="fw-bold mb-2">Level Up</h4>
+                            <p class="text-muted mb-3">Dive deeper into Go's powerful features</p>
+                            <div class="category-stats">
+                                <div class="stat">
+                                    <span class="stat-number">14</span>
+                                    <span class="stat-label">Challenges</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">8-12h</span>
+                                    <span class="stat-label">Duration</span>
+                                </div>
+                            </div>
+                            <div class="category-topics">
+                                <span class="topic-tag">Goroutines</span>
+                                <span class="topic-tag">Channels</span>
+                                <span class="topic-tag">Context</span>
+                                <span class="topic-tag">Testing</span>
+                            </div>
+                        </div>
+                        <div class="category-action">
+                            <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-category">
+                                Continue Journey <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Path -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="category-card-new advanced-theme">
+                        <div class="category-header">
+                            <div class="category-icon-new">
+                                <i class="bi bi-lightning-charge"></i>
+                            </div>
+                            <div class="category-badge advanced">Advanced</div>
+                        </div>
+                        <div class="category-content">
+                            <h4 class="fw-bold mb-2">Master Level</h4>
+                            <p class="text-muted mb-3">Tackle complex real-world scenarios</p>
+                            <div class="category-stats">
+                                <div class="stat">
+                                    <span class="stat-number">8</span>
+                                    <span class="stat-label">Challenges</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">6-10h</span>
+                                    <span class="stat-label">Duration</span>
+                                </div>
+                            </div>
+                            <div class="category-topics">
+                                <span class="topic-tag">Performance</span>
+                                <span class="topic-tag">Reflection</span>
+                                <span class="topic-tag">Algorithms</span>
+                                <span class="topic-tag">Architecture</span>
+                            </div>
+                        </div>
+                        <div class="category-action">
+                            <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-category">
+                                Master Go <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Package Frameworks Section -->
+            <div class="package-frameworks">
+                <div class="row text-center mb-4">
+                    <div class="col">
+                        <h3 class="fw-bold mb-2">Popular Go Frameworks</h3>
+                        <p class="text-muted">Master the tools used by industry leaders</p>
+                    </div>
+                </div>
+                
+                <div class="row g-4 justify-content-center">
+                    <div class="col-lg-4 col-md-6">
+                        <div class="framework-card gin-theme">
+                            <div class="framework-header">
+                                <div class="framework-icon gin-gradient">
+                                    <i class="bi bi-globe2"></i>
+                                </div>
+                                <div class="framework-info">
+                                    <h5 class="fw-bold mb-1">Gin Web Framework</h5>
+                                    <p class="small text-muted mb-0">Fast HTTP web framework</p>
+                                </div>
+                                <div class="framework-stars">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span class="fw-bold" data-github-url="https://github.com/gin-gonic/gin">83K</span>
+                                </div>
+                            </div>
+                            <div class="framework-content">
+                                <div class="framework-features">
+                                    <span class="feature-tag">REST APIs</span>
+                                    <span class="feature-tag">Middleware</span>
+                                    <span class="feature-tag">JSON Binding</span>
+                                </div>
+                                <div class="framework-stats">
+                                    <span><strong>4</strong> Challenges</span>
+                                    <span><strong>4-6</strong> Hours</span>
+                                </div>
+                            </div>
+                            <div class="framework-actions">
+                                <a href="gin.html" class="btn btn-framework-primary">
+                                    <i class="bi bi-play-circle me-1"></i>Start Gin
+                                </a>
+                                <a href="https://gin-gonic.com/" class="btn btn-framework-secondary">
+                                    <i class="bi bi-book me-1"></i>Docs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6">
+                        <div class="framework-card cobra-theme">
+                            <div class="framework-header">
+                                <div class="framework-icon cobra-gradient">
+                                    <i class="bi bi-terminal"></i>
+                                </div>
+                                <div class="framework-info">
+                                    <h5 class="fw-bold mb-1">Cobra CLI</h5>
+                                    <p class="small text-muted mb-0">Modern CLI applications</p>
+                                </div>
+                                <div class="framework-stars">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span class="fw-bold" data-github-url="https://github.com/spf13/cobra">41K</span>
+                                </div>
+                            </div>
+                            <div class="framework-content">
+                                <div class="framework-features">
+                                    <span class="feature-tag">Commands</span>
+                                    <span class="feature-tag">Flags</span>
+                                    <span class="feature-tag">Subcommands</span>
+                                </div>
+                                <div class="framework-stats">
+                                    <span><strong>4</strong> Challenges</span>
+                                    <span><strong>4-6</strong> Hours</span>
+                                </div>
+                            </div>
+                            <div class="framework-actions">
+                                <a href="cobra.html" class="btn btn-framework-primary">
+                                    <i class="bi bi-play-circle me-1"></i>Start Cobra
+                                </a>
+                                <a href="https://cobra.dev/" class="btn btn-framework-secondary">
+                                    <i class="bi bi-book me-1"></i>Docs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                                        <div class="col-lg-4 col-md-6">
+                        <div class="framework-card gorm-theme">
+                            <div class="framework-header">
+                                <div class="framework-icon gorm-gradient">
+                                    <i class="bi bi-database"></i>
+                                </div>
+                                <div class="framework-info">
+                                    <h5 class="fw-bold mb-1">GORM ORM</h5>
+                                    <p class="small text-muted mb-0">Database ORM library</p>
+                                </div>
+                                <div class="framework-stars">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span class="fw-bold" data-github-url="https://github.com/go-gorm/gorm">35K</span>
+                                </div>
+                            </div>
+                            <div class="framework-content">
+                                <div class="framework-features">
+                                    <span class="feature-tag">Models</span>
+                                    <span class="feature-tag">Migrations</span>
+                                    <span class="feature-tag">Relations</span>
+                                </div>
+                                <div class="framework-stats">
+                                    <span><strong>5</strong> Challenges</span>
+                                    <span><strong>5-7</strong> Hours</span>
+                                </div>
+                            </div>
+                            <div class="framework-actions">
+                                <a href="gorm.html" class="btn btn-framework-primary">
+                                    <i class="bi bi-play-circle me-1"></i>Start GORM
+                                </a>
+                                <a href="https://gorm.io/" class="btn btn-framework-secondary">
+                                    <i class="bi bi-book me-1"></i>Docs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </section>
+
+    <!-- Getting Started -->
+    <section class="getting-started py-5 bg-light">
+        <div class="container">
+
+            
+            <!-- Process Steps -->
+            <div class="process-steps">
+                <div class="row text-center mb-4">
+                    <div class="col">
+                        <h3 class="fw-bold mb-2">Your Learning Journey</h3>
+                        <p class="text-muted">A proven path to Go mastery</p>
+                    </div>
+                </div>
+                
+                <div class="steps-timeline">
+                    <div class="step-item">
+                        <div class="step-connector"></div>
+                        <div class="step-circle">
+                            <i class="bi bi-play-circle"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="fw-bold">Choose & Start</h5>
+                            <p class="text-muted">Pick your difficulty level and launch your coding environment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="step-connector"></div>
+                        <div class="step-circle">
+                            <i class="bi bi-code-slash"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="fw-bold">Code & Learn</h5>
+                            <p class="text-muted">Solve challenges with instant feedback and detailed explanations</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item">
+                        <div class="step-circle">
+                            <i class="bi bi-trophy"></i>
+                        </div>
+                        <div class="step-content">
+                            <h5 class="fw-bold">Track & Excel</h5>
+                            <p class="text-muted">Monitor progress, compete with others, and master Go programming</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="https://github.com/RezaSi/go-interview-practice" 
+                   class="btn btn-cta-large pulse">
+                    <i class="bi bi-github me-2"></i>Start Your Go Journey Now
+                </a>
+                <p class="small text-muted mt-3">
+                    <i class="bi bi-shield-check me-1"></i>Free forever • Fork & customize • 30+ challenges
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer py-4 bg-dark text-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2025 Go Interview Practice. Open source and free forever.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                        <a href="https://github.com/RezaSi/go-interview-practice" class="text-light me-3">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                        <a href="https://github.com/sponsors/RezaSi" class="text-light">
+                            <i class="bi bi-heart-fill"></i> Sponsor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/script.js"></script>
+</body>
+</html> 

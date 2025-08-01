@@ -1,0 +1,42 @@
+{
+  "title": "Basic Routing & User Management API",
+  "description": "Build a simple REST API with Gin framework that handles user management operations including creating, reading, updating, and deleting users.",
+  "short_description": "Learn fundamental Gin routing and build a user management REST API",
+  "difficulty": "Beginner",
+  "estimated_time": "30-45 min",
+  "learning_objectives": [
+    "Understand Gin framework basics",
+    "Implement HTTP routes (GET, POST, PUT, DELETE)",
+    "Handle JSON request/response",
+    "Work with URL parameters",
+    "Manage in-memory data structures"
+  ],
+  "prerequisites": [
+    "Basic Go syntax",
+    "Understanding of HTTP methods",
+    "JSON concepts"
+  ],
+  "tags": [
+    "routing",
+    "rest-api",
+    "json",
+    "http-methods"
+  ],
+  "real_world_connection": "User management APIs are foundational to most web applications, from authentication systems to content management platforms.",
+  "requirements": [
+    "Implement GET /users endpoint to retrieve all users",
+    "Implement POST /users endpoint to create new users",
+    "Implement GET /users/:id endpoint to get specific user",
+    "Implement PUT /users/:id endpoint to update users",
+    "Implement DELETE /users/:id endpoint to remove users",
+    "Handle proper HTTP status codes",
+    "Return appropriate JSON responses"
+  ],
+  "bonus_points": [
+    "Add input validation",
+    "Implement error handling middleware",
+    "Add request logging"
+  ],
+  "icon": "bi-play-circle",
+  "order": 1
+} 

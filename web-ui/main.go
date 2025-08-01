@@ -19,6 +19,7 @@ func main() {
 	scoreboardService := services.NewScoreboardService()
 	userService := services.NewUserService()
 	executionService := services.NewExecutionService()
+	packageService := services.NewPackageService()
 
 	// Load data
 	log.Println("Loading challenges...")
@@ -31,6 +32,11 @@ func main() {
 		log.Fatalf("Failed to load scoreboards: %v", err)
 	}
 
+	log.Println("Loading packages...")
+	if err := packageService.LoadPackages(); err != nil {
+		log.Fatalf("Failed to load packages: %v", err)
+	}
+
 	// Initialize server
 	srv := server.NewServer(
 		content,
@@ -38,6 +44,7 @@ func main() {
 		scoreboardService,
 		userService,
 		executionService,
+		packageService,
 	)
 
 	// Setup routes

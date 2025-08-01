@@ -102,8 +102,13 @@ def generate_main_scoreboard():
     # Dictionary to track user completion counts
     user_completions = defaultdict(lambda: {'count': 0, 'challenges': []})
     
-    # Find all challenge directories
+    # Get the root directory (handle running from different locations)
     current_dir = Path('.')
+    if 'scripts' in str(current_dir.absolute()):
+        # If running from scripts directory, go up one level
+        current_dir = current_dir.parent
+    
+    # Find all challenge directories
     challenge_dirs = sorted([d for d in current_dir.iterdir() 
                            if d.is_dir() and d.name.startswith('challenge-')])
     
@@ -164,7 +169,7 @@ def generate_main_scoreboard():
         f"- **Active Developers**: {len(user_completions)}",
         f"- **Most Challenges Solved**: {sorted_users[0][1]['count'] if sorted_users else 0} by {sorted_users[0][0] if sorted_users else 'N/A'}",
         "",
-        "---",
+        "<!-- END_CLASSIC_LEADERBOARD -->",
         ""
     ])
     
@@ -213,8 +218,8 @@ def generate_html_leaderboard(top_users, total_challenges, challenge_dirs):
         completed_challenges = {ch['num'] for ch in data['challenges']}
         
         # Split challenges into two rows for better display
-        first_half = challenge_numbers[:len(challenge_numbers)//2 + len(challenge_numbers)%2]  # First len(challenge_numbers)//2 challenges
-        second_half = challenge_numbers[len(challenge_numbers)//2 + len(challenge_numbers)%2:] # Remaining len(challenge_numbers)//2 challenges
+        first_half = challenge_numbers[:len(challenge_numbers)//2 + len(challenge_numbers)%2]
+        second_half = challenge_numbers[len(challenge_numbers)//2 + len(challenge_numbers)%2:]
 
         # First row indicators
         first_row = ""
@@ -267,7 +272,13 @@ def generate_html_leaderboard(top_users, total_challenges, challenge_dirs):
 def update_readme_with_scoreboard(scoreboard_content):
     """Update README.md with the new scoreboard content."""
     
-    readme_path = 'README.md'
+    # Get the root directory (handle running from different locations)
+    current_dir = Path('.')
+    if 'scripts' in str(current_dir.absolute()):
+        # If running from scripts directory, go up one level
+        current_dir = current_dir.parent
+    
+    readme_path = current_dir / 'README.md'
     
     try:
         with open(readme_path, 'r') as f:
@@ -276,36 +287,60 @@ def update_readme_with_scoreboard(scoreboard_content):
         print("README.md not found!", file=sys.stderr)
         return False
     
-    # Define markers for the scoreboard section
+    # Define specific markers for the classic leaderboard section
     start_marker = "## 🏆 Top 10 Leaderboard"
-    end_marker = "## Key Features"
+    end_marker = "<!-- END_CLASSIC_LEADERBOARD -->"
     
     # Find the positions of markers
     start_pos = content.find(start_marker)
     end_pos = content.find(end_marker)
     
-    if start_pos == -1 or end_pos == -1:
-        # If markers don't exist, insert before Key Features section
+    if start_pos == -1:
+        # If classic leaderboard doesn't exist, insert before package challenges or key features
+        package_pos = content.find("## 🚀 Package Challenges Leaderboard")
         key_features_pos = content.find("## Key Features")
-        if key_features_pos == -1:
+        
+        if package_pos != -1:
+            insertion_point = package_pos
+        elif key_features_pos != -1:
+            insertion_point = key_features_pos
+        else:
             print("Could not find insertion point in README.md", file=sys.stderr)
             return False
         
-        # Insert the new scoreboard before Key Features
-        new_content = (content[:key_features_pos] + 
+        # Insert the new classic leaderboard
+        new_content = (content[:insertion_point] + 
                       scoreboard_content + '\n' + 
-                      content[key_features_pos:])
+                      content[insertion_point:])
     else:
-        # Replace existing scoreboard section
+        if end_pos == -1:
+            # If start marker exists but no end marker, find next section
+            next_section_patterns = [
+                "## 🚀 Package Challenges Leaderboard",
+                "## Key Features",
+                "## Getting Started"
+            ]
+            
+            end_pos = len(content)  # Default to end of file
+            for pattern in next_section_patterns:
+                pattern_pos = content.find(pattern, start_pos + len(start_marker))
+                if pattern_pos != -1:
+                    end_pos = pattern_pos
+                    break
+        else:
+            # Include the end marker in replacement
+            end_pos = content.find('\n', end_pos) + 1
+        
+        # Replace existing classic leaderboard section
         new_content = (content[:start_pos] + 
-                      scoreboard_content + '\n' + 
+                      scoreboard_content + 
                       content[end_pos:])
     
     # Write the updated content
     try:
         with open(readme_path, 'w') as f:
             f.write(new_content)
-        print("README.md updated successfully!")
+        print("README.md updated successfully with classic leaderboard!")
         return True
     except Exception as e:
         print(f"Error writing to README.md: {e}", file=sys.stderr)
@@ -314,7 +349,7 @@ def update_readme_with_scoreboard(scoreboard_content):
 
 def main():
     """Main function to generate and update the scoreboard."""
-    print("Generating main scoreboard...")
+    print("Generating main (classic) scoreboard...")
     
     scoreboard_content = generate_main_scoreboard()
     
