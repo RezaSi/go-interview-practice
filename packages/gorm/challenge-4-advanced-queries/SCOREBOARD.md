@@ -1,5 +1,5 @@
-# Scoreboard
+# Scoreboard for gorm challenge-4-advanced-queries
 
-| Rank | User | Score | Date |
-|------|------|-------|------|
-| - | - | - | - | 
+| Username   | Passed Tests | Total Tests |
+|------------|--------------|-------------|
+| odelbos | 9 | 9 |

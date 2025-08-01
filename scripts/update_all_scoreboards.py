@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Wrapper script to update both classic and package scoreboards.
-This script ensures both scoreboards are updated in the correct order.
+Wrapper script to update both classic and package scoreboards and generate contributor badges.
+This script ensures both scoreboards are updated and profile badges are generated.
 """
 
 import os
@@ -50,7 +50,8 @@ def main():
     
     scripts = [
         "generate_main_scoreboard.py",
-        "generate_package_scoreboard.py"
+        "generate_package_scoreboard.py",
+        "generate_contributor_badges.py"
     ]
     
     success_count = 0
@@ -68,10 +69,12 @@ def main():
     print(f"Failed: {total_scripts - success_count}")
     
     if success_count == total_scripts:
-        print(f"\n🎉 All scoreboards updated successfully!")
+        print(f"\n🎉 All scoreboards and badges updated successfully!")
         print(f"✅ Classic Challenges Leaderboard updated")
         print(f"✅ Package Challenges Leaderboard updated")
+        print(f"✅ Contributor Profile Badges generated")
         print(f"\nREADME.md has been updated with the latest scoreboard data.")
+        print(f"🏆 Profile badges are available in the badges/ directory.")
         return 0
     else:
         print(f"\n⚠️  Some scripts failed. Please check the errors above.")
