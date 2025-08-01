@@ -1,5 +1,5 @@
-# Scoreboard
+# Scoreboard for gorm challenge-5-generics
 
-| Rank | User | Score | Date |
-|------|------|-------|------|
-| - | - | - | - | 
+| Username   | Passed Tests | Total Tests |
+|------------|--------------|-------------|
+| odelbos | 15 | 15 |
