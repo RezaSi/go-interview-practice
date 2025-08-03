@@ -2,7 +2,8 @@
 package challenge6
 
 import (
-	// Add any necessary imports here
+	"strings"
+	"unicode"
 )
 
 // CountWordFrequency takes a string containing multiple words and returns
@@ -16,7 +17,16 @@ import (
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
+
 func CountWordFrequency(text string) map[string]int {
-	// Your implementation here
-	return nil
-} 
+	result := make(map[string]int)
+	f := func(c rune) bool {
+		return !unicode.IsLetter(c) && !unicode.IsNumber(c) && !(c == '\'')
+	}
+	words := strings.FieldsFunc(text, f)
+	for _, word := range words {
+		result[strings.ToLower(strings.ReplaceAll(word, "'", ""))]++
+	}
+	return result
+
+}
