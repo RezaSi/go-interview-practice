@@ -19,17 +19,17 @@ func main() {
 // CelsiusToFahrenheit converts a temperature from Celsius to Fahrenheit
 // Formula: F = C × 9/5 + 32
 func CelsiusToFahrenheit(celsius float64) float64 {
-	// TODO: Implement this function
-	// Remember to round to 2 decimal places
-	return 0
+	F := (celsius*9 + 32*5) / 5
+	F = Round(F, 2)
+	return F
 }
 
 // FahrenheitToCelsius converts a temperature from Fahrenheit to Celsius
 // Formula: C = (F - 32) × 5/9
 func FahrenheitToCelsius(fahrenheit float64) float64 {
-	// TODO: Implement this function
-	// Remember to round to 2 decimal places
-	return 0
+	C := (fahrenheit*5 - 32*5) / 9
+	C = Round(C, 2)
+	return C
 }
 
 // Round rounds a float64 value to the specified number of decimal places
