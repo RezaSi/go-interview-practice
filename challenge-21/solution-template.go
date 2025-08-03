@@ -25,21 +25,56 @@ func main() {
 
 // BinarySearch performs a standard binary search to find the target in the sorted array.
 // Returns the index of the target if found, or -1 if not found.
+
 func BinarySearch(arr []int, target int) int {
-	// TODO: Implement this function
+	low := 0
+	high := len(arr) - 1
+	for low <= high {
+		mid := low + (high-low)/2
+		if target > arr[mid] {
+			low = mid + 1
+		} else if target < arr[mid] {
+			high = mid - 1
+		} else {
+			return mid
+		}
+	}
 	return -1
 }
 
 // BinarySearchRecursive performs binary search using recursion.
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
-	// TODO: Implement this function
+	if right >= left {
+		mid := left + (right-left)/2
+		if arr[mid] == target {
+			return mid
+		}
+		if target < arr[mid] {
+			return BinarySearchRecursive(arr, target, left, mid-1)
+		}
+
+		return BinarySearchRecursive(arr, target, mid+1, right)
+	}
 	return -1
+
 }
 
 // FindInsertPosition returns the index where the target should be inserted
 // to maintain the sorted order of the array.
+
 func FindInsertPosition(arr []int, target int) int {
-	// TODO: Implement this function
-	return -1
+	left := 0
+	right := len(arr) - 1
+	for left <= right {
+		mid := left + (right-left)/2
+		if target > arr[mid] {
+			left = mid + 1
+		} else if target < arr[mid] {
+			right = mid - 1
+		} else {
+			return mid
+		}
+	}
+	return left
 }
