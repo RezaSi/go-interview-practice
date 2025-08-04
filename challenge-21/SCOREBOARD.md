@@ -11,8 +11,10 @@
 | RezaSi | 32 | 32 |
 | ZaharBorisenko | 32 | 32 |
 | ashwinipatankar | 32 | 32 |
+| kuzminprog | 32 | 32 |
 | lanmanul | 32 | 32 |
 | mick4711 | 32 | 32 |
 | odelbos | 32 | 32 |
+| perekoshik | 32 | 32 |
 | tmsankaram | 32 | 32 |
 | y1hao | 32 | 32 |

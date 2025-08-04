@@ -13,6 +13,7 @@
 | ZaharBorisenko | 7 | 7 |
 | aruncs31s | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
+| idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
 | jasonnfeng | 7 | 7 |
 | jordanhimawan | 7 | 7 |
@@ -20,6 +21,7 @@
 | lanmanul | 7 | 7 |
 | mick4711 | 7 | 7 |
 | odelbos | 7 | 7 |
+| perekoshik | 7 | 7 |
 | skx | 7 | 7 |
 | sultaAann | 7 | 7 |
 | timlkko | 7 | 7 |

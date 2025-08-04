@@ -719,6 +719,54 @@
                                         </div>
                                     </div>
                                 </li>
+                                
+                                <!-- Profile Badge Section -->
+                                <li><h6 class="dropdown-header">
+                                    <i class="bi bi-award me-2"></i>
+                                    Your Badge
+                                </h6></li>
+                                <li class="px-3 py-2">
+                                    <div class="badge-section">
+                                        <!-- Badge Preview -->
+                                        <div class="text-center mb-3">
+                                            <div id="profile-badge-container" style="display: none;">
+                                                <img id="profile-badge" 
+                                                     src="" 
+                                                     alt="Go Interview Practice Badge" 
+                                                     style="max-width: 100%; height: auto; border-radius: 4px; cursor: pointer;"
+                                                     onclick="window.open('https://github.com/RezaSi/go-interview-practice', '_blank')">
+                                            </div>
+                                            <div id="profile-badge-loading" class="text-muted small">
+                                                <i class="bi bi-hourglass-split me-1"></i>Loading badge preview...
+                                            </div>
+                                            <div id="profile-badge-error" style="display: none;" class="text-muted small">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Badge not available yet
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Copy Section -->
+                                        <div class="badge-copy-section">
+                                            <div class="small text-muted mb-2">Copy & paste into your GitHub profile:</div>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" 
+                                                       id="badge-markdown" 
+                                                       class="form-control font-monospace small" 
+                                                       readonly
+                                                       value="[![Go Interview Practice Achievement](https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/YOUR_USERNAME.svg)](https://github.com/RezaSi/go-interview-practice)"
+                                                       style="font-size: 0.75rem; line-height: 1.2;">
+                                                <button class="btn btn-outline-secondary" 
+                                                        type="button" 
+                                                        id="copy-badge-btn"
+                                                        title="Copy badge markdown">
+                                                    <i class="bi bi-clipboard" id="copy-icon"></i>
+                                                </button>
+                                            </div>
+                                            <div class="small text-success mt-1" id="copy-success" style="display: none;">
+                                                <i class="bi bi-check-circle me-1"></i>Copied to clipboard!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 
                                 <li><a class="dropdown-item" href="#" id="view-github-profile">
@@ -1041,6 +1089,10 @@
                     
                     // Get actual main scoreboard rank
                     updateMainScoreboardRank(profileUsername.textContent || usernameInput.value, completedCount);
+                    
+                    // Load profile badge and update markdown
+                    loadProfileBadge(profileUsername.textContent || usernameInput.value);
+                    updateProfileBadgeMarkdown(profileUsername.textContent || usernameInput.value);
                 }
                 
                 // Function to get user's rank in main scoreboard
@@ -1127,6 +1179,12 @@
                 // Load username asynchronously
                 loadUsername();
                 
+                // Set up copy button for badge markdown
+                const copyBadgeBtn = document.getElementById('copy-badge-btn');
+                if (copyBadgeBtn) {
+                    copyBadgeBtn.addEventListener('click', copyBadgeMarkdown);
+                }
+                
                 // Save username when changed
                 usernameInput.addEventListener('change', function() {
                     const username = this.value.trim();
@@ -1143,6 +1201,94 @@
                         showProfile(username, 'manual');
                     }
                 });
+            }
+            
+            // Function to load and display profile badge image
+            function loadProfileBadge(username) {
+                const badgeContainer = document.getElementById('profile-badge-container');
+                const badgeLoading = document.getElementById('profile-badge-loading');
+                const badgeError = document.getElementById('profile-badge-error');
+                const badgeImg = document.getElementById('profile-badge');
+                
+                if (!badgeContainer || !username) return;
+                
+                // Reset states
+                badgeContainer.style.display = 'none';
+                badgeLoading.style.display = 'block';
+                badgeError.style.display = 'none';
+                
+                // Use compact badge for popup (smaller size)
+                const badgeUrl = `https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/${username}_compact.svg`;
+                
+                // Create a new image to test if badge exists
+                const testImg = new Image();
+                
+                testImg.onload = function() {
+                    // Badge exists, show it
+                    badgeImg.src = badgeUrl;
+                    badgeContainer.style.display = 'block';
+                    badgeLoading.style.display = 'none';
+                    badgeError.style.display = 'none';
+                };
+                
+                testImg.onerror = function() {
+                    // Badge doesn't exist, show error
+                    badgeContainer.style.display = 'none';
+                    badgeLoading.style.display = 'none';
+                    badgeError.style.display = 'block';
+                };
+                
+                // Start loading the test image
+                testImg.src = badgeUrl;
+            }
+            
+            // Function to update badge markdown with username
+            function updateProfileBadgeMarkdown(username) {
+                const badgeMarkdown = document.getElementById('badge-markdown');
+                if (!badgeMarkdown || !username) return;
+                
+                // Replace YOUR_USERNAME with actual username
+                const markdownText = `[![Go Interview Practice Achievement](https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/${username}.svg)](https://github.com/RezaSi/go-interview-practice)`;
+                badgeMarkdown.value = markdownText;
+            }
+            
+            // Function to copy badge markdown to clipboard
+            function copyBadgeMarkdown() {
+                const badgeMarkdown = document.getElementById('badge-markdown');
+                const copySuccess = document.getElementById('copy-success');
+                const copyIcon = document.getElementById('copy-icon');
+                
+                if (!badgeMarkdown) return;
+                
+                // Select and copy the text
+                badgeMarkdown.select();
+                badgeMarkdown.setSelectionRange(0, 99999); // For mobile devices
+                
+                try {
+                    navigator.clipboard.writeText(badgeMarkdown.value).then(() => {
+                        // Show success message
+                        copySuccess.style.display = 'block';
+                        copyIcon.className = 'bi bi-check-circle';
+                        
+                        // Reset after 2 seconds
+                        setTimeout(() => {
+                            copySuccess.style.display = 'none';
+                            copyIcon.className = 'bi bi-clipboard';
+                        }, 2000);
+                    }).catch(() => {
+                        // Fallback for older browsers
+                        document.execCommand('copy');
+                        copySuccess.style.display = 'block';
+                        copyIcon.className = 'bi bi-check-circle';
+                        
+                        setTimeout(() => {
+                            copySuccess.style.display = 'none';
+                            copyIcon.className = 'bi bi-clipboard';
+                        }, 2000);
+                    });
+                } catch (err) {
+                    console.error('Failed to copy: ', err);
+                }
             }
             
             // Initialize syntax highlighting
