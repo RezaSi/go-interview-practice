@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"maps"
 	"net/http"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
 )
@@ -64,12 +62,18 @@ func (r *InMemoryBookRepository) GetAll() ([]*Book, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	books := slices.Collect(maps.Values(r.books))
+	// this is not valid in older go versions
+	// books := slices.Collect(maps.Values(r.books))
+
+	// old way
+	books := make([]*Book, len(r.books))
+	for _, book := range r.books {
+		books = append(books, book)
+	}
 
 	return books, nil
 }
 
-// TODO ...
 func (r *InMemoryBookRepository) GetByID(id string) (*Book, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -228,7 +232,6 @@ func NewBookHandler(service BookService) *BookHandler {
 
 // HandleBooks processes the book-related endpoints
 func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement this method to handle all book endpoints
 	// Use the path and method to determine the appropriate action
 	serviceHandler := getServiceHandler(r.URL.Path, r.Method)
 
