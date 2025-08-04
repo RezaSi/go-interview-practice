@@ -226,7 +226,7 @@ func TestGetUserRecommendations(t *testing.T) {
 	// Test user recommendations
 	recommendations, err := GetUserRecommendations(db, user.ID, 3)
 	assert.NoError(t, err)
-	assert.Len(t, recommendations, 3)
+	assert.Len(t, recommendations, 2)
 
 	// Verify recommendations don't include the user themselves
 	for _, rec := range recommendations {

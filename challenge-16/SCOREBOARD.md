@@ -1,6 +1,7 @@
 # Scoreboard for challenge-16
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| PolinaSvet | 36 | 36 |
 | YounesBouchbouk | 36 | 36 |
 | mick4711 | 36 | 36 |
 | odelbos | 36 | 36 |
