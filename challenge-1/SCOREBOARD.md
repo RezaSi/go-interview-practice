@@ -35,6 +35,7 @@
 | ingingX | 6 | 6 |
 | jasonnfeng | 6 | 6 |
 | jersonzc | 6 | 6 |
+| joaovitoralvares | 6 | 6 |
 | jordanhimawan | 6 | 6 |
 | krmaxwell | 6 | 6 |
 | kuzminprog | 6 | 6 |
