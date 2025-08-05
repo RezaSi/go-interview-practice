@@ -18,8 +18,11 @@
 | ZaharBorisenko | 7 | 7 |
 | adwantay | 7 | 7 |
 | arslanoktay | 7 | 7 |
+| aseifi880 | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
+| chenyao0910 | 7 | 7 |
 | deloz | 7 | 7 |
+| idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
 | ilder | 7 | 7 |
 | ingingX | 7 | 7 |
@@ -31,8 +34,10 @@
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
 | mick4711 | 7 | 7 |
+| naghinezhad | 7 | 7 |
 | odelbos | 7 | 7 |
 | perekoshik | 7 | 7 |
+| potapkin-pavel | 7 | 7 |
 | setarehabhari | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
 | skx | 7 | 7 |
