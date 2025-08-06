@@ -3,7 +3,7 @@ package main
 import (
 	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	fiber "github.com/gofiber/fiber/v2"
 )
 
 // Task represents a task in our task management system
@@ -36,10 +36,7 @@ func NewTaskStore() *TaskStore {
 	return store
 }
 
-// Global task store
-var taskStore = NewTaskStore()
-
-func main() {
+func NewServer() *fiber.App {
 	// TODO: Create a new Fiber app instance
 	app := fiber.New()
 
@@ -93,8 +90,15 @@ func main() {
 		return nil
 	})
 
-	// TODO: Start the server on port 3000
-	// Hint: Use app.Listen(":3000")
+	return app
+}
+
+// Global task store
+var taskStore = NewTaskStore()
+
+func main() {
+	app := NewServer()
+	app.Listen(":3000")
 }
 
 // Helper methods for TaskStore
