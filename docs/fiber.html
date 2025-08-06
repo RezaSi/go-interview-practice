@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiber Web Framework Challenges - Go Interview Practice</title>
+    <meta name="description" content="Master Fiber web framework through interactive Go challenges. Learn high-performance APIs, middleware, validation, and routing.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">
+                <i class="bi bi-code-square me-2"></i>Go Interview Practice
+            </a>
+            <div class="d-flex gap-2">
+                <a href="https://github.com/RezaSi/go-interview-practice" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-github me-1"></i>GitHub
+                </a>
+                <a href="https://github.com/sponsors/RezaSi" class="btn btn-sponsor btn-sm">
+                    <i class="bi bi-heart-fill me-1"></i>Sponsor
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient">
+        <div class="container">
+            <div class="row align-items-center min-vh-100 py-5">
+                <div class="col-lg-8 mx-auto text-center">
+                    <div class="package-header mb-4">
+                        <div class="package-icon fiber-gradient">
+                            <i class="bi bi-lightning-fill"></i>
+                        </div>
+                        <h1 class="hero-title fw-bold mb-3">
+                            Master <span class="text-gradient">Fiber Web Framework</span>
+                        </h1>
+                        <p class="lead mb-4 text-muted">
+                            Learn Go's fastest web framework through hands-on challenges. Build lightning-fast APIs with Express.js-inspired syntax.
+                        </p>
+                    </div>
+
+                    <!-- Package Stats -->
+                    <div class="package-stats mb-4">
+                        <div class="stat-item">
+                            <i class="bi bi-star-fill text-warning me-1"></i>
+                            <span class="fw-bold">32k+ Stars</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-clock-fill text-info me-1"></i>
+                            <span class="fw-bold">Zero Allocation</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="bi bi-speedometer2 text-success me-1"></i>
+                            <span class="fw-bold">Express-like</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                        <a href="https://github.com/RezaSi/go-interview-practice/tree/main/packages/fiber" class="btn btn-primary btn-lg">
+                            <i class="bi bi-play-fill me-2"></i>Start Challenges
+                        </a>
+                        <a href="https://docs.gofiber.io/" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-book me-2"></i>Fiber Docs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What You'll Learn -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center mb-5">
+                    <h2 class="fw-bold mb-3">What You'll Master</h2>
+                    <p class="lead text-muted">
+                        Progress through carefully designed challenges that cover essential Fiber concepts and real-world scenarios.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new fiber-gradient">
+                                <i class="bi bi-server"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">High-Performance APIs</h4>
+                            <p class="text-muted mb-3">Build ultra-fast RESTful APIs with zero-allocation routing and Express.js-inspired syntax.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Zero-allocation routing</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Express.js syntax</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new fiber-gradient">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Middleware & Security</h4>
+                            <p class="text-muted mb-3">Implement custom middleware, rate limiting, CORS, and authentication systems.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Custom middleware</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Rate limiting & CORS</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new fiber-gradient">
+                                <i class="bi bi-check2-circle"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Request Validation</h4>
+                            <p class="text-muted mb-3">Master input validation, error handling, and data transformation with Fiber's built-in features.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Input validation</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>Error handling</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-12">
+                    <div class="feature-card-new">
+                        <div class="feature-header">
+                            <div class="feature-icon-new fiber-gradient">
+                                <i class="bi bi-key-fill"></i>
+                            </div>
+                        </div>
+                        <div class="feature-content">
+                            <h4 class="fw-bold mb-3">Authentication & JWT</h4>
+                            <p class="text-muted mb-3">Implement secure authentication systems with JWT tokens and API key validation.</p>
+                            <div class="feature-highlights">
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>JWT authentication</span>
+                                </div>
+                                <div class="highlight-item">
+                                    <i class="bi bi-check2 text-success me-2"></i>
+                                    <span>API key validation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenge Preview -->
+    <section class="challenges-section py-5 bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold mb-3">Challenge Roadmap</h2>
+                    <p class="lead text-muted">From basic HTTP server to production-ready APIs</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">1</div>
+                        <h6>Basic Routing</h6>
+                        <p class="small text-muted">Setup Fiber, routes, and handlers</p>
+                        <div class="difficulty beginner">Beginner</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">2</div>
+                        <h6>Middleware & CORS</h6>
+                        <p class="small text-muted">Custom middleware and rate limiting</p>
+                        <div class="difficulty intermediate">Intermediate</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">3</div>
+                        <h6>Validation & Errors</h6>
+                        <p class="small text-muted">Input validation and error handling</p>
+                        <div class="difficulty intermediate">Intermediate</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="challenge-card">
+                        <div class="challenge-number">4</div>
+                        <h6>Authentication</h6>
+                        <p class="small text-muted">JWT tokens and API key validation</p>
+                        <div class="difficulty advanced">Advanced</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="https://github.com/RezaSi/go-interview-practice" 
+                   class="btn btn-primary btn-lg pulse">
+                    <i class="bi bi-github me-2"></i>Start Your Fiber Journey
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="fw-bold mb-4">Ready to Start?</h2>
+                    <p class="lead text-muted mb-4">
+                        Jump into our interactive Fiber challenges and start building production-ready web applications.
+                    </p>
+                    <div class="d-flex flex-column flex-sm-row gap-3">
+                        <a href="https://github.com/RezaSi/go-interview-practice/tree/main/packages/fiber/challenge-1-basic-routing" class="btn btn-primary">
+                            <i class="bi bi-play-fill me-2"></i>Start Challenge 1
+                        </a>
+                        <a href="https://github.com/RezaSi/go-interview-practice/tree/main/packages/fiber" class="btn btn-outline-secondary">
+                            <i class="bi bi-list-ul me-2"></i>View All Challenges
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="code-preview-card">
+                        <div class="code-header">
+                            <div class="code-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span class="code-title">main.go</span>
+                        </div>
+                        <pre><code>package main
+
+import "github.com/gofiber/fiber/v2"
+
+func main() {
+    app := fiber.New()
+    
+    app.Get("/ping", func(c *fiber.Ctx) error {
+        return c.JSON(fiber.Map{
+            "message": "pong",
+        })
+    })
+    
+    app.Listen(":3000")
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer py-4 bg-dark text-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">Part of <a href="index.html" class="text-light">Go Interview Practice</a> • 30+ Go Challenges</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                        <a href="https://github.com/RezaSi/go-interview-practice" class="text-light me-3">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                        <a href="https://github.com/sponsors/RezaSi" class="text-light">
+                            <i class="bi bi-heart-fill"></i> Sponsor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/script.js"></script>
+</body>
+</html>
