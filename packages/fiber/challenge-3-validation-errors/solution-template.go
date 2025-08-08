@@ -59,7 +59,7 @@ func main() {
 // TODO: Implement custom validators
 
 // validateSKU validates SKU format (PROD-XXXXX)
-func validateSKU(fl interface{}) bool {
+func validateSKU(val string) bool {
 	// TODO: Implement SKU validation
 	// Format: "PROD-" followed by 5 digits
 	// Example: PROD-12345
