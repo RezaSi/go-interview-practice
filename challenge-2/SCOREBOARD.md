@@ -15,6 +15,7 @@
 | PolinaSvet | 7 | 7 |
 | RezaSi | 7 | 7 |
 | Seokky | 7 | 7 |
+| VadimihrSvS | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
 | adwantay | 7 | 7 |
@@ -38,6 +39,7 @@
 | mick4711 | 7 | 7 |
 | naghinezhad | 7 | 7 |
 | odelbos | 7 | 7 |
+| omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
 | setarehabhari | 7 | 7 |

@@ -17,6 +17,7 @@
 | PolinaSvet | 6 | 6 |
 | RezaSi | 6 | 6 |
 | Seokky | 6 | 6 |
+| VadimihrSvS | 6 | 6 |
 | Ward-R | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
 | ZaharBorisenko | 6 | 6 |
