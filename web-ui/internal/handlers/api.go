@@ -23,6 +23,7 @@ type APIHandler struct {
 	userService       *services.UserService
 	executionService  *services.ExecutionService
 	packageService    *services.PackageService
+	aiService         *services.AIService
 	submissions       []models.Submission
 }
 
@@ -33,6 +34,7 @@ func NewAPIHandler(
 	userService *services.UserService,
 	executionService *services.ExecutionService,
 	packageService *services.PackageService,
+	aiService *services.AIService,
 ) *APIHandler {
 	return &APIHandler{
 		challengeService:  challengeService,
@@ -40,6 +42,7 @@ func NewAPIHandler(
 		userService:       userService,
 		executionService:  executionService,
 		packageService:    packageService,
+		aiService:         aiService,
 		submissions:       make([]models.Submission, 0),
 	}
 }
@@ -774,4 +777,132 @@ func (h *APIHandler) savePackageChallengeToFilesystem(request struct {
 			"git push origin main",
 		},
 	}
+}
+
+// AICodeReview performs AI-powered code review
+func (h *APIHandler) AICodeReview(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		ChallengeID int    `json:"challengeId"`
+		Code        string `json:"code"`
+		Context     string `json:"context"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	challenge, exists := h.challengeService.GetChallenge(request.ChallengeID)
+	if !exists {
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	review, err := h.aiService.ReviewCode(request.Code, challenge, request.Context)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("AI review failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(review)
+}
+
+// AIInterviewerQuestions generates AI interviewer questions
+func (h *APIHandler) AIInterviewerQuestions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		ChallengeID  int    `json:"challengeId"`
+		Code         string `json:"code"`
+		UserProgress string `json:"userProgress"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	challenge, exists := h.challengeService.GetChallenge(request.ChallengeID)
+	if !exists {
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	questions, err := h.aiService.GetInterviewerQuestions(request.Code, challenge, request.UserProgress)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("AI questions failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Questions []string `json:"questions"`
+		Success   bool     `json:"success"`
+	}{
+		Questions: questions,
+		Success:   true,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// AICodeHint provides AI-powered code hints
+func (h *APIHandler) AICodeHint(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		ChallengeID int    `json:"challengeId"`
+		Code        string `json:"code"`
+		HintLevel   int    `json:"hintLevel"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	challenge, exists := h.challengeService.GetChallenge(request.ChallengeID)
+	if !exists {
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	// Validate hint level
+	if request.HintLevel < 1 || request.HintLevel > 4 {
+		request.HintLevel = 1
+	}
+
+	hint, err := h.aiService.GetCodeHint(request.Code, challenge, request.HintLevel)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("AI hint failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Hint      string `json:"hint"`
+		HintLevel int    `json:"hintLevel"`
+		Success   bool   `json:"success"`
+	}{
+		Hint:      hint,
+		HintLevel: request.HintLevel,
+		Success:   true,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

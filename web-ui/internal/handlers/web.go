@@ -270,6 +270,39 @@ func (h *WebHandler) ScoreChallengeHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// InterviewPage renders the interview simulator setup and runner
+func (h *WebHandler) InterviewPage(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.New("").Funcs(utils.GetTemplateFuncs()).ParseFS(h.content, "templates/base.html", "templates/interview.html")
+	if err != nil {
+		log.Printf("Template error: %v", err)
+		http.Error(w, "Failed to parse template: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert map to slice for template
+	var challengeList []*models.Challenge
+	for _, challenge := range h.challengeService.GetChallenges() {
+		challengeList = append(challengeList, challenge)
+	}
+
+	// Get username from cookie if available
+	username := h.getUsernameFromCookie(r)
+
+	data := struct {
+		Challenges []*models.Challenge
+		Username   string
+	}{
+		Challenges: challengeList,
+		Username:   username,
+	}
+
+	err = tmpl.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		log.Printf("Template execution error: %v", err)
+		// Don't call http.Error here since headers may already be sent during template execution
+	}
+}
+
 // getUsernameFromCookie retrieves the username from cookie
 func (h *WebHandler) getUsernameFromCookie(r *http.Request) string {
 	cookie, err := r.Cookie("username")
