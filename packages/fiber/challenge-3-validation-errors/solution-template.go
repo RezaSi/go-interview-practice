@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/go-playground/validator/v10"
 )
 
 // Product represents a product in the catalog
@@ -38,13 +39,14 @@ var products = []Product{
 }
 var nextID = 3
 
+var validate *validator.Validate
+
 func main() {
 	// TODO: Create Fiber app
 	app := fiber.New()
 
-	// TODO: Setup custom validator
-	// Use github.com/go-playground/validator/v10 package
-	// Register custom validators (SKU format)
+	// Setup custom validator
+	setupCustomValidator()
 
 	// TODO: Define routes
 	// GET /products - get all products with filtering
@@ -54,6 +56,12 @@ func main() {
 	// POST /products/bulk - create multiple products
 
 	// TODO: Start server on port 3000
+}
+
+func setupCustomValidator() {
+	// TODO: Setup custom validator
+	// Use github.com/go-playground/validator/v10 package
+	// Register custom validators (SKU format)
 }
 
 // TODO: Implement custom validators

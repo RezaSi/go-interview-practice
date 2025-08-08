@@ -18,6 +18,8 @@ func setupTestApp() *fiber.App {
 	}
 	nextID = 3
 
+	setupCustomValidator()
+
 	app := fiber.New()
 
 	// Setup routes (implement these in solution)
