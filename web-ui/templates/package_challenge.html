@@ -792,15 +792,8 @@
     function displayTestResults(data, duration, isSubmit) {
         const testResults = document.getElementById('test-results');
         
-        let html = `
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">${isSubmit ? 'Submission' : 'Test'} Results</h6>
-                <small class="text-muted">Execution time: ${duration}ms</small>
-            </div>
-        `;
-        
         if (data.success) {
-            html += `
+            html = `
                 <div class="alert alert-success">
                     <i class="bi bi-check-circle-fill me-2"></i>
                     <strong>All tests passed!</strong>
@@ -808,15 +801,56 @@
                 </div>
             `;
             
+            // Only show sponsor CTA on submission, not on test runs
+            if (isSubmit) {
+                html += `
+                    <!-- Small sponsor CTA -->
+                    <div class="alert alert-light border-0 py-2 px-3 mb-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 3px solid #28a745 !important;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-heart text-danger me-2"></i>
+                                <small class="text-muted mb-0">
+                                    <strong>Learned something new?</strong><br>
+                                    Show some love and help us build more ❤️
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="https://github.com/RezaSi/go-interview-practice" 
+                                   class="btn btn-sm btn-outline-secondary d-flex align-items-center" 
+                                   target="_blank" 
+                                   style="font-size: 0.8rem; border-radius: 12px;">
+                                    <i class="bi bi-star me-1" style="font-size: 0.7rem;"></i>
+                                    Star
+                                </a>
+                                <a href="https://github.com/sponsors/RezaSi" 
+                                   class="btn btn-sm btn-outline-primary d-flex align-items-center" 
+                                   target="_blank" 
+                                   style="font-size: 0.8rem; border-radius: 12px;">
+                                    <i class="bi bi-heart-fill me-1" style="font-size: 0.7rem;"></i>
+                                    Sponsor
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
             // Show PR instructions for successful submissions
             if (isSubmit && data.show_pr_instructions) {
                 const username = getUsernameFromStorage() || 'anonymous';
-                html += `
-                    <div class="alert alert-success mb-3">
+                
+                // Replace the success alert with the unified format
+                html = html.replace(
+                    /<div class="alert alert-success">[\s\S]*?<\/div>/,
+                    `<div class="alert alert-success mb-3">
                         <h4 class="alert-heading">Solution Submitted Successfully! 🎉</h4>
-                        <p>All tests passed. Follow the instructions below to submit your solution to the public scoreboard.</p>
-                    </div>
-                    
+                        <p>All tests passed. Execution time: ${duration}ms</p>
+                        <hr>
+                        <p class="mb-0">Follow the instructions below to submit your solution to the public scoreboard.</p>
+                    </div>`
+                );
+                
+                html += `
                     <div class="alert alert-info mb-3">
                         <h5>🚀 Next Steps: Create a Pull Request</h5>
                         <p class="mb-3">To contribute your solution to the project and appear on the public scoreboard, follow these steps:</p>
