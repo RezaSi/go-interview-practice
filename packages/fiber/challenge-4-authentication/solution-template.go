@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/go-playground/validator/v10"
 )
 
 // User represents a user in the system
@@ -55,11 +56,14 @@ var nextUserID = 3
 // JWT secret (in production, use environment variable)
 var jwtSecret = []byte("your-secret-key")
 
+var validate *validator.Validate
+
 func main() {
 	// TODO: Create Fiber app
 	app := fiber.New()
 
-	// TODO: Setup validator with custom password validator
+    // Setup custom validator
+	setupCustomValidator()
 
 	// TODO: Setup routes
 	// Public routes
@@ -79,6 +83,10 @@ func main() {
 	// admin.Put("/users/:id/role", updateUserRoleHandler)
 
 	// TODO: Start server on port 3000
+}
+
+func setupCustomValidator() {
+	// TODO: Setup validator with custom password validator
 }
 
 // TODO: Implement password security
