@@ -12,9 +12,10 @@
     <style>
         body {
             padding-top: 5rem;
-            padding-bottom: 3rem;
             background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         /* Hero section styling */
@@ -468,6 +469,47 @@
             background: linear-gradient(135deg, #764ba2, #667eea);
         }
         
+        /* Pulsing animation for new features */
+        .new-indicator {
+            animation: pulse-warning 2s infinite;
+            z-index: 10;
+        }
+        
+        .new-indicator-gray {
+            animation: pulse-gray 2s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes pulse-warning {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+            }
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
+        
+        @keyframes pulse-gray {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(108, 117, 125, 0.7);
+            }
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(108, 117, 125, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(108, 117, 125, 0);
+            }
+        }
+        
         /* Card bodies - reduce padding */
         .card-body {
             padding: 1rem;
@@ -673,6 +715,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">Challenges</a>
                     </li>
+                    <li class="nav-item position-relative">
+                        <a class="nav-link" href="/interview">
+                            Interview Simulator
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-secondary border border-light rounded-circle new-indicator-gray" style="margin-left: -8px; margin-top: 2px;">
+                                <span class="visually-hidden">New</span>
+                            </span>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/scoreboard">Scoreboard</a>
                     </li>
@@ -801,13 +851,13 @@
         </div>
     </nav>
 
-    <main class="container mt-5">
+    <main class="container mt-5 flex-grow-1">
         {{template "content" .}}
     </main>
 
-    <footer class="bg-light py-3 mt-5">
+    <footer class="bg-light py-4 mt-auto">
         <div class="container text-center">
-            <p class="mb-0">Go Interview Practice - Build your Go skills with coding challenges</p>
+            <p class="mb-0 text-muted">Go Interview Practice - Build your Go skills with coding challenges</p>
         </div>
     </footer>
 
