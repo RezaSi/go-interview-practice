@@ -31,6 +31,7 @@
 | ingingX | 7 | 7 |
 | jasonnfeng | 7 | 7 |
 | jersonzc | 7 | 7 |
+| jin5335 | 7 | 7 |
 | jordanhimawan | 7 | 7 |
 | korranat9 | 7 | 7 |
 | krmaxwell | 7 | 7 |

@@ -18,6 +18,8 @@ func setupTestApp() *fiber.App {
 	}
 	nextUserID = 3
 
+	setupCustomValidator()
+
 	app := fiber.New()
 
 	// Public routes
