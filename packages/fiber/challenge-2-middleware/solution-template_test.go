@@ -101,22 +101,6 @@ func TestAuthMiddleware(t *testing.T) {
 	assert.Equal(t, 201, resp.StatusCode)
 }
 
-func TestRateLimiting(t *testing.T) {
-	app := setupTestApp()
-
-	// Make multiple requests to trigger rate limiting
-	for i := 0; i < 105; i++ {
-		req := httptest.NewRequest("GET", "/ping", nil)
-		resp, _ := app.Test(req)
-
-		if i >= 100 {
-			// Should be rate limited after 100 requests
-			assert.Equal(t, 429, resp.StatusCode)
-			break
-		}
-	}
-}
-
 func TestRequestIDGeneration(t *testing.T) {
 	app := setupTestApp()
 
@@ -232,3 +216,20 @@ func TestGetStats(t *testing.T) {
 	json.NewDecoder(resp.Body).Decode(&response)
 	assert.True(t, response.Success)
 }
+
+func TestRateLimiting(t *testing.T) {
+	app := setupTestApp()
+
+	// Make multiple requests to trigger rate limiting
+	for i := 0; i < 105; i++ {
+		req := httptest.NewRequest("GET", "/ping", nil)
+		resp, _ := app.Test(req)
+
+		if i >= 100 {
+			// Should be rate limited after 100 requests
+			assert.Equal(t, 429, resp.StatusCode)
+			break
+		}
+	}
+}
+
