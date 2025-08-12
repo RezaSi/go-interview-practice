@@ -11,8 +11,8 @@
 <img src="https://trendshift.io/api/badge/repositories/14255" alt="RezaSi%2Fgo-interview-practice | Trendshift" style="width: 250px;" width="250"/>
 </a>
 
+**⭐ Star the repo if it’s useful to you**
 <br/>
-
 <br/>
 </div>
 
@@ -77,12 +77,12 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **28**/30 | **93.3%** | Master | ✅✅✅✅✅✅✅✅✅✅✅⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **29**/30 | **96.7%** | Master | ✅✅✅✅✅✅✅✅✅✅✅⬜✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 🥉 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 4 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 5 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **18**/30 | **60.0%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **17**/30 | **56.7%** | Expert | ✅✅✅✅⬜✅✅✅⬜✅⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
+| 5 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **18**/30 | **60.0%** | Expert | ✅✅✅✅⬜✅✅✅⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
+| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **18**/30 | **60.0%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 7 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **15**/30 | **50.0%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 8 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 9 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
@@ -101,8 +101,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 65
-- **Most Challenges Solved**: 28 by odelbos
+- **Active Developers**: 82
+- **Most Challenges Solved**: 29 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
 ## 🚀 Package Challenges Leaderboard
@@ -113,9 +113,11 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **11** | **3** pkgs | ⭐ Package Expert | **cobra**: 3 • **gin**: 3 • **gorm**: 5 |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **15** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 3 • **gin**: 3 • **gorm**: 5 |
 | 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
 | 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
+| 4 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 5 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
 <div align="center">
 
@@ -129,16 +131,24 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[ashwinipatankar](https://github.com/ashwinipatankar)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
-| 🥈 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
+| 🥈 | **[ashwinipatankar](https://github.com/ashwinipatankar)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
 | 🥉 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+
+#### Fiber Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
 
 #### Gin Package
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
 | 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
-| 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 🥈 | **[GleeN987](https://github.com/GleeN987)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 🥉 | **[MarioPaez](https://github.com/MarioPaez)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 4 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 
 #### Gorm Package
 
@@ -149,11 +159,11 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 ### 📊 Package Challenge Statistics
 
-- **Total Package Challenges Available**: 13
-- **Active Package Learners**: 3
-- **Available Packages**: 3 (cobra, gin, gorm)
+- **Total Package Challenges Available**: 17
+- **Active Package Learners**: 5
+- **Available Packages**: 4 (cobra, fiber, gin, gorm)
 
-- **Most Package Challenges Solved**: 11 by odelbos
+- **Most Package Challenges Solved**: 15 by odelbos
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
@@ -161,10 +171,49 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Interactive Web UI** - Code, test, and submit solutions in your browser
 - **Automated Testing** - Get immediate feedback on your solutions
 - **Automated Scoreboards** - Solutions are automatically scored and ranked
-- **🏆 Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
+- **Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
 - **Performance Analytics** - Track execution time and memory usage for your solutions
 - **Comprehensive Learning** - Each challenge includes detailed explanations and resources
 - **Progressive Difficulty** - From beginner to advanced Go concepts
+- **AI Interview Simulation** - Practice with AI-powered code review and interviewer questions
+
+## AI Interview Simulation
+
+Transform your coding practice into realistic interview scenarios with our AI-powered features:
+
+**Real-Time Code Review** - Get instant feedback on code quality, complexity analysis, and improvement suggestions
+
+**Dynamic Interview Questions** - AI generates follow-up questions based on your solution approach
+
+**Progressive Hints** - 4-level hint system from subtle nudges to detailed explanations
+
+**Multi-LLM Support** - Works with Gemini (recommended), OpenAI, or Claude
+
+Simply add your API key to experience interview-style feedback that adapts to your code and challenges you with realistic technical questions.
+
+### AI Interview Experience
+
+<div align="center">
+  <img src="./images/interview-code-review.png" alt="AI Code Review - Real-time feedback and analysis" width="48%" style="margin-right: 2%;">
+  <img src="./images/interview-questions.png" alt="AI Interview Questions - Dynamic follow-up questions" width="48%">
+</div>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="48%">
+        <strong>AI Code Review</strong><br>
+        <em>Get instant feedback on code quality, complexity analysis,<br>and improvement suggestions from AI</em>
+      </td>
+      <td align="center" width="48%">
+        <strong>Dynamic Interview Questions</strong><br>
+        <em>AI generates follow-up questions based on your<br>solution approach and coding patterns</em>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
 
 ## Quick Start
 
@@ -186,6 +235,13 @@ cd web-ui
 go run main.go
 
 # 4. Open http://localhost:8080 in your browser
+
+# 5. Optional: Enable AI Features (Recommended) 🤖
+# Add your free Gemini API key to enable AI interview simulation
+echo "AI_PROVIDER=gemini" > web-ui/.env
+echo "GEMINI_API_KEY=your_actual_api_key_here" >> web-ui/.env
+# Get your free API key: https://makersuite.google.com/app/apikey
+# Note: .env files are automatically ignored by git for security
 ```
 
 **After solving challenges and submitting solutions:**
@@ -205,7 +261,12 @@ Want to get started instantly without setting up anything locally? Use GitHub Co
    cd web-ui
    go run main.go
    ```
-5. **Access the Web UI**: Click on the "Ports" tab in the bottom panel, then click the "Open in Browser" button next to port 8080
+5. **Optional: Enable AI Features**: Add your Gemini API key:
+   ```bash
+   echo "AI_PROVIDER=gemini" > .env
+   echo "GEMINI_API_KEY=your_actual_api_key_here" >> .env
+   ```
+6. **Access the Web UI**: Click on the "Ports" tab in the bottom panel, then click the "Open in Browser" button next to port 8080
 
 **Benefits of using Codespaces:**
 - No local setup required
@@ -371,9 +432,8 @@ Premium sponsor logos will appear here when we have them. Format:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=RezaSi/go-interview-practice&type=Date)](https://www.star-history.com/#RezaSi/go-interview-practice&Date)
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/RezaSi/go-interview-practice.svg?variant=adaptive)](https://starchart.cc/RezaSi/go-interview-practice)
 
 ---
 

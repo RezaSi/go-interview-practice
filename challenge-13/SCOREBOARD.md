@@ -1,6 +1,7 @@
 # Scoreboard for challenge-13
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Gandook | 15 | 15 |
 | JackDalberg | 15 | 15 |
 | KhaledMosaad | 15 | 15 |
 | PolinaSvet | 15 | 15 |
