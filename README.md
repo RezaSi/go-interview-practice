@@ -101,7 +101,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 77
+- **Active Developers**: 82
 - **Most Challenges Solved**: 29 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -171,10 +171,49 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Interactive Web UI** - Code, test, and submit solutions in your browser
 - **Automated Testing** - Get immediate feedback on your solutions
 - **Automated Scoreboards** - Solutions are automatically scored and ranked
-- **🏆 Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
+- **Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
 - **Performance Analytics** - Track execution time and memory usage for your solutions
 - **Comprehensive Learning** - Each challenge includes detailed explanations and resources
 - **Progressive Difficulty** - From beginner to advanced Go concepts
+- **AI Interview Simulation** - Practice with AI-powered code review and interviewer questions
+
+## AI Interview Simulation
+
+Transform your coding practice into realistic interview scenarios with our AI-powered features:
+
+**Real-Time Code Review** - Get instant feedback on code quality, complexity analysis, and improvement suggestions
+
+**Dynamic Interview Questions** - AI generates follow-up questions based on your solution approach
+
+**Progressive Hints** - 4-level hint system from subtle nudges to detailed explanations
+
+**Multi-LLM Support** - Works with Gemini (recommended), OpenAI, or Claude
+
+Simply add your API key to experience interview-style feedback that adapts to your code and challenges you with realistic technical questions.
+
+### AI Interview Experience
+
+<div align="center">
+  <img src="./images/interview-code-review.png" alt="AI Code Review - Real-time feedback and analysis" width="48%" style="margin-right: 2%;">
+  <img src="./images/interview-questions.png" alt="AI Interview Questions - Dynamic follow-up questions" width="48%">
+</div>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="48%">
+        <strong>AI Code Review</strong><br>
+        <em>Get instant feedback on code quality, complexity analysis,<br>and improvement suggestions from AI</em>
+      </td>
+      <td align="center" width="48%">
+        <strong>Dynamic Interview Questions</strong><br>
+        <em>AI generates follow-up questions based on your<br>solution approach and coding patterns</em>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
 
 ## Quick Start
 
@@ -393,9 +432,8 @@ Premium sponsor logos will appear here when we have them. Format:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=RezaSi/go-interview-practice&type=Date)](https://www.star-history.com/#RezaSi/go-interview-practice&Date)
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/RezaSi/go-interview-practice.svg?variant=adaptive)](https://starchart.cc/RezaSi/go-interview-practice)
 
 ---
 

@@ -906,3 +906,51 @@ func (h *APIHandler) AICodeHint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+// AIDebugResponse provides raw AI response for debugging
+func (h *APIHandler) AIDebugResponse(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var request struct {
+		ChallengeID int    `json:"challengeId"`
+		Code        string `json:"code"`
+		Context     string `json:"context"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	challenge, exists := h.challengeService.GetChallenge(request.ChallengeID)
+	if !exists {
+		http.Error(w, "Challenge not found", http.StatusNotFound)
+		return
+	}
+
+	// Get raw AI response for debugging
+	prompt := h.aiService.BuildCodeReviewPrompt(request.Code, challenge, request.Context)
+	rawResponse, err := h.aiService.CallLLMRaw(prompt)
+
+	response := struct {
+		RawResponse string `json:"raw_response"`
+		Prompt      string `json:"prompt"`
+		Success     bool   `json:"success"`
+		Error       string `json:"error,omitempty"`
+	}{
+		RawResponse: rawResponse,
+		Prompt:      prompt,
+		Success:     err == nil,
+	}
+
+	if err != nil {
+		response.Error = err.Error()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

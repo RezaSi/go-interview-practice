@@ -91,12 +91,21 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/api/ai/code-review", apiHandler.AICodeReview)
 	mux.HandleFunc("/api/ai/interviewer-questions", apiHandler.AIInterviewerQuestions)
 	mux.HandleFunc("/api/ai/code-hint", apiHandler.AICodeHint)
+	mux.HandleFunc("/api/ai/debug", apiHandler.AIDebugResponse)
 	mux.HandleFunc("/api/ai/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		provider := os.Getenv("AI_PROVIDER")
-		apiKey := os.Getenv("GEMINI_API_KEY")
 		if provider == "" {
 			provider = "gemini"
+		}
+		var apiKey string
+		switch strings.ToLower(provider) {
+		case "openai":
+			apiKey = os.Getenv("OPENAI_API_KEY")
+		case "claude":
+			apiKey = os.Getenv("CLAUDE_API_KEY")
+		default:
+			apiKey = os.Getenv("GEMINI_API_KEY")
 		}
 
 		// Check if API key looks valid
