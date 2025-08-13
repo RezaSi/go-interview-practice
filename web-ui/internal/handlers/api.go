@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -427,16 +428,146 @@ func (h *APIHandler) GetMainLeaderboard(w http.ResponseWriter, r *http.Request) 
 	// Calculate leaderboard data
 	leaderboard := h.calculateMainLeaderboard()
 
+	// Include total number of classic challenges for dynamic UI rendering
+	totalChallenges := len(h.challengeService.GetChallenges())
+
 	response := struct {
-		Leaderboard []LeaderboardUser `json:"leaderboard"`
-		Success     bool              `json:"success"`
+		Leaderboard     []LeaderboardUser `json:"leaderboard"`
+		Success         bool              `json:"success"`
+		TotalChallenges int               `json:"totalChallenges"`
 	}{
-		Leaderboard: leaderboard,
-		Success:     true,
+		Leaderboard:     leaderboard,
+		Success:         true,
+		TotalChallenges: totalChallenges,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// GetPackageLeaderboard returns leaderboard data for a package learning path
+func (h *APIHandler) GetPackageLeaderboard(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	packageName := r.URL.Query().Get("package")
+	if packageName == "" {
+		http.Error(w, "package parameter required", http.StatusBadRequest)
+		return
+	}
+
+	// Load package and its challenges
+	pkg, err := h.packageService.GetPackage(packageName)
+	if err != nil {
+		http.Error(w, "Package not found", http.StatusNotFound)
+		return
+	}
+
+	// Build package challenge list in learning path order
+	challengesMap, err := h.packageService.GetPackageChallenges(packageName)
+	if err != nil {
+		challengesMap = make(map[string]*models.PackageChallenge)
+	}
+	var challenges []*models.PackageChallenge
+	for _, id := range pkg.LearningPath {
+		if ch, ok := challengesMap[id]; ok {
+			challenges = append(challenges, ch)
+		}
+	}
+
+	// Reuse existing creator to gather leaderboard
+	leaderboard := h.createPackageLeaderboard(packageName, challenges)
+
+	response := map[string]interface{}{
+		"success":         true,
+		"leaderboard":     leaderboard,
+		"totalChallenges": len(challenges),
+		"package":         pkg.Name,
+		"displayName":     pkg.DisplayName,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// createPackageLeaderboard builds the package leaderboard based on filesystem submissions
+func (h *APIHandler) createPackageLeaderboard(packageName string, challenges []*models.PackageChallenge) []models.PackageScoreboardEntry {
+	var leaderboard []models.PackageScoreboardEntry
+	type userPackageStats struct {
+		username            string
+		completedCount      int
+		lastSubmission      time.Time
+		challengesCompleted map[string]bool
+	}
+	userStats := make(map[string]*userPackageStats)
+
+	for _, challenge := range challenges {
+		submissionsDir := filepath.Join("..", "packages", packageName, challenge.ID, "submissions")
+		if _, err := os.Stat(submissionsDir); os.IsNotExist(err) {
+			continue
+		}
+		entries, err := ioutil.ReadDir(submissionsDir)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				username := entry.Name()
+				userDir := filepath.Join(submissionsDir, username)
+				solutionPath := filepath.Join(userDir, "solution.go")
+				altSolutionPath := filepath.Join(userDir, "solution-template.go")
+
+				var modTime time.Time
+				if stat, err := os.Stat(solutionPath); err == nil {
+					modTime = stat.ModTime()
+				} else if stat, err := os.Stat(altSolutionPath); err == nil {
+					modTime = stat.ModTime()
+				} else {
+					continue
+				}
+
+				if userStats[username] == nil {
+					userStats[username] = &userPackageStats{
+						username:            username,
+						completedCount:      0,
+						lastSubmission:      modTime,
+						challengesCompleted: make(map[string]bool),
+					}
+				}
+				if !userStats[username].challengesCompleted[challenge.ID] {
+					userStats[username].completedCount++
+					userStats[username].challengesCompleted[challenge.ID] = true
+					if modTime.After(userStats[username].lastSubmission) {
+						userStats[username].lastSubmission = modTime
+					}
+				}
+			}
+		}
+	}
+
+	for username, stats := range userStats {
+		if stats.completedCount > 0 {
+			leaderboard = append(leaderboard, models.PackageScoreboardEntry{
+				Username:    username,
+				PackageName: packageName,
+				ChallengeID: "",
+				SubmittedAt: stats.lastSubmission,
+				TestsPassed: stats.completedCount,
+				TestsTotal:  len(challenges),
+			})
+		}
+	}
+
+	sort.Slice(leaderboard, func(i, j int) bool {
+		if leaderboard[i].TestsPassed != leaderboard[j].TestsPassed {
+			return leaderboard[i].TestsPassed > leaderboard[j].TestsPassed
+		}
+		return leaderboard[i].SubmittedAt.Before(leaderboard[j].SubmittedAt)
+	})
+
+	return leaderboard
 }
 
 // LeaderboardUser represents a user in the leaderboard
