@@ -101,7 +101,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 82
+- **Active Developers**: 83
 - **Most Challenges Solved**: 29 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -113,7 +113,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **15** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 3 • **gin**: 3 • **gorm**: 5 |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **17** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 4 • **gin**: 4 • **gorm**: 5 |
 | 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
 | 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
 | 4 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
@@ -139,13 +139,13 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 
 #### Gin Package
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[GleeN987](https://github.com/GleeN987)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 | 🥉 | **[MarioPaez](https://github.com/MarioPaez)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 | 4 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
@@ -163,7 +163,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Active Package Learners**: 5
 - **Available Packages**: 4 (cobra, fiber, gin, gorm)
 
-- **Most Package Challenges Solved**: 15 by odelbos
+- **Most Package Challenges Solved**: 17 by odelbos
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
@@ -292,16 +292,6 @@ cd challenge-1
 ./run_tests.sh
 ```
 
-## Scoreboards
-
-Each challenge has its own scoreboard that tracks:
-- Successful submissions by user
-- Execution time rankings
-- Code efficiency metrics
-- Completion dates
-
-View global and per-challenge scoreboards in the Web UI to compare your solutions with others.
-
 ## Profile Badges for Contributors
 
 Showcase your Go programming achievements with auto-updating profile badges for GitHub profiles, portfolios, and personal websites.
@@ -400,7 +390,6 @@ We welcome contributions! You can contribute in several ways:
 - Submit your solutions via pull request
 
 **Add New Challenges:**
-- **Classic Challenges:** Algorithm and data structure problems
 - **Package Challenges:** Framework-specific practical applications (Gin, Cobra, GORM, etc.)
 
 **Quick Steps:**

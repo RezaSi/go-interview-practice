@@ -84,6 +84,7 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/api/main-leaderboard", apiHandler.GetMainLeaderboard)
 
 	// Package challenge API routes
+	mux.HandleFunc("/api/package-leaderboard", apiHandler.GetPackageLeaderboard)
 	mux.HandleFunc("/api/packages/", apiHandler.HandlePackageChallenge)
 	mux.HandleFunc("/api/packages-save-to-filesystem", apiHandler.SavePackageChallengeToFilesystem)
 
@@ -142,8 +143,13 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 			// /packages/gin -> package detail page
 			webHandler.PackageDetailPage(w, r)
 		} else if len(parts) == 3 {
-			// /packages/gin/challenge-1 -> package challenge page
-			webHandler.PackageChallengePage(w, r)
+			if parts[2] == "scoreboard" {
+				// /packages/gin/scoreboard -> package leaderboard page
+				webHandler.PackageScoreboardPage(w, r)
+			} else {
+				// /packages/gin/challenge-1 -> package challenge page
+				webHandler.PackageChallengePage(w, r)
+			}
 		} else {
 			http.NotFound(w, r)
 		}
