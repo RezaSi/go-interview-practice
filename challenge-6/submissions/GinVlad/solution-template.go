@@ -19,7 +19,7 @@ import (
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
-    result := map[string]int{}
+    result := make(map[string]int)
     if len(text) == 0  {
         return result
     }
