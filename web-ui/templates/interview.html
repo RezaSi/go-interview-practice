@@ -162,9 +162,9 @@
                             <button type="button" class="btn btn-outline-warning btn-sm" onclick="requestHint(4)">
                               Lv4
                             </button>
+                            </div>
                           </div>
-                        </div>
-                        
+                          
                         <!-- AI Response Area -->
                         <div id="ai-response-area" class="mt-3" style="display: none;">
                           <div class="card border-0 bg-light">
@@ -173,7 +173,7 @@
                                 <i class="bi bi-robot me-1"></i>
                                 <span id="ai-response-title">AI Feedback</span>
                               </h6>
-                            </div>
+                                </div>
                             <div class="card-body p-3" id="ai-response-content">
                               <!-- AI responses will appear here -->
                             </div>
@@ -944,8 +944,17 @@
       return null;
     }
     
-    // For now, let's use the first challenge ID
-    // In a more sophisticated implementation, you might track which challenge is currently active
+    // Get the currently active challenge ID from the DOM element
+    const challengeIdElement = document.getElementById('challenge-id');
+    if (challengeIdElement && challengeIdElement.textContent) {
+      const currentId = Number(challengeIdElement.textContent);
+      // Verify this ID is in our session's challenge list
+      if (currentSession.challengeIds.includes(currentId)) {
+        return currentId;
+      }
+    }
+    
+    // Fallback to first challenge if no active challenge is found
     return currentSession.challengeIds[0];
   }
 
@@ -1033,6 +1042,7 @@
     }
   };
 
+
   window.requestHint = async function(level = 1) {
     const currentCode = editor ? editor.getValue() : '';
     
@@ -1083,6 +1093,20 @@
     const title = document.getElementById('ai-response-title');
     const content = document.getElementById('ai-response-content');
     
+    // helper to render markdown when available
+    const md = (text) => {
+      if (!text) return '';
+      const safe = text.toString();
+      if (typeof marked !== 'undefined') {
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        }
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>');
+    };
+
     // Provide defaults for missing properties
     const overallScore = review.overall_score || 0;
     const readabilityScore = review.readability_score || 0;
@@ -1106,7 +1130,9 @@
       
       <div class="mb-3">
         <h6><i class="bi bi-chat-quote-fill me-1"></i>Interviewer Feedback:</h6>
-        <div class="alert alert-light p-2 small">${escapeHtml(interviewerFeedback)}</div>
+        <div class="alert alert-light p-2 small">
+          <div class="markdown-content" style="padding: 0;">${typeof marked !== 'undefined' ? marked.parse(interviewerFeedback) : escapeHtml(interviewerFeedback)}</div>
+        </div>
       </div>
     `;
     
@@ -1116,8 +1142,9 @@
           <h6><i class="bi bi-exclamation-triangle me-1"></i>Issues Found:</h6>
           ${review.issues.map(issue => `
             <div class="alert alert-${getSeverityColor(issue.severity)} p-2 small mb-1">
-              <strong>${escapeHtml(issue.type.toUpperCase())}:</strong> ${escapeHtml(issue.description)}
-              ${issue.solution ? `<br><em>Fix: ${escapeHtml(issue.solution)}</em>` : ''}
+              <div><strong>${escapeHtml((issue.type||'').toString().toUpperCase())}:</strong></div>
+              <div class="markdown-content" style="padding:0; margin-top: .25rem;">${md(issue.description)}</div>
+              ${issue.solution ? `<div class="mt-1"><em>Fix:</em><div class="markdown-content" style="padding:0;">${md(issue.solution)}</div></div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -1130,7 +1157,9 @@
           <h6><i class="bi bi-lightbulb me-1"></i>Suggestions:</h6>
           ${review.suggestions.map(suggestion => `
             <div class="alert alert-info p-2 small mb-1">
-              <strong>${escapeHtml(suggestion.category)}:</strong> ${escapeHtml(suggestion.description)}
+              <div><strong>${escapeHtml(suggestion.category || '')}:</strong></div>
+              <div class="markdown-content" style="padding:0; margin-top: .25rem;">${md(suggestion.description)}</div>
+              ${suggestion.example ? `<div class="mt-1"><em>Example:</em><div class="markdown-content" style="padding:0;">${md(suggestion.example)}</div></div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -1141,13 +1170,16 @@
       html += `
         <div class="mb-3">
           <h6><i class="bi bi-speedometer me-1"></i>Complexity Analysis:</h6>
-          <div class="row">
-            <div class="col-6">
-              <div class="badge bg-secondary">Time: ${review.complexity.time_complexity}</div>
+          <div class="alert alert-light p-2 small">
+            <div class="mb-2">
+              <strong>Time Complexity:</strong> <code>${escapeHtml(review.complexity.time_complexity || 'N/A')}</code>
             </div>
-            <div class="col-6">
-              <div class="badge bg-secondary">Space: ${review.complexity.space_complexity}</div>
+            <div class="mb-2">
+              <strong>Space Complexity:</strong> <code>${escapeHtml(review.complexity.space_complexity || 'N/A')}</code>
             </div>
+            ${review.complexity.can_optimize && review.complexity.optimized_approach ? 
+              `<div><strong>Optimization:</strong><div class="markdown-content mt-1" style="padding:0;">${md(review.complexity.optimized_approach)}</div></div>` : 
+              ''}
           </div>
         </div>
       `;
@@ -1162,6 +1194,19 @@
     
     title.textContent = 'Interview Questions';
     
+    const md = (text) => {
+      if (!text) return '';
+      const safe = text.toString();
+      if (typeof marked !== 'undefined') {
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        }
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>');
+    };
+
     let html = `
       <div class="mb-2">
         <h6><i class="bi bi-person-check me-1"></i>The interviewer asks:</h6>
@@ -1171,11 +1216,14 @@
     // Ensure questions is an array
     if (questions && Array.isArray(questions)) {
       questions.forEach((question, index) => {
-      html += `
-        <div class="alert alert-primary p-2 small mb-2">
-          <strong>Q${index + 1}:</strong> ${escapeHtml(question)}
-        </div>
-      `;
+        // Convert markdown to HTML for proper rendering
+        const questionHtml = md(question);
+        html += `
+          <div class="alert alert-primary p-2 small mb-2">
+            <strong>Q${index + 1}:</strong> 
+            <div class="markdown-content" style="margin-top: 0.5rem; padding: 0;">${questionHtml}</div>
+          </div>
+        `;
       });
     } else {
       html += `
@@ -1203,14 +1251,30 @@
       </button>
     ` : '';
     
+    // Convert markdown to HTML for proper rendering
+    const hintHtml = (function(t){
+      if (!t) return '';
+      const safe = t.toString();
+      if (typeof marked !== 'undefined') { 
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        } 
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>' );
+    })(safeHint);
+    
     content.innerHTML = `
       <div class="alert alert-warning p-3">
         <i class="bi bi-lightbulb-fill me-2"></i>
-        ${escapeHtml(safeHint)}
+        <div class="markdown-content" style="margin-top: 0.5rem; padding: 0;">${hintHtml}</div>
         ${nextLevelButton}
       </div>
     `;
   }
+
+
 
   function showAIError(message) {
     const title = document.getElementById('ai-response-title');

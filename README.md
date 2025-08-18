@@ -80,10 +80,10 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **29**/30 | **96.7%** | Master | ✅✅✅✅✅✅✅✅✅✅✅⬜✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 🥈 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 🥉 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 4 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 5 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **18**/30 | **60.0%** | Expert | ✅✅✅✅⬜✅✅✅⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜⬜ |
-| 6 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **18**/30 | **60.0%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 7 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **15**/30 | **50.0%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅⬜⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 4 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **20**/30 | **66.7%** | Master | ✅✅✅✅⬜✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅⬜✅⬜⬜✅ |
+| 5 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 6 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 7 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **18**/30 | **60.0%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 8 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 9 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **14**/30 | **46.7%** | Advanced | ✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜ |
 | 10 | <img src="https://github.com/MYK12397.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MYK12397](https://github.com/MYK12397)** | **11**/30 | **36.7%** | Advanced | ⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜⬜⬜<br/>⬜✅✅✅⬜✅⬜⬜✅⬜⬜⬜⬜⬜✅ |
@@ -101,7 +101,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 77
+- **Active Developers**: 87
 - **Most Challenges Solved**: 29 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -113,9 +113,9 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | 🏅 | Developer | Total Solved | Packages | Achievement | Challenge Distribution |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **15** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 3 • **gin**: 3 • **gorm**: 5 |
+| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **17** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 4 • **gin**: 4 • **gorm**: 5 |
 | 🥈 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **3** | **3** pkgs | 🚀 Package Intermediate | **cobra**: 1 • **gin**: 1 • **gorm**: 1 |
-| 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
+| 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
 | 4 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 | 5 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
@@ -139,13 +139,13 @@ Master Go packages through hands-on challenges! Each package offers a structured
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 
 #### Gin Package
 
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
-| 🥇 | **[odelbos](https://github.com/odelbos)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[GleeN987](https://github.com/GleeN987)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 | 🥉 | **[MarioPaez](https://github.com/MarioPaez)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 | 4 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
@@ -163,7 +163,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Active Package Learners**: 5
 - **Available Packages**: 4 (cobra, fiber, gin, gorm)
 
-- **Most Package Challenges Solved**: 15 by odelbos
+- **Most Package Challenges Solved**: 17 by odelbos
 
 <!-- END_PACKAGE_LEADERBOARD -->
 ## Key Features
@@ -171,10 +171,49 @@ Master Go packages through hands-on challenges! Each package offers a structured
 - **Interactive Web UI** - Code, test, and submit solutions in your browser
 - **Automated Testing** - Get immediate feedback on your solutions
 - **Automated Scoreboards** - Solutions are automatically scored and ranked
-- **🏆 Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
+- **Profile Badges** - Beautiful auto-updating badges for GitHub profiles, LinkedIn, and portfolios
 - **Performance Analytics** - Track execution time and memory usage for your solutions
 - **Comprehensive Learning** - Each challenge includes detailed explanations and resources
 - **Progressive Difficulty** - From beginner to advanced Go concepts
+- **AI Interview Simulation** - Practice with AI-powered code review and interviewer questions
+
+## AI Interview Simulation
+
+Transform your coding practice into realistic interview scenarios with our AI-powered features:
+
+**Real-Time Code Review** - Get instant feedback on code quality, complexity analysis, and improvement suggestions
+
+**Dynamic Interview Questions** - AI generates follow-up questions based on your solution approach
+
+**Progressive Hints** - 4-level hint system from subtle nudges to detailed explanations
+
+**Multi-LLM Support** - Works with Gemini (recommended), OpenAI, or Claude
+
+Simply add your API key to experience interview-style feedback that adapts to your code and challenges you with realistic technical questions.
+
+### AI Interview Experience
+
+<div align="center">
+  <img src="./images/interview-code-review.png" alt="AI Code Review - Real-time feedback and analysis" width="48%" style="margin-right: 2%;">
+  <img src="./images/interview-questions.png" alt="AI Interview Questions - Dynamic follow-up questions" width="48%">
+</div>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="48%">
+        <strong>AI Code Review</strong><br>
+        <em>Get instant feedback on code quality, complexity analysis,<br>and improvement suggestions from AI</em>
+      </td>
+      <td align="center" width="48%">
+        <strong>Dynamic Interview Questions</strong><br>
+        <em>AI generates follow-up questions based on your<br>solution approach and coding patterns</em>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
 
 ## Quick Start
 
@@ -252,16 +291,6 @@ cd go-interview-practice
 cd challenge-1
 ./run_tests.sh
 ```
-
-## Scoreboards
-
-Each challenge has its own scoreboard that tracks:
-- Successful submissions by user
-- Execution time rankings
-- Code efficiency metrics
-- Completion dates
-
-View global and per-challenge scoreboards in the Web UI to compare your solutions with others.
 
 ## Profile Badges for Contributors
 
@@ -361,7 +390,6 @@ We welcome contributions! You can contribute in several ways:
 - Submit your solutions via pull request
 
 **Add New Challenges:**
-- **Classic Challenges:** Algorithm and data structure problems
 - **Package Challenges:** Framework-specific practical applications (Gin, Cobra, GORM, etc.)
 
 **Quick Steps:**
@@ -393,9 +421,8 @@ Premium sponsor logos will appear here when we have them. Format:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=RezaSi/go-interview-practice&type=Date)](https://www.star-history.com/#RezaSi/go-interview-practice&Date)
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/RezaSi/go-interview-practice.svg?variant=adaptive)](https://starchart.cc/RezaSi/go-interview-practice)
 
 ---
 

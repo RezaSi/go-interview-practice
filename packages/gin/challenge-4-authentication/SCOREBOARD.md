@@ -1,4 +1,5 @@
-# Scoreboard for Gin Challenge 4: Authentication & Session Management
+# Scoreboard for gin challenge-4-authentication
 
 | Username   | Passed Tests | Total Tests |
-|------------|--------------|-------------| 
+|------------|--------------|-------------|
+| odelbos | 57 | 57 |

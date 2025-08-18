@@ -270,6 +270,63 @@ func (h *WebHandler) ScoreChallengeHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// PackageScoreboardPage renders the package-wide scoreboard page with same theme as main scoreboard
+func (h *WebHandler) PackageScoreboardPage(w http.ResponseWriter, r *http.Request) {
+	// URL format: /packages/{package}/scoreboard
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) != 3 || parts[0] != "packages" || parts[2] != "scoreboard" {
+		http.NotFound(w, r)
+		return
+	}
+
+	packageName := parts[1]
+
+	// Get package and challenges
+	pkg, err := h.packageService.GetPackage(packageName)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	challengesMap, err := h.packageService.GetPackageChallenges(packageName)
+	if err != nil {
+		challengesMap = make(map[string]*models.PackageChallenge)
+	}
+
+	// Build list of challenges in learning path order
+	var challenges []*models.PackageChallenge
+	for _, id := range pkg.LearningPath {
+		if ch, ok := challengesMap[id]; ok {
+			challenges = append(challenges, ch)
+		}
+	}
+
+	// Create leaderboard
+	leaderboard := h.createPackageLeaderboard(packageName, challenges)
+
+	tmpl, err := template.New("").Funcs(utils.GetTemplateFuncs()).ParseFS(h.content, "templates/base.html", "templates/package_scoreboard.html")
+	if err != nil {
+		log.Printf("Template error: %v", err)
+		http.Error(w, "Failed to parse template: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Package         *models.Package
+		Leaderboard     []models.PackageScoreboardEntry
+		TotalChallenges int
+	}{
+		Package:         pkg,
+		Leaderboard:     leaderboard,
+		TotalChallenges: len(challenges),
+	}
+
+	err = tmpl.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		log.Printf("Template execution error: %v", err)
+	}
+}
+
 // InterviewPage renders the interview simulator setup and runner
 func (h *WebHandler) InterviewPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.New("").Funcs(utils.GetTemplateFuncs()).ParseFS(h.content, "templates/base.html", "templates/interview.html")
@@ -594,6 +651,11 @@ func (h *WebHandler) countPackageChallengeSubmissions(packageName, challengeID s
 func (h *WebHandler) createPackageLeaderboard(packageName string, challenges []*models.PackageChallenge) []models.PackageScoreboardEntry {
 	var leaderboard []models.PackageScoreboardEntry
 	userStats := make(map[string]*userPackageStats)
+	
+	// Load sponsors for package leaderboard (reuse from API handler)
+	// Create a temporary API handler instance to access LoadSponsors
+	tempHandler := &APIHandler{}
+	sponsors := tempHandler.LoadSponsors()
 
 	// Collect submission data for each challenge
 	for _, challenge := range challenges {
@@ -615,27 +677,35 @@ func (h *WebHandler) createPackageLeaderboard(packageName string, challenges []*
 				username := entry.Name()
 				userDir := filepath.Join(submissionsDir, username)
 				solutionPath := filepath.Join(userDir, "solution.go")
+				altSolutionPath := filepath.Join(userDir, "solution-template.go")
 
-				// Check if user has a solution file
+				// Check if user has a solution file (either solution.go or solution-template.go)
+				var modTime time.Time
 				if stat, err := os.Stat(solutionPath); err == nil {
-					if userStats[username] == nil {
-						userStats[username] = &userPackageStats{
-							username:            username,
-							completedCount:      0,
-							lastSubmission:      stat.ModTime(),
-							challengesCompleted: make(map[string]bool),
-						}
+					modTime = stat.ModTime()
+				} else if stat, err := os.Stat(altSolutionPath); err == nil {
+					modTime = stat.ModTime()
+				} else {
+					continue
+				}
+
+				if userStats[username] == nil {
+					userStats[username] = &userPackageStats{
+						username:            username,
+						completedCount:      0,
+						lastSubmission:      modTime,
+						challengesCompleted: make(map[string]bool),
 					}
+				}
 
-					// Only count if not already counted
-					if !userStats[username].challengesCompleted[challenge.ID] {
-						userStats[username].completedCount++
-						userStats[username].challengesCompleted[challenge.ID] = true
+				// Only count if not already counted
+				if !userStats[username].challengesCompleted[challenge.ID] {
+					userStats[username].completedCount++
+					userStats[username].challengesCompleted[challenge.ID] = true
 
-						// Update last submission time if this is more recent
-						if stat.ModTime().After(userStats[username].lastSubmission) {
-							userStats[username].lastSubmission = stat.ModTime()
-						}
+					// Update last submission time if this is more recent
+					if modTime.After(userStats[username].lastSubmission) {
+						userStats[username].lastSubmission = modTime
 					}
 				}
 			}
@@ -652,6 +722,7 @@ func (h *WebHandler) createPackageLeaderboard(packageName string, challenges []*
 				SubmittedAt: stats.lastSubmission,
 				TestsPassed: stats.completedCount,
 				TestsTotal:  len(challenges),
+				IsSponsor:   sponsors[username],
 			}
 			leaderboard = append(leaderboard, entry)
 		}
