@@ -23,7 +23,7 @@ func TestReverseString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command("go", "run", "solution-template.go")
+			cmd := exec.Command("go", "run", "submissions/tonybui98/solution-template.go")
 			stdin := strings.NewReader(tt.input)
 			var stdout, stderr bytes.Buffer
 			cmd.Stdin = stdin
