@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AkifhanIlgaz | 7 | 7 |
 | Gandook | 7 | 7 |
+| GinVlad | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JunLog | 7 | 7 |
 | KhaledMosaad | 7 | 7 |
@@ -22,6 +23,7 @@
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
 | mick4711 | 7 | 7 |
+| muhammedkucukaslan | 7 | 7 |
 | odelbos | 7 | 7 |
 | perekoshik | 7 | 7 |
 | rohit-jangra-dx | 7 | 7 |

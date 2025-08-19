@@ -40,9 +40,10 @@ type AIService struct {
 
 // NewAIService creates a new AI service with the specified provider
 func NewAIService() *AIService {
+	cfgProvider := getProviderFromEnv()
 	config := LLMConfig{
-		Provider:    getProviderFromEnv(),
-		APIKey:      getAPIKeyFromEnv(),
+		Provider:    cfgProvider,
+		APIKey:      getAPIKeyFromEnvFor(cfgProvider),
 		Model:       getModelFromEnv(),
 		MaxTokens:   4000, // Increased for longer responses
 		Temperature: 0.3,
@@ -58,7 +59,8 @@ func NewAIService() *AIService {
 	case ProviderOpenAI:
 		config.BaseURL = "https://api.openai.com/v1/chat/completions"
 		if config.Model == "" {
-			config.Model = "gpt-4"
+			// Use a modern default that supports structured outputs well
+			config.Model = "gpt-4o-mini"
 		}
 	case ProviderClaude:
 		config.BaseURL = "https://api.anthropic.com/v1/messages"
@@ -97,16 +99,20 @@ func getProviderFromEnv() LLMProvider {
 	}
 }
 
-func getAPIKeyFromEnv() string {
-	// Try provider-specific keys first
-	if key := os.Getenv("GEMINI_API_KEY"); key != "" {
-		return key
-	}
-	if key := os.Getenv("OPENAI_API_KEY"); key != "" {
-		return key
-	}
-	if key := os.Getenv("CLAUDE_API_KEY"); key != "" {
-		return key
+func getAPIKeyFromEnvFor(provider LLMProvider) string {
+	switch provider {
+	case ProviderGemini:
+		if key := os.Getenv("GEMINI_API_KEY"); key != "" {
+			return key
+		}
+	case ProviderOpenAI:
+		if key := os.Getenv("OPENAI_API_KEY"); key != "" {
+			return key
+		}
+	case ProviderClaude:
+		if key := os.Getenv("CLAUDE_API_KEY"); key != "" {
+			return key
+		}
 	}
 	// Fall back to generic AI_API_KEY
 	return os.Getenv("AI_API_KEY")
@@ -172,6 +178,7 @@ type GeminiPart struct {
 type GeminiGenerationConfig struct {
 	Temperature     *float64 `json:"temperature,omitempty"`
 	MaxOutputTokens *int     `json:"maxOutputTokens,omitempty"`
+	ResponseMIME    string   `json:"responseMimeType,omitempty"`
 }
 
 // GeminiResponse represents the response from Gemini API
@@ -220,10 +227,11 @@ type ClaudeError struct {
 
 // OpenAIRequest represents the request structure for OpenAI API
 type OpenAIRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	MaxTokens   int       `json:"max_tokens"`
-	Temperature float64   `json:"temperature"`
+	Model          string                `json:"model"`
+	Messages       []Message             `json:"messages"`
+	MaxTokens      int                   `json:"max_tokens"`
+	Temperature    float64               `json:"temperature"`
+	ResponseFormat *OpenAIResponseFormat `json:"response_format,omitempty"`
 }
 
 // Message represents a message in the OpenAI chat
@@ -272,7 +280,7 @@ func (ai *AIService) ReviewCode(code string, challenge *models.Challenge, contex
 
 	prompt := ai.buildCodeReviewPrompt(code, challenge, context)
 
-	response, err := ai.callLLM(prompt)
+	response, err := ai.callLLMWithOpts(prompt, true /* expectJSON */)
 	if err != nil {
 		return &AICodeReview{
 			OverallScore:        0,
@@ -293,21 +301,8 @@ func (ai *AIService) ReviewCode(code string, challenge *models.Challenge, contex
 
 	review, err := ai.parseAIResponse(response)
 	if err != nil {
-		return &AICodeReview{
-			OverallScore:        0,
-			Issues:              []CodeIssue{},
-			Suggestions:         []CodeSuggestion{},
-			InterviewerFeedback: "🔧 AI response parsing error. The AI responded but we couldn't parse it properly. Please try again.",
-			FollowUpQuestions:   []string{"Would you like to try again?"},
-			Complexity: ComplexityAnalysis{
-				TimeComplexity:    "N/A",
-				SpaceComplexity:   "N/A",
-				CanOptimize:       false,
-				OptimizedApproach: "Response parsing failed",
-			},
-			ReadabilityScore: 0,
-			TestCoverage:     "Response parsing failed",
-		}, nil
+		// This shouldn't happen anymore since parseAIResponse returns fallback instead of error
+		return ai.createFallbackReview("Unexpected parsing error", response), nil
 	}
 
 	return review, nil
@@ -321,7 +316,7 @@ func (ai *AIService) GetInterviewerQuestions(code string, challenge *models.Chal
 
 	prompt := ai.buildQuestionPrompt(code, challenge, userProgress)
 
-	response, err := ai.callLLM(prompt)
+	response, err := ai.callLLMWithOpts(prompt, true /* expectJSON */)
 	if err != nil {
 		return []string{fmt.Sprintf("❌ AI service unavailable: %v", err)}, nil
 	}
@@ -338,7 +333,7 @@ func (ai *AIService) GetCodeHint(code string, challenge *models.Challenge, hintL
 
 	prompt := ai.buildHintPrompt(code, challenge, hintLevel)
 
-	response, err := ai.callLLM(prompt)
+	response, err := ai.callLLMWithOpts(prompt, false /* expectJSON */)
 	if err != nil {
 		return fmt.Sprintf("❌ AI service unavailable: %v", err), nil
 	}
@@ -346,77 +341,76 @@ func (ai *AIService) GetCodeHint(code string, challenge *models.Challenge, hintL
 	return ai.parseHint(response), nil
 }
 
+// BuildCodeReviewPrompt exposes the prompt builder for debugging
+func (ai *AIService) BuildCodeReviewPrompt(code string, challenge *models.Challenge, context string) string {
+	return ai.buildCodeReviewPrompt(code, challenge, context)
+}
+
+// CallLLMRaw calls the LLM and returns raw response for debugging
+func (ai *AIService) CallLLMRaw(prompt string) (string, error) {
+	return ai.callLLMWithOpts(prompt, true)
+}
+
 // buildCodeReviewPrompt creates the prompt for code review
 func (ai *AIService) buildCodeReviewPrompt(code string, challenge *models.Challenge, context string) string {
-	return fmt.Sprintf(`You are a senior Go engineer conducting a technical interview. Review this Go code solution and provide detailed feedback.
+	return fmt.Sprintf(`You are a senior Go interviewer. Respond ONLY with a single JSON object. Do NOT include markdown or code fences. All numeric fields must be JSON numbers, not strings.
 
-CHALLENGE: %s
-CONTEXT: %s
-
-CODE TO REVIEW:
-%s
-
-IMPORTANT: Respond with ONLY valid JSON. No markdown code blocks, no explanations before or after. Keep suggestions concise to avoid truncation.
-
-Provide a comprehensive review in this exact JSON format:
+SCHEMA:
 {
-  "overall_score": 0-100,
+  "overall_score": integer (0..100),
   "issues": [
     {
       "type": "bug|performance|style|logic",
       "severity": "low|medium|high|critical",
-      "line_number": 0,
-      "description": "Clear description of the issue",
-      "solution": "How to fix it"
+      "line_number": integer,
+      "description": string,
+      "solution": string
     }
   ],
   "suggestions": [
     {
       "category": "optimization|best_practice|alternative",
       "priority": "low|medium|high",
-      "description": "What to improve",
-      "example": "Code example if applicable"
+      "description": string,
+      "example": string
     }
   ],
-  "interviewer_feedback": "What a technical interviewer would say about this code",
-  "follow_up_questions": ["Question 1", "Question 2", "Question 3"],
+  "interviewer_feedback": string,
+  "follow_up_questions": [string],
   "complexity": {
-    "time_complexity": "O(n)",
-    "space_complexity": "O(1)",
-    "can_optimize": true,
-    "optimized_approach": "How to optimize"
+    "time_complexity": string,
+    "space_complexity": string,
+    "can_optimize": boolean,
+    "optimized_approach": string
   },
-  "readability_score": 0-100,
-  "test_coverage": "Assessment of how well the code handles edge cases"
+  "readability_score": integer (0..100),
+  "test_coverage": string
 }
 
-Focus on:
-1. Code correctness and edge cases
-2. Go best practices and idioms
-3. Performance and efficiency
-4. Code readability and maintainability
-5. What follow-up questions an interviewer would ask`, challenge.Title, context, code)
+CHALLENGE: %s
+CONTEXT: %s
+
+CODE (Go):
+BEGIN_CODE
+%s
+END_CODE
+
+Focus on: (1) correctness and edge cases, (2) Go idioms, (3) performance, (4) readability, (5) interviewer follow-ups.`, challenge.Title, context, code)
 }
 
 // buildQuestionPrompt creates the prompt for generating interview questions
 func (ai *AIService) buildQuestionPrompt(code string, challenge *models.Challenge, userProgress string) string {
-	return fmt.Sprintf(`You are a technical interviewer. Based on the candidate's solution to the coding challenge, generate 3-5 follow-up questions that a real interviewer would ask.
+	return fmt.Sprintf(`You are a technical interviewer. Respond ONLY with a JSON array of strings. No markdown, no prose outside the array.
 
 CHALLENGE: %s
 USER PROGRESS: %s
 
-CANDIDATE'S CODE:
+CODE (Go):
+BEGIN_CODE
 %s
+END_CODE
 
-Generate questions that:
-1. Test deeper understanding of the solution
-2. Explore edge cases and optimizations
-3. Assess knowledge of Go-specific concepts
-4. Evaluate problem-solving approach
-5. Check understanding of trade-offs
-
-Return only a JSON array of strings:
-["Question 1", "Question 2", "Question 3"]`, challenge.Title, userProgress, code)
+Generate 3-5 follow-up questions that probe: deeper understanding, edge cases, optimizations, Go-specific concepts, and trade-offs.`, challenge.Title, userProgress, code)
 }
 
 // buildHintPrompt creates the prompt for generating hints
@@ -428,7 +422,7 @@ func (ai *AIService) buildHintPrompt(code string, challenge *models.Challenge, h
 		4: "a detailed explanation with partial code example",
 	}
 
-	return fmt.Sprintf(`You are a helpful coding mentor. The user is working on this challenge and needs help.
+	return fmt.Sprintf(`You are a helpful coding mentor. Return only the hint text as plain text. No JSON, no code fences.
 
 CHALLENGE: %s
 CURRENT CODE:
@@ -436,25 +430,30 @@ CURRENT CODE:
 
 Provide %s (level %d/4). Be encouraging and educational, not just giving the answer.
 
-Return only the hint text, no JSON formatting.`, challenge.Title, code, hintTypes[hintLevel], hintLevel)
+Return only the hint text.`, challenge.Title, code, hintTypes[hintLevel], hintLevel)
 }
 
 // callLLM makes a request to the configured LLM provider
 func (ai *AIService) callLLM(prompt string) (string, error) {
+	return ai.callLLMWithOpts(prompt, false)
+}
+
+// callLLMWithOpts allows specifying whether JSON output is expected (to enforce provider features)
+func (ai *AIService) callLLMWithOpts(prompt string, expectJSON bool) (string, error) {
 	switch ai.config.Provider {
 	case ProviderGemini:
-		return ai.callGemini(prompt)
+		return ai.callGeminiWithOpts(prompt, expectJSON)
 	case ProviderOpenAI:
-		return ai.callOpenAI(prompt)
+		return ai.callOpenAIWithOpts(prompt, expectJSON)
 	case ProviderClaude:
-		return ai.callClaude(prompt)
+		return ai.callClaudeWithOpts(prompt, expectJSON)
 	default:
 		return "", fmt.Errorf("unsupported provider: %s", ai.config.Provider)
 	}
 }
 
 // callGemini makes a request to the Gemini API
-func (ai *AIService) callGemini(prompt string) (string, error) {
+func (ai *AIService) callGeminiWithOpts(prompt string, expectJSON bool) (string, error) {
 	url := fmt.Sprintf("%s/%s:generateContent?key=%s", ai.config.BaseURL, ai.config.Model, ai.config.APIKey)
 
 	requestBody := GeminiRequest{
@@ -468,6 +467,12 @@ func (ai *AIService) callGemini(prompt string) (string, error) {
 		GenerationConfig: &GeminiGenerationConfig{
 			Temperature:     &ai.config.Temperature,
 			MaxOutputTokens: &ai.config.MaxTokens,
+			ResponseMIME: func() string {
+				if expectJSON {
+					return "application/json"
+				}
+				return ""
+			}(),
 		},
 	}
 
@@ -512,14 +517,32 @@ func (ai *AIService) callGemini(prompt string) (string, error) {
 }
 
 // callClaude makes a request to the Claude API
-func (ai *AIService) callClaude(prompt string) (string, error) {
-	requestBody := ClaudeRequest{
+// Claude Messages API requires content blocks and benefits from a system message
+type claudeContentBlock struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type claudeMessage struct {
+	Role    string               `json:"role"`
+	Content []claudeContentBlock `json:"content"`
+}
+
+func (ai *AIService) callClaudeWithOpts(prompt string, expectJSON bool) (string, error) {
+	systemText := "You are a senior Go interviewer. Be concise."
+	if expectJSON {
+		systemText += " Respond ONLY with strict JSON. No markdown."
+	}
+	requestBody := struct {
+		Model       string          `json:"model"`
+		Messages    []claudeMessage `json:"messages"`
+		MaxTokens   int             `json:"max_tokens"`
+		Temperature float64         `json:"temperature"`
+	}{
 		Model: ai.config.Model,
-		Messages: []ClaudeMessage{
-			{
-				Role:    "user",
-				Content: prompt,
-			},
+		Messages: []claudeMessage{
+			{Role: "system", Content: []claudeContentBlock{{Type: "text", Text: systemText}}},
+			{Role: "user", Content: []claudeContentBlock{{Type: "text", Text: prompt}}},
 		},
 		MaxTokens:   ai.config.MaxTokens,
 		Temperature: ai.config.Temperature,
@@ -568,17 +591,33 @@ func (ai *AIService) callClaude(prompt string) (string, error) {
 }
 
 // callOpenAI makes a request to the OpenAI API
-func (ai *AIService) callOpenAI(prompt string) (string, error) {
+type OpenAIResponseFormat struct {
+	Type string `json:"type"`
+}
+
+func (ai *AIService) callOpenAIWithOpts(prompt string, expectJSON bool) (string, error) {
+	// Add a system message to better steer responses
+	messages := []Message{
+		{Role: "system", Content: func() string {
+			if expectJSON {
+				return "You are a senior Go interviewer. Respond ONLY with strict JSON. No markdown."
+			}
+			return "You are a senior Go interviewer."
+		}()},
+		{Role: "user", Content: prompt},
+	}
+
 	requestBody := OpenAIRequest{
-		Model: ai.config.Model,
-		Messages: []Message{
-			{
-				Role:    "user",
-				Content: prompt,
-			},
-		},
+		Model:       ai.config.Model,
+		Messages:    messages,
 		MaxTokens:   ai.config.MaxTokens,
 		Temperature: ai.config.Temperature,
+	}
+	if expectJSON {
+		// Only force json_object when the prompt expects a single JSON object, not an array
+		if strings.Contains(strings.ToLower(prompt), "single json object") {
+			requestBody.ResponseFormat = &OpenAIResponseFormat{Type: "json_object"}
+		}
 	}
 
 	jsonData, err := json.Marshal(requestBody)
@@ -626,15 +665,9 @@ func (ai *AIService) callOpenAI(prompt string) (string, error) {
 func (ai *AIService) parseAIResponse(response string) (*AICodeReview, error) {
 	// Remove markdown code blocks if present
 	response = strings.TrimSpace(response)
-	if strings.HasPrefix(response, "```json") {
-		response = strings.TrimPrefix(response, "```json")
-	}
-	if strings.HasPrefix(response, "```") {
-		response = strings.TrimPrefix(response, "```")
-	}
-	if strings.HasSuffix(response, "```") {
-		response = strings.TrimSuffix(response, "```")
-	}
+	response = strings.TrimPrefix(response, "```json")
+	response = strings.TrimPrefix(response, "```")
+	response = strings.TrimSuffix(response, "```")
 	response = strings.TrimSpace(response)
 
 	// Try to extract JSON from the response
@@ -642,7 +675,9 @@ func (ai *AIService) parseAIResponse(response string) (*AICodeReview, error) {
 	end := strings.LastIndex(response, "}")
 
 	if start == -1 || end == -1 {
-		return nil, fmt.Errorf("no complete JSON found in response")
+		// Log the raw response for debugging
+		fmt.Printf("AI Response parsing failed - no JSON braces found. Raw response: %s\n", response)
+		return ai.createFallbackReview("No JSON found in AI response", response), nil
 	}
 
 	jsonStr := response[start : end+1]
@@ -651,16 +686,71 @@ func (ai *AIService) parseAIResponse(response string) (*AICodeReview, error) {
 	openBraces := strings.Count(jsonStr, "{")
 	closeBraces := strings.Count(jsonStr, "}")
 	if openBraces != closeBraces {
-		return nil, fmt.Errorf("incomplete JSON - mismatched braces: %d open, %d close", openBraces, closeBraces)
+		fmt.Printf("AI Response parsing failed - mismatched braces. JSON: %s\n", jsonStr)
+		return ai.createFallbackReview("Incomplete JSON response", jsonStr), nil
 	}
 
 	var review AICodeReview
 	err := json.Unmarshal([]byte(jsonStr), &review)
 	if err != nil {
-		return nil, fmt.Errorf("JSON unmarshal error: %v, JSON length: %d chars", err, len(jsonStr))
+		fmt.Printf("AI Response JSON unmarshal error: %v. JSON: %s\n", err, jsonStr)
+		return ai.createFallbackReview("JSON parsing error", jsonStr), nil
+	}
+
+	// Validate critical fields and provide defaults
+	if review.OverallScore == 0 && review.ReadabilityScore == 0 && review.InterviewerFeedback == "" {
+		fmt.Printf("AI Response appears incomplete - all key fields empty. JSON: %s\n", jsonStr)
+		return ai.createFallbackReview("Incomplete AI response", jsonStr), nil
 	}
 
 	return &review, nil
+}
+
+// createFallbackReview creates a reasonable fallback when AI parsing fails
+func (ai *AIService) createFallbackReview(reason, rawResponse string) *AICodeReview {
+	// Try to extract any useful text from the response
+	feedback := rawResponse
+	if len(feedback) > 500 {
+		feedback = feedback[:500] + "..."
+	}
+	if feedback == "" {
+		feedback = "AI provided an empty or malformed response. Please try again."
+	}
+
+	return &AICodeReview{
+		OverallScore: 50, // Neutral score
+		Issues: []CodeIssue{
+			{
+				Type:        "parsing",
+				Severity:    "medium",
+				LineNumber:  0,
+				Description: fmt.Sprintf("AI response parsing issue: %s", reason),
+				Solution:    "Try running the AI review again, or check your code for syntax issues.",
+			},
+		},
+		Suggestions: []CodeSuggestion{
+			{
+				Category:    "troubleshooting",
+				Priority:    "medium",
+				Description: "If this keeps happening, try simplifying your code or breaking it into smaller functions.",
+				Example:     "",
+			},
+		},
+		InterviewerFeedback: fmt.Sprintf("I'm having trouble analyzing your code automatically. %s Let's focus on the core logic - can you walk me through your approach?", feedback),
+		FollowUpQuestions: []string{
+			"Can you explain your algorithm step by step?",
+			"What's the time complexity of your solution?",
+			"How would you handle edge cases?",
+		},
+		Complexity: ComplexityAnalysis{
+			TimeComplexity:    "Unable to analyze",
+			SpaceComplexity:   "Unable to analyze",
+			CanOptimize:       false,
+			OptimizedApproach: "Rerun analysis after fixing any syntax issues",
+		},
+		ReadabilityScore: 50,
+		TestCoverage:     "Unable to assess due to parsing error",
+	}
 }
 
 // parseQuestions parses questions from AI response

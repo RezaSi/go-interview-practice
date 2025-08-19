@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 32 | 32 |
+| GinVlad | 32 | 32 |
 | IBraveMonkey | 32 | 32 |
 | JackDalberg | 32 | 32 |
 | JunLog | 32 | 32 |
@@ -11,6 +12,7 @@
 | RezaSi | 32 | 32 |
 | ZaharBorisenko | 32 | 32 |
 | ashwinipatankar | 32 | 32 |
+| hodgechung | 32 | 32 |
 | kuzminprog | 32 | 32 |
 | lanmanul | 32 | 32 |
 | liukw-go | 32 | 32 |
