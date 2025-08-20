@@ -1,5 +1,5 @@
 // Package challenge20 contains the implementation for Challenge 20: Circuit Breaker Pattern
-package muhammedkucukaslan
+package main
 
 import (
 	"context"
