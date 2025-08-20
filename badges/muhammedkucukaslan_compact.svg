@@ -25,7 +25,7 @@
   <text x="20" y="20" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#212529">🐹 Go Interview Practice</text>
   
   <!-- Username and level -->
-  <text x="20" y="38" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="11" fill="#6c757d">@jersonzc</text>
+  <text x="20" y="38" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="11" fill="#6c757d">@muhammedkucukaslan</text>
   <text x="20" y="52" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="#97CA00">🌱 Beginner Developer</text>
   
   <!-- Progress section -->
@@ -33,10 +33,10 @@
   
   <!-- Progress bar -->
   <rect x="220" y="25" width="100" height="4" fill="#e9ecef" rx="2"/>
-  <rect x="220" y="25" width="26" height="4" fill="url(#compactGradient)" rx="2"/>
+  <rect x="220" y="25" width="20" height="4" fill="url(#compactGradient)" rx="2"/>
   
   <!-- Stats -->
-  <text x="220" y="42" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="#495057">8/30 (26.7%)</text>
+  <text x="220" y="42" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="#495057">6/30 (20.0%)</text>
   <circle cx="365" cy="30" r="12" fill="#97CA00" opacity="0.1"/>
   <text x="365" y="34" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" text-anchor="middle" fill="#97CA00">🌱</text>
 </svg>

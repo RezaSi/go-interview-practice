@@ -9,6 +9,8 @@
 | ZaharBorisenko | 9 | 9 |
 | ashwinipatankar | 9 | 9 |
 | bmeverett | 9 | 9 |
+| chenyao0910 | 9 | 9 |
+| jersonzc | 9 | 9 |
 | korranat9 | 9 | 9 |
 | mick4711 | 9 | 9 |
 | odelbos | 9 | 9 |
