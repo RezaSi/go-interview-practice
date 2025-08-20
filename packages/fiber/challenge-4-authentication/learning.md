@@ -133,7 +133,7 @@ func validateJWT(tokenString string, secret []byte) (*Claims, error) {
 ### **JWT Authentication Middleware**
 ```go
 func jwtMiddleware(secret []byte) fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         // Extract token from Authorization header
         authHeader := c.Get("Authorization")
         if authHeader == "" {
@@ -171,7 +171,7 @@ func jwtMiddleware(secret []byte) fiber.Handler {
 ### **Role-Based Access Control**
 ```go
 func requireRole(requiredRole string) fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         userRole := c.Locals("role").(string)
         
         if userRole != requiredRole {
@@ -353,7 +353,7 @@ func loginRateLimit() fiber.Handler {
     return limiter.New(limiter.Config{
         Max:        5,
         Expiration: 1 * time.Minute,
-        KeyGenerator: func(c *fiber.Ctx) string {
+        KeyGenerator: func(c fiber.Ctx) string {
             return c.IP()
         },
     })
@@ -391,7 +391,7 @@ app := fiber.New(fiber.Config{
 })
 
 // Add security headers
-app.Use(func(c *fiber.Ctx) error {
+app.Use(func(c fiber.Ctx) error {
     c.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return c.Next()
 })

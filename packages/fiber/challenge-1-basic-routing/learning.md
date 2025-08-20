@@ -20,8 +20,11 @@ The app instance is the core of a Fiber application. It handles incoming HTTP re
 app := fiber.New() // Create new Fiber instance
 // or with config
 app := fiber.New(fiber.Config{
-    Prefork: true,
     CaseSensitive: true,
+})
+// Enable prefork when starting the server
+app.Listen(":3000", fiber.ListenConfig{
+    EnablePrefork: true,
 })
 ```
 
@@ -39,7 +42,7 @@ Fiber supports all standard HTTP methods with Express-like syntax:
 The context carries request data, validates JSON, and renders responses.
 
 ```go
-func handler(c *fiber.Ctx) error {
+func handler(c fiber.Ctx) error {
     // c contains everything about the HTTP request/response
     return c.JSON(fiber.Map{"message": "Hello"})
 }
@@ -68,14 +71,14 @@ func handler(c *fiber.Ctx) error {
 
 ### **Static Routes**
 ```go
-app.Get("/", func(c *fiber.Ctx) error {
+app.Get("/", func(c fiber.Ctx) error {
     return c.SendString("Hello, World!")
 })
 ```
 
 ### **Route Parameters**
 ```go
-app.Get("/tasks/:id", func(c *fiber.Ctx) error {
+app.Get("/tasks/:id", func(c fiber.Ctx) error {
     id := c.Params("id")
     return c.JSON(fiber.Map{"task_id": id})
 })
@@ -83,7 +86,7 @@ app.Get("/tasks/:id", func(c *fiber.Ctx) error {
 
 ### **Query Parameters**
 ```go
-app.Get("/tasks", func(c *fiber.Ctx) error {
+app.Get("/tasks", func(c fiber.Ctx) error {
     search := c.Query("search", "")
     return c.JSON(fiber.Map{"search": search})
 })
@@ -93,7 +96,7 @@ app.Get("/tasks", func(c *fiber.Ctx) error {
 
 ### **JSON Responses**
 ```go
-app.Get("/api/data", func(c *fiber.Ctx) error {
+app.Get("/api/data", func(c fiber.Ctx) error {
     data := map[string]interface{}{
         "message": "Success",
         "data": []string{"item1", "item2"},
@@ -109,9 +112,9 @@ type User struct {
     Email string `json:"email"`
 }
 
-app.Post("/users", func(c *fiber.Ctx) error {
+app.Post("/users", func(c fiber.Ctx) error {
     user := new(User)
-    if err := c.BodyParser(user); err != nil {
+    if err := c.Bind().Body(user); err != nil {
         return c.Status(400).JSON(fiber.Map{"error": err.Error()})
     }
     return c.JSON(user)
@@ -123,7 +126,7 @@ app.Post("/users", func(c *fiber.Ctx) error {
 ### **Context Methods**
 - `c.Params(key)` - Get route parameter
 - `c.Query(key)` - Get query parameter  
-- `c.BodyParser(&struct)` - Parse request body
+- `c.Bind().Body(&struct)` - Parse request body
 - `c.JSON(data)` - Send JSON response
 - `c.Status(code)` - Set status code
 - `c.SendString(text)` - Send plain text
