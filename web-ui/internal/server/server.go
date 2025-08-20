@@ -93,6 +93,12 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/api/ai/interviewer-questions", apiHandler.AIInterviewerQuestions)
 	mux.HandleFunc("/api/ai/code-hint", apiHandler.AICodeHint)
 	mux.HandleFunc("/api/ai/debug", apiHandler.AIDebugResponse)
+
+	// GitHub webhook route
+	mux.HandleFunc("/webhook/github", apiHandler.GitHubWebhookHandler)
+
+	// Debug route for sponsors
+	mux.HandleFunc("/api/debug/sponsors", apiHandler.GetSponsorsDebug)
 	mux.HandleFunc("/api/ai/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		provider := os.Getenv("AI_PROVIDER")

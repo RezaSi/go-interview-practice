@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 32 | 32 |
+| GinVlad | 32 | 32 |
 | IBraveMonkey | 32 | 32 |
 | JackDalberg | 32 | 32 |
 | JunLog | 32 | 32 |
