@@ -9,6 +9,7 @@
 | GinVlad | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
 | JackDalberg | 7 | 7 |
+| JarhsonNing | 7 | 7 |
 | JunLog | 7 | 7 |
 | K1tten2005 | 7 | 7 |
 | KaiserKun | 7 | 7 |
@@ -23,6 +24,7 @@
 | TOomaAh | 7 | 7 |
 | VadimihrSvS | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
+| Z4za01 | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
 | adwantay | 7 | 7 |
 | arashrasoulzadeh | 7 | 7 |

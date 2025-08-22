@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Article represents a blog article
@@ -58,7 +58,7 @@ func main() {
 
 // RequestIDMiddleware generates a unique request ID for each request
 func RequestIDMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Generate UUID for request ID
 		// Use github.com/google/uuid package
 		// Store in context locals as "request_id"
@@ -70,7 +70,7 @@ func RequestIDMiddleware() fiber.Handler {
 
 // LoggingMiddleware logs all requests with timing information
 func LoggingMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Capture start time
 
 		err := c.Next()
@@ -84,7 +84,7 @@ func LoggingMiddleware() fiber.Handler {
 
 // CORSMiddleware handles cross-origin requests
 func CORSMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Set CORS headers
 		// Access-Control-Allow-Origin: *
 		// Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS
@@ -104,7 +104,7 @@ func RateLimitMiddleware() fiber.Handler {
 	// Use a sliding window or token bucket algorithm
 	// Return 429 Too Many Requests when limit exceeded
 
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Check rate limit for c.IP()
 		// If exceeded, return 429 status
 
@@ -114,7 +114,7 @@ func RateLimitMiddleware() fiber.Handler {
 
 // AuthMiddleware validates API keys for protected routes
 func AuthMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Get API key from X-API-Key header
 		// Valid keys: "admin-key-123", "user-key-456"
 		// Return 401 Unauthorized if missing or invalid
@@ -126,7 +126,7 @@ func AuthMiddleware() fiber.Handler {
 
 // ErrorHandlerMiddleware provides centralized error handling
 func ErrorHandlerMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Handle panics and errors
 		// Recover from panics and return 500 status
 		// Log errors with request ID
@@ -139,13 +139,13 @@ func ErrorHandlerMiddleware() fiber.Handler {
 // TODO: Implement route handlers
 
 // pingHandler handles health check requests
-func pingHandler(c *fiber.Ctx) error {
+func pingHandler(c fiber.Ctx) error {
 	// TODO: Return simple pong response with request ID
 	return nil
 }
 
 // getArticlesHandler returns all articles with pagination
-func getArticlesHandler(c *fiber.Ctx) error {
+func getArticlesHandler(c fiber.Ctx) error {
 	// TODO: Implement pagination using query parameters
 	// ?page=1&limit=10 (default: page=1, limit=10)
 	// Return articles with pagination metadata
@@ -153,14 +153,14 @@ func getArticlesHandler(c *fiber.Ctx) error {
 }
 
 // getArticleHandler returns a specific article by ID
-func getArticleHandler(c *fiber.Ctx) error {
+func getArticleHandler(c fiber.Ctx) error {
 	// TODO: Get article ID from URL parameter
 	// Return 404 if article not found
 	return nil
 }
 
 // createArticleHandler creates a new article
-func createArticleHandler(c *fiber.Ctx) error {
+func createArticleHandler(c fiber.Ctx) error {
 	// TODO: Parse request body into Article struct
 	// Validate required fields (title, content, author)
 	// Add article to storage with auto-increment ID
@@ -169,7 +169,7 @@ func createArticleHandler(c *fiber.Ctx) error {
 }
 
 // updateArticleHandler updates an existing article
-func updateArticleHandler(c *fiber.Ctx) error {
+func updateArticleHandler(c fiber.Ctx) error {
 	// TODO: Get article ID from URL parameter
 	// Parse request body for updates
 	// Update article if exists, return 404 if not found
@@ -178,7 +178,7 @@ func updateArticleHandler(c *fiber.Ctx) error {
 }
 
 // deleteArticleHandler deletes an article
-func deleteArticleHandler(c *fiber.Ctx) error {
+func deleteArticleHandler(c fiber.Ctx) error {
 	// TODO: Get article ID from URL parameter
 	// Remove article from storage
 	// Return 404 if article not found
@@ -187,7 +187,7 @@ func deleteArticleHandler(c *fiber.Ctx) error {
 }
 
 // getStatsHandler returns API usage statistics (admin only)
-func getStatsHandler(c *fiber.Ctx) error {
+func getStatsHandler(c fiber.Ctx) error {
 	// TODO: Return API statistics
 	// Total articles, request count, etc.
 	// Only accessible with admin API key

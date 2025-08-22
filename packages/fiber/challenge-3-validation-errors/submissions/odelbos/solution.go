@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"regexp"
-	"sync"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Product represents a product in the catalog
@@ -40,8 +40,8 @@ type ErrorResponse struct {
 }
 
 type BulkResult struct {
-	Success bool     `json:"success"`
-	Product *Product `json:"product,omitempty"`
+	Success bool              `json:"success"`
+	Product *Product          `json:"product,omitempty"`
 	Errors  []ValidationError `json:"errors,omitempty"`
 }
 
@@ -113,7 +113,6 @@ func validateProduct(product Product) []ValidationError {
 	return errors
 }
 
-
 func formatValidationError(e validator.FieldError) ValidationError {
 	field := e.Field()
 	var msg string
@@ -149,7 +148,7 @@ func formatValidationError(e validator.FieldError) ValidationError {
 // Route handlers
 // -------------------------------------------------------------------
 
-func getProductsHandler(c *fiber.Ctx) error {
+func getProductsHandler(c fiber.Ctx) error {
 	filters := map[string]string{
 		"category":  c.Query("category"),
 		"in_stock":  c.Query("in_stock"),
@@ -165,7 +164,7 @@ func getProductsHandler(c *fiber.Ctx) error {
 	return c.JSON(filteredProducts)
 }
 
-func getProductHandler(c *fiber.Ctx) error {
+func getProductHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
@@ -184,9 +183,9 @@ func getProductHandler(c *fiber.Ctx) error {
 	return c.JSON(product)
 }
 
-func createProductHandler(c *fiber.Ctx) error {
+func createProductHandler(c fiber.Ctx) error {
 	var product Product
-	if err := c.BodyParser(&product); err != nil {
+	if err := c.Bind().Body(&product); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
 			Success: false,
 			Error:   "Invalid request",
@@ -213,7 +212,7 @@ func createProductHandler(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(product)
 }
 
-func updateProductHandler(c *fiber.Ctx) error {
+func updateProductHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
@@ -234,7 +233,7 @@ func updateProductHandler(c *fiber.Ctx) error {
 	}
 
 	var updated Product
-	if err := c.BodyParser(&updated); err != nil {
+	if err := c.Bind().Body(&updated); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
 			Success: false,
 			Error:   "Invalid request",
@@ -262,9 +261,9 @@ func updateProductHandler(c *fiber.Ctx) error {
 	return c.JSON(updated)
 }
 
-func bulkCreateHandler(c *fiber.Ctx) error {
+func bulkCreateHandler(c fiber.Ctx) error {
 	var bulkProducts []Product
-	if err := c.BodyParser(&bulkProducts); err != nil {
+	if err := c.Bind().Body(&bulkProducts); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
 			Success: false,
 			Error:   "Invalid request",
@@ -276,7 +275,7 @@ func bulkCreateHandler(c *fiber.Ctx) error {
 
 	results := make([]BulkResult, 0, len(bulkProducts))
 
-	for _, product := range(bulkProducts) {
+	for _, product := range bulkProducts {
 		if errors := validateProduct(product); len(errors) > 0 {
 			results = append(results, BulkResult{
 				Success: false,
@@ -312,7 +311,7 @@ func bulkCreateHandler(c *fiber.Ctx) error {
 // -------------------------------------------------------------------
 
 func findProductByID(id int) (*Product, int) {
-	for i, product := range(products) {
+	for i, product := range products {
 		if product.ID == id {
 			return &product, i
 		}
@@ -326,7 +325,7 @@ func generateSKU() string {
 
 func filterProducts(products []Product, filters map[string]string) []Product {
 	var results []Product
-	for _, p := range(products) {
+	for _, p := range products {
 		match := true
 		if category, ok := filters["category"]; ok && category != "" && p.Category != category {
 			match = false
