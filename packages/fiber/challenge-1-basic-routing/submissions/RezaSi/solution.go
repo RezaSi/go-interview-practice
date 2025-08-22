@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Task represents a task in our task management system
@@ -54,20 +54,20 @@ func setupApp() *fiber.App {
 
 	// Health check endpoint
 	// GET /ping - should return {"message": "pong"}
-	app.Get("/ping", func(c *fiber.Ctx) error {
+	app.Get("/ping", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "pong"})
 	})
 
 	// Get all tasks endpoint
 	// GET /tasks - should return all tasks as JSON array
-	app.Get("/tasks", func(c *fiber.Ctx) error {
+	app.Get("/tasks", func(c fiber.Ctx) error {
 		tasks := taskStore.GetAll()
 		return c.JSON(tasks)
 	})
 
 	// Get task by ID endpoint
 	// GET /tasks/:id - should return specific task or 404 if not found
-	app.Get("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Get("/tasks/:id", func(c fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
@@ -84,9 +84,9 @@ func setupApp() *fiber.App {
 
 	// Create task endpoint
 	// POST /tasks - should create new task and return it with 201 status
-	app.Post("/tasks", func(c *fiber.Ctx) error {
+	app.Post("/tasks", func(c fiber.Ctx) error {
 		var newTask Task
-		if err := c.BodyParser(&newTask); err != nil {
+		if err := c.Bind().Body(&newTask); err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 		}
 
@@ -96,7 +96,7 @@ func setupApp() *fiber.App {
 
 	// Update task endpoint
 	// PUT /tasks/:id - should update existing task or return 404
-	app.Put("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Put("/tasks/:id", func(c fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
@@ -104,7 +104,7 @@ func setupApp() *fiber.App {
 		}
 
 		var updateTask Task
-		if err := c.BodyParser(&updateTask); err != nil {
+		if err := c.Bind().Body(&updateTask); err != nil {
 			return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
 		}
 
@@ -118,7 +118,7 @@ func setupApp() *fiber.App {
 
 	// Delete task endpoint
 	// DELETE /tasks/:id - should delete task or return 404
-	app.Delete("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Delete("/tasks/:id", func(c fiber.Ctx) error {
 		idStr := c.Params("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {

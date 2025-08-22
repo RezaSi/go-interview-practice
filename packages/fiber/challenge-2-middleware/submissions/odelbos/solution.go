@@ -1,14 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
-	"fmt"
-	"slices"
-	"log"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 )
@@ -40,20 +40,19 @@ var articles = []Article{
 var nextID = 3
 var articlesMu sync.RWMutex
 
-
-var	validKeys = map[string]string{
+var validKeys = map[string]string{
 	"admin-key-123": "admin",
 	"user-key-456":  "user",
 }
 
 var (
-	rateLimiters = make(map[string]*rate.Limiter)
+	rateLimiters   = make(map[string]*rate.Limiter)
 	rateLimitMutex sync.Mutex
 )
 
 var (
 	requestCount = 0
-	statsMu sync.Mutex
+	statsMu      sync.Mutex
 )
 
 func main() {
@@ -84,7 +83,7 @@ func main() {
 // -----------------------------------------------------------
 
 func RequestIDMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		requestID := uuid.New().String()
 		c.Locals("request_id", requestID)
 		c.Set("X-Request-ID", requestID)
@@ -98,7 +97,7 @@ func RequestIDMiddleware() fiber.Handler {
 }
 
 func LoggingMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		start := time.Now()
 		err := c.Next()
 
@@ -117,7 +116,7 @@ func LoggingMiddleware() fiber.Handler {
 }
 
 func CORSMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		c.Set("Access-Control-Allow-Origin", "*")
 		c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization,X-API-Key")
@@ -131,12 +130,12 @@ func CORSMiddleware() fiber.Handler {
 }
 
 func RateLimitMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		ip := c.IP()
 		rateLimitMutex.Lock()
 		limiter, ok := rateLimiters[ip]
-		if ! ok {
-			limiter = rate.NewLimiter(rate.Every(time.Minute / 100), 100)
+		if !ok {
+			limiter = rate.NewLimiter(rate.Every(time.Minute/100), 100)
 			rateLimiters[ip] = limiter
 		}
 		rateLimitMutex.Unlock()
@@ -144,7 +143,7 @@ func RateLimitMiddleware() fiber.Handler {
 		c.Set("X-RateLimit-Limit", "100")
 		c.Set("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(time.Minute).Unix()))
 
-		if ! limiter.Allow() {
+		if !limiter.Allow() {
 			c.Set("X-RateLimit-Remaining", "0")
 			return errResponse(c, fiber.StatusTooManyRequests, "Rate limit exceeded")
 		}
@@ -156,10 +155,10 @@ func RateLimitMiddleware() fiber.Handler {
 }
 
 func AuthMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		apiKey := c.Get("X-API-Key")
 		role, ok := validKeys[apiKey]
-		if ! ok {
+		if !ok {
 			return errResponse(c, fiber.StatusUnauthorized, "Unauthorized")
 		}
 		c.Locals("role", role)
@@ -168,7 +167,7 @@ func AuthMiddleware() fiber.Handler {
 }
 
 func ErrorHandlerMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// Recover from panics and return 500 status
 		// Log errors with request ID
 		// Return consistent error response format
@@ -200,11 +199,11 @@ func ErrorHandlerMiddleware() fiber.Handler {
 // Handlers
 // -----------------------------------------------------------
 
-func pingHandler(c *fiber.Ctx) error {
+func pingHandler(c fiber.Ctx) error {
 	return okResponse(c, fiber.StatusOK, "pong", nil)
 }
 
-func getArticlesHandler(c *fiber.Ctx) error {
+func getArticlesHandler(c fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 	if page < 1 {
@@ -228,8 +227,7 @@ func getArticlesHandler(c *fiber.Ctx) error {
 	return okResponse(c, fiber.StatusOK, "Articles", articles[start:end])
 }
 
-
-func getArticleHandler(c *fiber.Ctx) error {
+func getArticleHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid Id")
@@ -246,9 +244,9 @@ func getArticleHandler(c *fiber.Ctx) error {
 	return errResponse(c, fiber.StatusNotFound, "Not found")
 }
 
-func createArticleHandler(c *fiber.Ctx) error {
+func createArticleHandler(c fiber.Ctx) error {
 	var article Article
-	if err := c.BodyParser(&article); err != nil {
+	if err := c.Bind().Body(&article); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid body")
 	}
 
@@ -264,24 +262,24 @@ func createArticleHandler(c *fiber.Ctx) error {
 	article.UpdatedAt = article.CreatedAt
 	articles = append(articles, article)
 	nextID++
-	
+
 	return okResponse(c, fiber.StatusCreated, "Created successfully", article)
 }
 
-func updateArticleHandler(c *fiber.Ctx) error {
+func updateArticleHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid Id")
 	}
 
 	var data Article
-	if err := c.BodyParser(&data); err != nil {
+	if err := c.Bind().Body(&data); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid body")
 	}
 
 	articlesMu.Lock()
 	defer articlesMu.Unlock()
-	
+
 	for i, article := range articles {
 		if article.ID == id {
 			if data.Title != "" {
@@ -294,14 +292,14 @@ func updateArticleHandler(c *fiber.Ctx) error {
 				articles[i].Author = data.Author
 			}
 			articles[i].UpdatedAt = time.Now()
-			
+
 			return okResponse(c, fiber.StatusOK, "Updated successfully", articles[i])
 		}
 	}
 	return errResponse(c, fiber.StatusNotFound, "Not found")
 }
 
-func deleteArticleHandler(c *fiber.Ctx) error {
+func deleteArticleHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid Id")
@@ -309,17 +307,17 @@ func deleteArticleHandler(c *fiber.Ctx) error {
 
 	articlesMu.Lock()
 	defer articlesMu.Unlock()
-	
+
 	for i, article := range articles {
 		if article.ID == id {
-			articles = slices.Delete(articles, i, i + 1)			
+			articles = slices.Delete(articles, i, i+1)
 			return okResponse(c, fiber.StatusOK, "Delted successfully", articles[i])
 		}
 	}
 	return errResponse(c, fiber.StatusNotFound, "Not found")
 }
 
-func getStatsHandler(c *fiber.Ctx) error {
+func getStatsHandler(c fiber.Ctx) error {
 	// Total articles, request count, etc.
 	// Only accessible with admin API key
 	if c.Locals("role") != "admin" {
@@ -340,7 +338,7 @@ func getStatsHandler(c *fiber.Ctx) error {
 // Helpers
 // -----------------------------------------------------------
 
-func getRequestId(c *fiber.Ctx) string {
+func getRequestId(c fiber.Ctx) string {
 	id := c.Locals("request_id")
 	if s, ok := id.(string); ok {
 		return s
@@ -348,7 +346,7 @@ func getRequestId(c *fiber.Ctx) string {
 	return ""
 }
 
-func okResponse(c *fiber.Ctx, status int, msg string, data interface{}) error {
+func okResponse(c fiber.Ctx, status int, msg string, data interface{}) error {
 	return c.Status(status).JSON(APIResponse{
 		Success:   true,
 		Message:   msg,
@@ -357,7 +355,7 @@ func okResponse(c *fiber.Ctx, status int, msg string, data interface{}) error {
 	})
 }
 
-func errResponse(c *fiber.Ctx, status int, err string) error {
+func errResponse(c fiber.Ctx, status int, err string) error {
 	return c.Status(status).JSON(APIResponse{
 		Success:   false,
 		Error:     err,
