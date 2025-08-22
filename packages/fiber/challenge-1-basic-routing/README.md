@@ -62,7 +62,7 @@ Your implementation must pass all the provided tests, which verify:
 
 - Use Fiber's built-in JSON handling with `c.JSON()`
 - Extract path parameters with `c.Params()`
-- Parse JSON request bodies with `c.BodyParser()`
+- Parse JSON request bodies with `c.Bind().Body()`
 - Store tasks in memory (slice or map)
 - Return appropriate HTTP status codes
 

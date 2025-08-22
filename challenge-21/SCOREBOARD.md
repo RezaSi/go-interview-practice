@@ -5,6 +5,7 @@
 | GinVlad | 32 | 32 |
 | IBraveMonkey | 32 | 32 |
 | JackDalberg | 32 | 32 |
+| JarhsonNing | 32 | 32 |
 | JunLog | 32 | 32 |
 | KhaledMosaad | 32 | 32 |
 | MYK12397 | 32 | 32 |
@@ -17,6 +18,7 @@
 | lanmanul | 32 | 32 |
 | liukw-go | 32 | 32 |
 | mick4711 | 32 | 32 |
+| muhammedkucukaslan | 32 | 32 |
 | odelbos | 32 | 32 |
 | perekoshik | 32 | 32 |
 | t4e1 | 32 | 32 |
