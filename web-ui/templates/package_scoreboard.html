@@ -1,0 +1,235 @@
+{{define "content"}}
+<div class="row mb-4">
+    <div class="col">
+        <div class="hero-section text-center py-4">
+            <div class="hero-content">
+                <h1 class="display-5 fw-bold mb-2">🏆 {{.Package.DisplayName}} Leaderboard</h1>
+                <p class="lead mb-3">Top contributors ranked by completed challenges</p>
+                <div class="d-flex justify-content-center flex-wrap gap-2 mb-2">
+                    <a href="/packages/{{.Package.Name}}" class="btn btn-light px-4">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Package
+                    </a>
+                    <a href="/" class="btn btn-outline-light px-4">
+                        <i class="bi bi-code-slash me-2"></i>Browse Classic Challenges
+                    </a>
+                </div>
+                <div class="small opacity-75">Total challenges: {{.TotalChallenges}}</div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-5" style="display:none;">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading leaderboard...</span>
+        </div>
+        <p class="text-muted">Loading leaderboard data...</p>
+    </div>
+
+    <!-- Leaderboard Content -->
+    <div id="leaderboard-content">
+        <div class="row mb-5" id="podium-section" style="display:none;">
+            <div class="col">
+                <h3 class="text-center mb-4">🥇 Top Champions</h3>
+                <div class="row justify-content-center">
+                    <!-- Top 3 populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-trophy me-2"></i>Complete Rankings
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="leaderboard-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center" style="width:80px;">Rank</th>
+                                        <th style="width:220px;">Contributor</th>
+                                        <th class="text-center" style="width:120px;">Completed</th>
+                                        <th>Challenge Progress</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loadingState = document.getElementById('loading-state');
+    const leaderboardContent = document.getElementById('leaderboard-content');
+    const podiumSection = document.getElementById('podium-section');
+    const leaderboardTbody = document.getElementById('leaderboard-tbody');
+
+    async function loadPackageLeaderboard() {
+        try {
+            loadingState.style.display = 'block';
+            leaderboardContent.style.display = 'none';
+
+            const pkg = '{{.Package.Name}}';
+            const resp = await fetch(`/api/package-leaderboard?package=${encodeURIComponent(pkg)}`);
+            const data = await resp.json();
+
+            if (data.success && Array.isArray(data.leaderboard)) {
+                renderLeaderboard(data.leaderboard, data.totalChallenges || 0);
+                loadingState.style.display = 'none';
+                leaderboardContent.style.display = 'block';
+            } else {
+                showEmptyState();
+            }
+        } catch (e) {
+            console.error('Error loading package leaderboard:', e);
+            showErrorState();
+        }
+    }
+
+    function renderLeaderboard(leaderboard, totalChallenges) {
+        // Assign ranks first so podium has access to them
+        leaderboard.forEach((user, idx) => { user.rank = idx + 1; });
+
+        // Podium
+        if (leaderboard.length >= 3) {
+            renderPodium(leaderboard.slice(0,3));
+            podiumSection.style.display = 'block';
+        }
+
+        // Table
+        leaderboardTbody.innerHTML = '';
+        leaderboard.forEach((user) => {
+            const row = createRow(user, totalChallenges);
+            leaderboardTbody.appendChild(row);
+        });
+    }
+
+    function renderPodium(topThree) {
+        const podiumContainer = podiumSection.querySelector('.row');
+        podiumContainer.innerHTML = '';
+        const order = [topThree[1], topThree[0], topThree[2]].filter(Boolean);
+        order.forEach(user => {
+            const actualRank = Number.isInteger(user?.rank) ? user.rank : 0;
+            const podiumClass = actualRank === 1 ? 'first' : actualRank === 2 ? 'second' : 'third';
+            const rankClass = podiumClass;
+            const card = document.createElement('div');
+            card.className = 'col-md-4 mb-3';
+            card.innerHTML = `
+                <div class="card podium-card ${podiumClass} text-center p-3">
+                    <div class="podium-rank ${rankClass}">${actualRank || ''}</div>
+                    <img src="https://github.com/${user.username}.png" class="rounded-circle mx-auto mb-3" style="width:80px;height:80px;border:3px solid white;">
+                    <h5 class="mb-2">
+                        ${user.isSponsor ? '<span class="sponsor-heart-podium">❤️</span> ' : ''}${user.username}
+                    </h5>
+                    <p class="mb-2"><strong>${user.tests_passed || 0}</strong> completed</p>
+                    <div class="mt-2">
+                        <span class="badge bg-primary achievement-badge">Package Pro</span>
+                    </div>
+                </div>`;
+            podiumContainer.appendChild(card);
+        });
+    }
+
+    function createRow(user, totalChallenges) {
+        const row = document.createElement('tr');
+        const rankBadgeClass = user.rank === 1 ? 'top-1' : user.rank <= 3 ? 'top-3' : user.rank <= 10 ? 'top-10' : 'other';
+
+        // Build challenge indicators based on TestsTotal (package challenges count)
+        const count = Number.isInteger(totalChallenges) && totalChallenges > 0 ? totalChallenges : (user.tests_total || 0);
+        let indicators = '';
+        for (let i = 1; i <= count; i++) {
+            const isCompleted = i <= (user.tests_passed || 0);
+            const indicatorClass = isCompleted ? 'completed' : 'not-completed';
+            const content = isCompleted ? '✓' : '•';
+            indicators += `<span class="challenge-indicator ${indicatorClass}" title="Challenge ${i}: ${isCompleted ? 'Completed' : 'Not completed'}">${content}</span>`;
+        }
+
+        row.innerHTML = `
+            <td class="text-center"><div class="rank-badge ${rankBadgeClass}">${user.rank}</div></td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <img src="https://github.com/${user.username}.png" class="avatar-small me-3" alt="${user.username}">
+                    <div>
+                        <div class="fw-bold">${user.username}</div>
+                        ${user.isSponsor ? '<div class="sponsor-badge-line">❤️ Sponsor</div>' : '<div style="height: 0;"></div>'}
+                        <div>
+                            <a href="https://github.com/${user.username}" target="_blank" class="small text-muted text-decoration-none">
+                                <i class="bi bi-github"></i> View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="text-center">
+                <div class="fw-bold text-primary fs-5">${user.tests_passed || 0}</div>
+                <small class="text-muted">of ${count}</small>
+            </td>
+            <td><div style="line-height:1.2;">${indicators}</div></td>`;
+        return row;
+    }
+
+    function showEmptyState() {
+        loadingState.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-trophy" style="font-size: 3rem; color: #6c757d;"></i>
+                <h4 class="mt-3 text-muted">No Rankings Yet</h4>
+                <p class="text-muted">Be the first to complete a package challenge!</p>
+                <a href="/packages/{{.Package.Name}}" class="btn btn-primary">Browse Package Challenges</a>
+            </div>`;
+    }
+
+    function showErrorState() {
+        loadingState.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #dc3545;"></i>
+                <h4 class="mt-3 text-danger">Error Loading Leaderboard</h4>
+                <p class="text-muted">Failed to load data. Please try again.</p>
+                <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+            </div>`;
+    }
+
+    loadPackageLeaderboard();
+});
+</script>
+
+<style>
+.hero-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3); margin-bottom: 2rem; }
+.hero-section::before { content: ''; position: absolute; inset: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>') repeat; background-size: 40px 40px; }
+.hero-content { position: relative; z-index: 2; }
+.podium-card { background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: none; border-radius: 15px; transition: all 0.3s ease; position: relative; overflow: hidden; }
+.podium-card.first { background: linear-gradient(135deg, #ffd700, #ffed4e); transform: scale(1.05); box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); }
+.podium-card.second { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); box-shadow: 0 8px 25px rgba(192, 192, 192, 0.3); }
+.podium-card.third { background: linear-gradient(135deg, #cd7f32, #daa520); box-shadow: 0 8px 25px rgba(205, 127, 50, 0.3); }
+.podium-rank { position: absolute; top: -10px; right: -10px; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.podium-rank.first { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
+.podium-rank.second { background: linear-gradient(135deg, #4ecdc4, #45b7aa); }
+.podium-rank.third { background: linear-gradient(135deg, #feca57, #ff6348); }
+.challenge-indicator { display: inline-block; width: 24px; height: 24px; border-radius: 4px; margin: 1px; text-align: center; line-height: 22px; font-size: 0.7rem; font-weight: bold; transition: all 0.2s ease; }
+.challenge-indicator.completed { background: #28a745; color: white; }
+.challenge-indicator.not-completed { background: #e9ecef; color: #6c757d; border: 1px solid #dee2e6; }
+.challenge-indicator:hover { transform: scale(1.1); z-index: 10; position: relative; }
+.rank-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.9rem; }
+.rank-badge.top-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #333; }
+.rank-badge.top-3 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #333; }
+.rank-badge.top-10 { background: linear-gradient(135deg, #cd7f32, #daa520); }
+.rank-badge.other { background: linear-gradient(135deg, #6c757d, #495057); }
+.avatar-small { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.achievement-badge { font-size: 0.8rem; padding: 0.25rem 0.5rem; border-radius: 50px; font-weight: 500; }
+.sponsor-badge-line { background: linear-gradient(45deg, #ff6b6b, #ee5a52); color: white; padding: 1px 6px; border-radius: 8px; font-size: 0.65rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.2); box-shadow: 0 1px 3px rgba(255, 107, 107, 0.3); display: inline-block; margin: 2px 0; animation: sponsorGlow 2s ease-in-out infinite alternate; }
+@keyframes sponsorGlow { 0% { box-shadow: 0 1px 3px rgba(255, 107, 107, 0.3); } 100% { box-shadow: 0 2px 6px rgba(255, 107, 107, 0.5); } }
+.sponsor-heart-podium { font-size: 1.1em; margin-right: 4px; filter: drop-shadow(0 0 4px rgba(255, 107, 107, 0.6)); animation: sponsorPulse 2s ease-in-out infinite; }
+@keyframes sponsorPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 107, 107, 0.5)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.8)); } }
+</style>
+{{end}}
+
