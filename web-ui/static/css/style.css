@@ -645,4 +645,340 @@
 #reset-hints-btn {
     border-color: #6c757d;
     color: #6c757d;
+}
+
+/* Enhanced Challenge Cards for Package Detail - Matching Home Page */
+.challenge-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.challenge-card.attempted-challenge {
+    border-left: 4px solid #28a745;
+    background: #e8f5e8;
+}
+
+.challenge-card.attempted-challenge .card-header {
+    background: #e8f5e8;
+}
+
+.challenge-card .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.challenge-card .card-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #212529;
+    line-height: 1.3;
+}
+
+.challenge-card .card-text {
+    flex: 1;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+.challenge-card .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.challenge-card .card-footer {
+    background: transparent;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.challenge-card .btn {
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4rem 0.8rem;
+}
+
+/* Hover effects matching home page */
+.challenge-card:hover .card-header {
+    background: #e9ecef;
+}
+
+.challenge-card.attempted-challenge:hover .card-header {
+    background: #e8f5e8;
+}
+
+/* Compact Prerequisites & Real-World Usage Styles */
+.prerequisites-container,
+.usage-container {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.25rem;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-header .icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.section-header.prerequisites .icon {
+    background: #28a745;
+}
+
+.section-header.usage .icon {
+    background: #17a2b8;
+}
+
+.section-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.section-header p {
+    display: none;
+}
+
+.prerequisite-item,
+.usage-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.prerequisite-item:hover,
+.usage-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.prerequisite-item .icon,
+.usage-item .icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.prerequisite-item .icon {
+    background: #28a745;
+}
+
+.usage-item .icon {
+    background: #17a2b8;
+}
+
+.usage-item .icon.rest-api {
+    background: #dc3545;
+}
+
+.usage-item .icon.microservices {
+    background: #ffc107;
+}
+
+.usage-item .icon.web-apps {
+    background: #28a745;
+}
+
+.usage-item .icon.database {
+    background: #6f42c1;
+}
+
+.usage-item .icon.ecommerce {
+    background: #fd7e14;
+}
+
+.usage-item .icon.user-management {
+    background: #20c997;
+}
+
+.usage-item .icon.devops {
+    background: #6f42c1;
+}
+
+.usage-item .icon.cli {
+    background: #495057;
+}
+
+.usage-item .icon.system-admin {
+    background: #dc3545;
+}
+
+.usage-item .icon.high-traffic {
+    background: #28a745;
+}
+
+.usage-item .icon.real-time {
+    background: #ffc107;
+}
+
+.usage-item .icon.microservices-arch {
+    background: #17a2b8;
+}
+
+.prerequisite-item .text,
+.usage-item .text {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 1rem;
+}
+
+.empty-state .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    font-size: 1rem;
+    color: white;
+    background: #6c757d;
+}
+
+.empty-state h6 {
+    color: #6c757d;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.empty-state p {
+    color: #adb5bd;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* Sponsor Button Styles */
+.btn-sponsor {
+    background: linear-gradient(135deg, #ea4aaa 0%, #ff6b9d 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(234, 74, 170, 0.3) !important;
+    text-decoration: none !important;
+}
+
+.btn-sponsor:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(234, 74, 170, 0.4) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.btn-sponsor:focus {
+    outline: none !important;
+    box-shadow: 0 4px 8px rgba(234, 74, 170, 0.4), 0 0 0 3px rgba(234, 74, 170, 0.2) !important;
+}
+
+.btn-sponsor:active {
+    transform: translateY(0) !important;
+}
+
+/* GitHub Stats Section */
+.github-stats {
+    gap: 1rem;
+    max-width: 300px;
+    margin: 0 auto;
+    justify-content: center !important;
+}
+
+/* Premium Sponsors Section */
+.sponsors-container {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.sponsor-logo {
+    height: 50px;
+    max-width: 150px;
+    object-fit: contain;
+    filter: grayscale(100%);
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.sponsor-logo:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+@media (max-width: 576px) {
+    .github-stats {
+        gap: 0.75rem;
+    }
+    
+    .btn-sponsor {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    .sponsors-container {
+        gap: 1rem;
+    }
+    
+    .sponsor-logo {
+        height: 40px;
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .prerequisites-container,
+    .usage-container {
+        padding: 1rem;
+    }
+    
+    .prerequisite-item,
+    .usage-item {
+        padding: 0.5rem 0.75rem;
+    }
 } 

@@ -17,11 +17,23 @@
                     </a>
                 </div>
                 
-                <!-- GitHub Stars Only -->
-                <div class="github-stats d-inline-flex align-items-center">
-                    <i class="bi bi-star-fill text-warning me-2"></i>
-                    <iframe src="https://ghbtns.com/github-btn.html?user=RezaSi&repo=go-interview-practice&type=star&count=true" 
-                            frameborder="0" scrolling="0" width="100" height="20" title="GitHub Stars"></iframe>
+                <!-- GitHub Stats & Sponsor -->
+                <div class="github-stats d-flex align-items-center flex-wrap">
+                    <!-- Star Button -->
+                    <div class="d-inline-flex align-items-center">
+                        <i class="bi bi-star-fill text-warning me-2"></i>
+                        <iframe src="https://ghbtns.com/github-btn.html?user=RezaSi&repo=go-interview-practice&type=star&count=true" 
+                                frameborder="0" scrolling="0" width="100" height="20" title="GitHub Stars"></iframe>
+                    </div>
+                    
+                    <!-- Sponsor Button -->
+                    <a href="https://github.com/sponsors/RezaSi" 
+                       class="btn btn-sm btn-sponsor d-inline-flex align-items-center px-3 py-2"
+                       target="_blank"
+                       title="Support this project">
+                        <i class="bi bi-heart-fill me-2" style="font-size: 0.8rem;"></i>
+                        Sponsor
+                    </a>
                 </div>
             </div>
         </div>
@@ -49,30 +61,73 @@
     </div>
 </div>
 
+<!-- Challenge Types Navigation -->
 <div class="row mb-4" id="challenges">
     <div class="col">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h2 class="mb-0">Challenge Library</h2>
-            </div>
-            <div class="d-flex gap-2">
-                <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-outline-secondary active" id="filter-all">All</button>
-                    <button class="btn btn-sm btn-outline-success" id="filter-beginner">Beginner</button>
-                    <button class="btn btn-sm btn-outline-warning" id="filter-intermediate">Intermediate</button>
-                    <button class="btn btn-sm btn-outline-danger" id="filter-advanced">Advanced</button>
-                </div>
-                <select class="form-select form-select-sm" id="sort-select" style="width: auto;">
-                    <option value="difficulty" selected>Difficulty</option>
-                    <option value="id-asc">Number ↑</option>
-                    <option value="id-desc">Number ↓</option>
-                </select>
+        <!-- Modern Tab Navigation -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom-0">
+                <ul class="nav nav-pills card-header-pills justify-content-center" id="challengeTypeTabs" role="tablist">
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link active px-4 py-2 fw-semibold" 
+                                id="algorithm-tab" 
+                                data-bs-toggle="pill" 
+                                data-bs-target="#algorithm-challenges" 
+                                type="button" 
+                                role="tab">
+                            <i class="bi bi-cpu me-2"></i>Classic Challenges
+                            <span class="badge bg-primary ms-2">{{len .Challenges}}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-4 py-2 fw-semibold position-relative" 
+                                id="package-tab" 
+                                data-bs-toggle="pill" 
+                                data-bs-target="#package-challenges" 
+                                type="button" 
+                                role="tab"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-bs-title="🚀 New! Try real-world package challenges"
+                                data-bs-custom-class="package-tooltip">
+                            <i class="bi bi-box-seam me-2"></i>Package Mastery
+                            <span class="badge bg-success ms-2">{{len .PackagesList}}</span>
+                            <!-- Permanent pulsing indicator -->
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle new-indicator" id="package-new-indicator" style="margin-left: -8px; margin-top: 2px;">
+                                <span class="visually-hidden">New</span>
+                            </span>
+                        </button>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="challenges-container">
+        
+        <!-- Tab Content -->
+        <div class="tab-content mt-4" id="challengeTypeContent">
+            <!-- Algorithm Challenges Tab -->
+            <div class="tab-pane fade show active" id="algorithm-challenges" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h3 class="mb-1">Classic Challenges</h3>
+                        <p class="text-muted mb-0">Classic coding interview problems to master fundamental concepts</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-secondary active" id="filter-all">All</button>
+                            <button class="btn btn-sm btn-outline-success" id="filter-beginner">Beginner</button>
+                            <button class="btn btn-sm btn-outline-warning" id="filter-intermediate">Intermediate</button>
+                            <button class="btn btn-sm btn-outline-danger" id="filter-advanced">Advanced</button>
+                        </div>
+                        <select class="form-select form-select-sm" id="sort-select" style="width: auto;">
+                            <option value="difficulty" selected>Difficulty</option>
+                            <option value="id-asc">Number ↑</option>
+                            <option value="id-desc">Number ↓</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Classic Challenges Grid -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="classic-challenges-container">
     {{range .Challenges}}
     <div class="col challenge-item" data-difficulty="{{.Difficulty}}" data-id="{{.ID}}" data-attempted="{{if and $.UserAttempts (index $.UserAttempts.AttemptedIDs .ID)}}true{{else}}false{{end}}">
         <div class="card h-100 shadow-sm hover-shadow {{if and $.UserAttempts (index $.UserAttempts.AttemptedIDs .ID)}}attempted-challenge{{end}}">
@@ -101,7 +156,256 @@
         </div>
     </div>
     {{end}}
+                </div>
+            </div>
+            
+            <!-- Package Challenges Tab -->
+            <div class="tab-pane fade" id="package-challenges" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="mb-1">Real-World Package Challenges</h3>
+                        <p class="text-muted mb-0">Master popular Go packages and frameworks used in production</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-secondary active" id="package-filter-all">All Packages</button>
+                            <button class="btn btn-sm btn-outline-info" id="package-filter-web">Web</button>
+                            <button class="btn btn-sm btn-outline-warning" id="package-filter-cli">CLI</button>
+                            <button class="btn btn-sm btn-outline-success" id="package-filter-database">Database</button>
+                        </div>
+                        <select class="form-select form-select-sm" id="package-sort-select" style="width: auto;">
+                            <option value="popularity" selected>Popularity</option>
+                            <option value="difficulty">Difficulty</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Package Grid -->
+                <div class="row row-cols-1 row-cols-lg-2 g-4" id="packages-container">
+                    {{range .PackagesList}}
+                    <div class="col">
+                        <div class="card h-100 shadow-sm hover-shadow package-card border-0 {{if not (isPackageActive .Package)}}opacity-75{{end}}" data-category="{{.Category}}" data-popularity="{{.Stars}}">
+                            <div class="card-header {{getCategoryGradient .Category}} text-white border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="{{getCategoryIcon .Category}} me-2 fs-4"></i>
+                                        <div>
+                                            <h5 class="mb-0 fw-bold">{{.DisplayName}}</h5>
+                                            <small class="opacity-75">{{.Description}}</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="bi bi-star-fill text-warning me-1"></i>
+                                            <span class="fw-semibold">{{formatStars .Stars}}</span>
+                                        </div>
+                                        <span class="badge bg-light text-dark">{{.Category}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {{if not (isPackageActive .Package)}}
+                                <!-- Coming Soon Card -->
+                                <div class="text-center py-4">
+                                    <i class="bi bi-clock text-muted fs-1 mb-3"></i>
+                                    <h6 class="text-muted">Coming Soon</h6>
+                                    <p class="small text-muted mb-0">{{.Description}} challenges and tutorials</p>
+                                    {{if .Prerequisites}}
+                                    <div class="mt-3">
+                                        <h6 class="small fw-semibold text-muted">Prerequisites:</h6>
+                                        <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                            {{range .Prerequisites}}
+                                            <span class="badge bg-light text-muted border">{{.}}</span>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    {{end}}
+                                </div>
+                                {{else}}
+                                <!-- Active Package -->
+                                <div class="mb-3">
+                                    {{if .Tags}}
+                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                        {{range .Tags}}
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info">{{. | replace "_" " "}}</span>
+                                        {{end}}
+                                    </div>
+                                    {{end}}
+                                    <p class="text-muted small mb-0">{{.Description}}</p>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted">Progress</small>
+                                        <small class="text-muted">{{if $.UserAttempts}}{{countPackageAttemptsForPackage $.UserAttempts .Package}}{{else}}0{{end}}/{{len .LearningPath}} challenges</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{if $.UserAttempts}}{{calculateProgress (countPackageAttemptsForPackage $.UserAttempts .Package) (len .LearningPath)}}{{else}}0{{end}}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Challenge List -->
+                                <div class="package-challenges">
+                                    <h6 class="fw-semibold mb-2">Learning Path:</h6>
+                                    <div class="list-group list-group-flush">
+                                        {{$challenges := getPackageChallenges .Package}}
+                                        {{range $challenges}}
+                                        <div class="list-group-item px-0 py-2 border-0">
+                                            <div class="d-flex align-items-center">
+                                                {{if isComingSoon .}}
+                                                <i class="bi bi-clock text-muted me-2"></i>
+                                                <span class="small">{{.Title}}</span>
+                                                <span class="badge bg-secondary ms-auto">Coming Soon</span>
+                                                {{else}}
+                                                <i class="{{.Icon}} text-primary me-2"></i>
+                                                <span class="small">{{.Title}}</span>
+                                                <span class="badge {{getDifficultyBadgeClass .Difficulty}} ms-auto">{{.Difficulty}}</span>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                        {{if not $challenges}}
+                                        <div class="list-group-item px-0 py-2 border-0">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-info-circle text-muted me-2"></i>
+                                                <span class="small text-muted">No challenges available yet</span>
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                            {{if isPackageActive .Package}}
+                            <div class="card-footer bg-transparent border-0">
+                                <div class="d-flex gap-2">
+                                    <a href="/packages/{{.Name}}" class="btn btn-primary btn-sm flex-fill">
+                                        <i class="bi bi-play-circle me-1"></i>Start Learning
+                                    </a>
+                                    <a href="{{.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-github"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {{else}}
+                            <div class="card-footer bg-transparent border-0">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-secondary btn-sm flex-fill disabled" disabled>
+                                        <i class="bi bi-clock me-1"></i>Coming Soon
+                                    </button>
+                                    <a href="{{.GitHubURL}}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-github"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+
+            
+        </div> <!-- End package challenges tab (already closed above) -->
+    </div> <!-- End tab content -->
+</div> <!-- End challenges section -->
+
+<!-- Premium Sponsors Section -->
+<div class="row mb-5">
+    <div class="col">
+        <div class="text-center py-4">
+            <h4 class="mb-4 text-muted">Proudly Supported By</h4>
+            <div class="sponsors-container" id="premium-sponsors">
+                <!-- Premium sponsor logos will appear here -->
+                <div class="text-muted">
+                    <i class="bi bi-building me-2"></i>
+                    <span class="small">
+                        Interested in premium sponsorship? 
+                        <a href="https://github.com/sponsors/RezaSi" target="_blank" class="text-decoration-none">
+                            Feature your company logo here!
+                        </a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Package Tips Modal -->
+<div class="modal fade" id="packageTipsModal" tabindex="-1" aria-labelledby="packageTipsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-primary text-white border-0">
+                <h5 class="modal-title d-flex align-items-center" id="packageTipsModalLabel">
+                    <i class="bi bi-lightbulb-fill text-warning me-2 fs-4"></i>
+                    Welcome to Package Mastery!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="fw-bold mb-3">🚀 Master Real-World Go Packages</h6>
+                        <p class="mb-3">Package challenges are different from classic algorithm challenges - they focus on practical skills with popular Go packages used in production environments.</p>
+                        
+                        <div class="mb-4">
+                            <h6 class="fw-semibold text-primary mb-2">What makes Package Challenges unique:</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Hands-on Experience:</strong> Work with real packages like Gin, Cobra, GORM
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Progressive Learning:</strong> Challenges build on each other in a structured path
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Production Skills:</strong> Learn patterns and best practices used in industry
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check2-circle text-success me-2"></i>
+                                    <strong>Rich Learning Materials:</strong> Detailed explanations, examples, and documentation
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Pro Tip:</strong> Start with packages you're curious about, or follow the popularity ranking to learn the most widely-used Go packages first!
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="bi bi-box-seam text-primary mb-3" style="font-size: 4rem;"></i>
+                        <div class="bg-light rounded p-3">
+                            <small class="text-muted d-block mb-2">Currently Available:</small>
+                            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <span class="badge bg-success">Gin</span>
+                                <span class="badge bg-primary">Cobra</span>
+                                <span class="badge bg-warning text-dark">GORM</span>
+                            </div>
+                            <small class="text-muted d-block mt-2">More packages coming soon!</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="dontShowAgain">
+                    <label class="form-check-label text-muted" for="dontShowAgain">
+                        Don't show this again
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary ms-auto" data-bs-dismiss="modal">
+                    <i class="bi bi-rocket-takeoff me-2"></i>Let's Start Learning!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{end}}
 
 {{define "scripts"}}
@@ -111,7 +415,7 @@
         const filterButtons = document.querySelectorAll('[id^="filter-"]');
         const challengeItems = document.querySelectorAll('.challenge-item');
         const sortSelect = document.getElementById('sort-select');
-        const challengesContainer = document.getElementById('challenges-container');
+        const challengesContainer = document.getElementById('classic-challenges-container');
         const usernameInput = document.getElementById('username');
 
         // Auto-refresh attempts on page load if username is set
@@ -315,6 +619,222 @@
 
         // Initialize: set all filter as active
         document.getElementById('filter-all').classList.add('active');
+        
+        // Package Challenges Filtering
+        const packageFilterButtons = document.querySelectorAll('[id^="package-filter-"]');
+        const packageCards = document.querySelectorAll('.package-card');
+        const packageSortSelect = document.getElementById('package-sort-select');
+        const packagesContainer = document.getElementById('packages-container');
+
+        // Package filter functionality
+        packageFilterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all package filter buttons
+                packageFilterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                const filter = this.id.replace('package-filter-', '');
+                
+                packageCards.forEach(card => {
+                    if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                        card.parentElement.style.display = 'block';
+                    } else {
+                        card.parentElement.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Package sort functionality
+        if (packageSortSelect) {
+            packageSortSelect.addEventListener('change', function() {
+                sortPackages(this.value);
+            });
+        }
+
+        function sortPackages(sortValue) {
+            const packages = Array.from(packagesContainer.children);
+            
+            packages.sort((a, b) => {
+                if (sortValue === 'popularity') {
+                    const popA = parseInt(a.querySelector('.package-card').getAttribute('data-popularity') || '0');
+                    const popB = parseInt(b.querySelector('.package-card').getAttribute('data-popularity') || '0');
+                    return popB - popA; // Descending order: highest stars first
+                } else if (sortValue === 'name') {
+                    const nameA = a.querySelector('h5').textContent;
+                    const nameB = b.querySelector('h5').textContent;
+                    return nameA.localeCompare(nameB);
+                } else if (sortValue === 'difficulty') {
+                    // For now, sort by name since difficulty isn't implemented yet
+                    const nameA = a.querySelector('h5').textContent;
+                    const nameB = b.querySelector('h5').textContent;
+                    return nameA.localeCompare(nameB);
+                }
+            });
+            
+            // Reappend in sorted order
+            packages.forEach(packageCard => {
+                packagesContainer.appendChild(packageCard);
+            });
+        }
+
+        // Packages are now pre-sorted by Go backend in popularity order
+        
+        // Package Tips Modal Logic
+        const packageTab = document.getElementById('package-tab');
+        const packageTipsModal = new bootstrap.Modal(document.getElementById('packageTipsModal'));
+        const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+        // Check if user has seen the package tips before
+        const hasSeenPackageTips = localStorage.getItem('hasSeenPackageTips') === 'true';
+        
+        // Initialize tooltip only for first-time users
+        let tooltip = null;
+        if (!hasSeenPackageTips) {
+            tooltip = new bootstrap.Tooltip(packageTab);
+            
+            // Show tooltip briefly on page load to draw attention
+            setTimeout(() => {
+                tooltip.show();
+                setTimeout(() => {
+                    tooltip.hide();
+                }, 3000); // Hide after 3 seconds
+            }, 1000); // Show after 1 second
+        }
+        
+        // Show tips modal when Package Mastery tab is clicked for the first time
+        packageTab.addEventListener('click', function() {
+            // Dispose tooltip after first click (but keep the NEW badge)
+            if (tooltip) {
+                tooltip.dispose();
+                tooltip = null;
+            }
+            
+            if (!hasSeenPackageTips) {
+                // Small delay to let the tab switch animation complete
+                setTimeout(() => {
+                    packageTipsModal.show();
+                }, 300);
+            }
+        });
+        
+        // Handle modal close and save preference
+        document.getElementById('packageTipsModal').addEventListener('hidden.bs.modal', function() {
+            const shouldNotShowAgain = dontShowAgainCheckbox.checked;
+            if (shouldNotShowAgain) {
+                localStorage.setItem('hasSeenPackageTips', 'true');
+            } else {
+                // If they didn't check "don't show again", mark as seen for this session only
+                localStorage.setItem('hasSeenPackageTips', 'true');
+            }
+        });
+        
+        // Reset tips option (for development/testing - remove in production)
+        // Uncomment the next line to reset the tips state for testing
+        // localStorage.removeItem('hasSeenPackageTips');
     });
 </script>
+
+<style>
+    /* Custom styles for package challenges */
+    .package-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .package-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    
+    .progress {
+        border-radius: 10px;
+        background-color: rgba(0,0,0,0.1);
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 25px;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background-color: rgba(0,123,255,0.1);
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+    }
+    
+    .hover-shadow {
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .hover-shadow:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    .badge.bg-info.bg-opacity-10 {
+        border: 1px solid rgba(13, 202, 240, 0.3);
+    }
+    
+    /* Tab content animations */
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Permanent pulsing indicator */
+    .new-indicator {
+        animation: pulse-warning 2s infinite;
+        z-index: 10;
+    }
+    
+    @keyframes pulse-warning {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+        }
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+    }
+    
+    /* Custom tooltip styles */
+    .package-tooltip {
+        --bs-tooltip-bg: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        --bs-tooltip-color: white;
+        font-size: 0.875rem;
+    }
+</style>
 {{end}} 

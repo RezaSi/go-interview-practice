@@ -1,0 +1,28 @@
+{
+  "name": "gorm",
+  "display_name": "GORM Database ORM",
+  "description": "Feature-rich ORM library for Go databases",
+  "version": "v1.25.5",
+  "github_url": "https://github.com/go-gorm/gorm",
+  "documentation_url": "https://gorm.io/",
+  "stars": 36000,
+  "category": "database",
+  "difficulty": "intermediate_to_advanced",
+  "prerequisites": ["basic_go", "sql_concepts", "database_fundamentals"],
+  "learning_path": [
+    "challenge-1-crud-operations",
+    "challenge-2-associations",
+    "challenge-3-migrations",
+    "challenge-4-advanced-queries",
+    "challenge-5-generics"
+  ],
+  "tags": ["database", "orm", "sql", "mysql", "postgresql", "sqlite"],
+  "estimated_time": "4-6 hours",
+  "real_world_usage": [
+    "Web application backends",
+    "REST API data layers",
+    "Microservices with databases",
+    "Data migration tools",
+    "Admin dashboards and CRUD apps"
+  ]
+} 
