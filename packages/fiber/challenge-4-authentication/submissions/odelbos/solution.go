@@ -1,15 +1,15 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User represents a user in the system
@@ -151,7 +151,7 @@ func generateJWT(user User) (string, error) {
 
 func validateJWT(tokenString string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ! ok {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Invalid token")
 		}
 		return jwtSecret, nil
@@ -171,9 +171,9 @@ func validateJWT(tokenString string) (*JWTClaims, error) {
 // --------------------------------------------------------------------
 
 func jwtMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		bearer := c.Get("Authorization")
-		if ! strings.HasPrefix(bearer, "Bearer ") {
+		if !strings.HasPrefix(bearer, "Bearer ") {
 			return errResponse(c, fiber.StatusUnauthorized, "Invalid token")
 		}
 		tokenStr := strings.TrimPrefix(bearer, "Bearer ")
@@ -187,7 +187,7 @@ func jwtMiddleware() fiber.Handler {
 }
 
 func adminMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		claims := c.Locals("claims").(*JWTClaims)
 		if claims.Role != "admin" {
 			return errResponse(c, fiber.StatusForbidden, "Forbidden")
@@ -200,9 +200,9 @@ func adminMiddleware() fiber.Handler {
 // Implement route handlers
 // --------------------------------------------------------------------
 
-func registerHandler(c *fiber.Ctx) error {
+func registerHandler(c fiber.Ctx) error {
 	var req RegisterRequest
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid request")
 	}
 	if err := validate.Struct(req); err != nil {
@@ -238,9 +238,9 @@ func registerHandler(c *fiber.Ctx) error {
 	return okResponse(c, fiber.StatusCreated, token, safeUser(user), "")
 }
 
-func loginHandler(c *fiber.Ctx) error {
+func loginHandler(c fiber.Ctx) error {
 	var req LoginRequest
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, err.Error())
 	}
 	if err := validate.Struct(req); err != nil {
@@ -248,10 +248,10 @@ func loginHandler(c *fiber.Ctx) error {
 	}
 
 	user, _ := findUserByUsername(req.Username)
-	if user == nil || ! verifyPassword(req.Password, user.Password) {
+	if user == nil || !verifyPassword(req.Password, user.Password) {
 		return errResponse(c, fiber.StatusUnauthorized, "Invalid credentials")
 	}
-	if ! user.Active {
+	if !user.Active {
 		return errResponse(c, fiber.StatusForbidden, "Account inactive")
 	}
 
@@ -262,11 +262,11 @@ func loginHandler(c *fiber.Ctx) error {
 	return okResponse(c, fiber.StatusOK, token, safeUser(*user), "Login success")
 }
 
-func healthHandler(c *fiber.Ctx) error {
+func healthHandler(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "ok", "timestamp": time.Now()})
 }
 
-func getProfileHandler(c *fiber.Ctx) error {
+func getProfileHandler(c fiber.Ctx) error {
 	// Find user by ID from claims
 	// Return user profile (without password)
 	claims := c.Locals("claims").(*JWTClaims)
@@ -278,7 +278,7 @@ func getProfileHandler(c *fiber.Ctx) error {
 	return okResponse(c, fiber.StatusOK, "", safeUser(*user), "")
 }
 
-func updateProfileHandler(c *fiber.Ctx) error {
+func updateProfileHandler(c fiber.Ctx) error {
 	claims := c.Locals("claims").(*JWTClaims)
 	user, idx := findUserByID(claims.UserID)
 	if idx == -1 {
@@ -291,7 +291,7 @@ func updateProfileHandler(c *fiber.Ctx) error {
 	}
 	var req UpdateData
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, err.Error())
 	}
 
@@ -313,7 +313,7 @@ func updateProfileHandler(c *fiber.Ctx) error {
 	return c.JSON(safeUser(*user))
 }
 
-func refreshTokenHandler(c *fiber.Ctx) error {
+func refreshTokenHandler(c fiber.Ctx) error {
 	claims := c.Locals("claims").(*JWTClaims)
 	user, _ := findUserByID(claims.UserID)
 	if user == nil {
@@ -327,15 +327,15 @@ func refreshTokenHandler(c *fiber.Ctx) error {
 	return okResponse(c, fiber.StatusOK, token, safeUser(*user), "")
 }
 
-func listUsersHandler(c *fiber.Ctx) error {
+func listUsersHandler(c fiber.Ctx) error {
 	results := make([]User, len(users))
-	for _, user := range(users) {
+	for _, user := range users {
 		results = append(results, safeUser(user))
 	}
 	return c.JSON(results)
 }
 
-func updateUserRoleHandler(c *fiber.Ctx) error {
+func updateUserRoleHandler(c fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid ID")
@@ -344,7 +344,7 @@ func updateUserRoleHandler(c *fiber.Ctx) error {
 	var req struct {
 		Role string `json:"role"`
 	}
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid request")
 	}
 	if req.Role != "user" && req.Role != "admin" {
@@ -395,7 +395,7 @@ func safeUser(user User) User {
 	return user
 }
 
-func okResponse(c *fiber.Ctx, status int, token string, user User, msg string) error {
+func okResponse(c fiber.Ctx, status int, token string, user User, msg string) error {
 	return c.Status(status).JSON(AuthResponse{
 		Success: true,
 		Token:   token,
@@ -404,7 +404,7 @@ func okResponse(c *fiber.Ctx, status int, token string, user User, msg string) e
 	})
 }
 
-func errResponse(c *fiber.Ctx, status int, msg string) error {
+func errResponse(c fiber.Ctx, status int, msg string) error {
 	return c.Status(status).JSON(AuthResponse{
 		Success: false,
 		Message: msg,
