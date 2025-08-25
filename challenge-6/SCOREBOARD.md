@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AkifhanIlgaz | 7 | 7 |
+| Cpoing | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
 | JackDalberg | 7 | 7 |
@@ -15,6 +16,7 @@
 | ZaharBorisenko | 7 | 7 |
 | aruncs31s | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
+| binoymanoj | 7 | 7 |
 | grozdovk | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
