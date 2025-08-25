@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v3"
 )
 
 // User represents a user in the system
@@ -62,7 +62,7 @@ func main() {
 	// TODO: Create Fiber app
 	app := fiber.New()
 
-    // Setup custom validator
+	// Setup custom validator
 	setupCustomValidator()
 
 	// TODO: Setup routes
@@ -138,7 +138,7 @@ func validateJWT(tokenString string) (*JWTClaims, error) {
 
 // jwtMiddleware validates JWT tokens
 func jwtMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Extract token from Authorization header
 		// - Expected format: "Bearer <token>"
 		// - Validate token using validateJWT()
@@ -151,7 +151,7 @@ func jwtMiddleware() fiber.Handler {
 
 // adminMiddleware checks for admin role
 func adminMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// TODO: Check if user has admin role
 		// - Get user claims from context (set by jwtMiddleware)
 		// - Return 403 if user is not admin
@@ -163,7 +163,7 @@ func adminMiddleware() fiber.Handler {
 // TODO: Implement route handlers
 
 // registerHandler handles user registration
-func registerHandler(c *fiber.Ctx) error {
+func registerHandler(c fiber.Ctx) error {
 	// TODO: Parse and validate registration request
 	// - Validate input using struct validation
 	// - Check if username/email already exists
@@ -175,7 +175,7 @@ func registerHandler(c *fiber.Ctx) error {
 }
 
 // loginHandler handles user login
-func loginHandler(c *fiber.Ctx) error {
+func loginHandler(c fiber.Ctx) error {
 	// TODO: Parse and validate login request
 	// - Find user by username
 	// - Verify password
@@ -186,7 +186,7 @@ func loginHandler(c *fiber.Ctx) error {
 }
 
 // healthHandler returns API health status
-func healthHandler(c *fiber.Ctx) error {
+func healthHandler(c fiber.Ctx) error {
 	// TODO: Return health check response
 	return c.JSON(fiber.Map{
 		"status":    "ok",
@@ -195,7 +195,7 @@ func healthHandler(c *fiber.Ctx) error {
 }
 
 // getProfileHandler returns current user's profile
-func getProfileHandler(c *fiber.Ctx) error {
+func getProfileHandler(c fiber.Ctx) error {
 	// TODO: Get user from JWT claims in context
 	// - Find user by ID from claims
 	// - Return user profile (without password)
@@ -203,7 +203,7 @@ func getProfileHandler(c *fiber.Ctx) error {
 }
 
 // updateProfileHandler updates current user's profile
-func updateProfileHandler(c *fiber.Ctx) error {
+func updateProfileHandler(c fiber.Ctx) error {
 	// TODO: Update user profile
 	// - Get user ID from JWT claims
 	// - Parse update request (email, username)
@@ -215,7 +215,7 @@ func updateProfileHandler(c *fiber.Ctx) error {
 }
 
 // refreshTokenHandler generates a new JWT token
-func refreshTokenHandler(c *fiber.Ctx) error {
+func refreshTokenHandler(c fiber.Ctx) error {
 	// TODO: Generate new token for current user
 	// - Get user from JWT claims
 	// - Generate new token with extended expiry
@@ -224,7 +224,7 @@ func refreshTokenHandler(c *fiber.Ctx) error {
 }
 
 // listUsersHandler returns all users (admin only)
-func listUsersHandler(c *fiber.Ctx) error {
+func listUsersHandler(c fiber.Ctx) error {
 	// TODO: Return list of all users
 	// - Remove password field from response
 	// - Add pagination if needed
@@ -233,7 +233,7 @@ func listUsersHandler(c *fiber.Ctx) error {
 }
 
 // updateUserRoleHandler updates a user's role (admin only)
-func updateUserRoleHandler(c *fiber.Ctx) error {
+func updateUserRoleHandler(c fiber.Ctx) error {
 	// TODO: Update user role
 	// - Get user ID from URL parameter
 	// - Parse new role from request body

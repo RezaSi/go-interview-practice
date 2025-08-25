@@ -3,7 +3,7 @@ package main
 import (
 	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Task represents a task in our task management system
@@ -44,6 +44,7 @@ func main() {
 
 	// TODO: Start the server on port 3000
 	// Hint: Use app.Listen(":3000")
+	app.Listen(":3000")
 }
 
 // setupApp creates and configures the Fiber app with all routes
@@ -53,14 +54,14 @@ func setupApp() *fiber.App {
 
 	// TODO: Implement health check endpoint
 	// GET /ping - should return {"message": "pong"}
-	app.Get("/ping", func(c *fiber.Ctx) error {
+	app.Get("/ping", func(c fiber.Ctx) error {
 		// TODO: Return JSON response with "pong" message
 		return nil
 	})
 
 	// TODO: Implement get all tasks endpoint
 	// GET /tasks - should return all tasks as JSON array
-	app.Get("/tasks", func(c *fiber.Ctx) error {
+	app.Get("/tasks", func(c fiber.Ctx) error {
 		// TODO: Get all tasks from store and return as JSON
 		// Hint: Use taskStore.GetAll() and c.JSON()
 		return nil
@@ -68,7 +69,7 @@ func setupApp() *fiber.App {
 
 	// TODO: Implement get task by ID endpoint
 	// GET /tasks/:id - should return specific task or 404 if not found
-	app.Get("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Get("/tasks/:id", func(c fiber.Ctx) error {
 		// TODO: Extract ID from params, get task from store
 		// Return 404 if task not found, otherwise return task as JSON
 		// Hint: Use c.Params("id") and strconv.Atoi()
@@ -77,16 +78,16 @@ func setupApp() *fiber.App {
 
 	// TODO: Implement create task endpoint
 	// POST /tasks - should create new task and return it with 201 status
-	app.Post("/tasks", func(c *fiber.Ctx) error {
+	app.Post("/tasks", func(c fiber.Ctx) error {
 		// TODO: Parse JSON body, create new task, add to store
 		// Return created task with 201 status
-		// Hint: Use c.BodyParser() and c.Status(201).JSON()
+		// Hint: Use c.Bind().Body() and c.Status(201).JSON()
 		return nil
 	})
 
 	// TODO: Implement update task endpoint
 	// PUT /tasks/:id - should update existing task or return 404
-	app.Put("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Put("/tasks/:id", func(c fiber.Ctx) error {
 		// TODO: Extract ID, parse body, update task in store
 		// Return 404 if task not found, otherwise return updated task
 		return nil
@@ -94,7 +95,7 @@ func setupApp() *fiber.App {
 
 	// TODO: Implement delete task endpoint
 	// DELETE /tasks/:id - should delete task or return 404
-	app.Delete("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Delete("/tasks/:id", func(c fiber.Ctx) error {
 		// TODO: Extract ID, delete task from store
 		// Return 404 if task not found, otherwise return 204 No Content
 		// Hint: Use c.SendStatus(204)

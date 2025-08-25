@@ -103,7 +103,7 @@ Extract and validate tokens from requests:
 
 ```go
 func jwtMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         authHeader := c.Get("Authorization")
         if authHeader == "" {
             return c.Status(401).JSON(fiber.Map{
@@ -142,7 +142,7 @@ Check user roles for admin endpoints:
 
 ```go
 func adminMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         claims := c.Locals("user_claims").(*JWTClaims)
         
         if claims.Role != "admin" {
@@ -162,9 +162,9 @@ func adminMiddleware() fiber.Handler {
 Handle user registration with validation:
 
 ```go
-func registerHandler(c *fiber.Ctx) error {
+func registerHandler(c fiber.Ctx) error {
     var req RegisterRequest
-    if err := c.BodyParser(&req); err != nil {
+    if err := c.Bind().Body(&req); err != nil {
         return c.Status(400).JSON(AuthResponse{
             Success: false,
             Message: "Invalid request format",
@@ -238,9 +238,9 @@ func registerHandler(c *fiber.Ctx) error {
 Authenticate users and return JWT tokens:
 
 ```go
-func loginHandler(c *fiber.Ctx) error {
+func loginHandler(c fiber.Ctx) error {
     var req LoginRequest
-    if err := c.BodyParser(&req); err != nil {
+    if err := c.Bind().Body(&req); err != nil {
         return c.Status(400).JSON(AuthResponse{
             Success: false,
             Message: "Invalid request format",
