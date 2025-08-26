@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AliNazariii | 22 | 22 |
+| Cpoing | 22 | 22 |
 | Gandook | 22 | 22 |
 | JackDalberg | 22 | 22 |
 | PolinaSvet | 22 | 22 |
@@ -16,3 +17,4 @@
 | odelbos | 22 | 22 |
 | t4e1 | 22 | 22 |
 | y1hao | 22 | 22 |
+| yz4230 | 22 | 22 |

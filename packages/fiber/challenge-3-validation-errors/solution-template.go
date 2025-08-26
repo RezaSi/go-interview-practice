@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Product represents a product in the catalog
@@ -106,7 +106,7 @@ func formatValidationError(field, tag string, value interface{}) ValidationError
 // TODO: Implement route handlers
 
 // getProductsHandler returns all products with optional filtering
-func getProductsHandler(c *fiber.Ctx) error {
+func getProductsHandler(c fiber.Ctx) error {
 	// TODO: Implement filtering by query parameters
 	// ?category=electronics - filter by category
 	// ?in_stock=true - filter by stock status
@@ -117,7 +117,7 @@ func getProductsHandler(c *fiber.Ctx) error {
 }
 
 // getProductHandler returns a specific product by ID
-func getProductHandler(c *fiber.Ctx) error {
+func getProductHandler(c fiber.Ctx) error {
 	// TODO: Get product ID from URL parameter
 	// Return 404 if product not found
 	// Return product as JSON
@@ -125,7 +125,7 @@ func getProductHandler(c *fiber.Ctx) error {
 }
 
 // createProductHandler creates a new product
-func createProductHandler(c *fiber.Ctx) error {
+func createProductHandler(c fiber.Ctx) error {
 	// TODO: Parse request body into Product struct
 	// Validate product using validateProduct()
 	// Return validation errors if validation fails
@@ -136,7 +136,7 @@ func createProductHandler(c *fiber.Ctx) error {
 }
 
 // updateProductHandler updates an existing product
-func updateProductHandler(c *fiber.Ctx) error {
+func updateProductHandler(c fiber.Ctx) error {
 	// TODO: Get product ID from URL parameter
 	// Parse request body for updates
 	// Validate updated product
@@ -146,7 +146,7 @@ func updateProductHandler(c *fiber.Ctx) error {
 }
 
 // bulkCreateHandler creates multiple products in one request
-func bulkCreateHandler(c *fiber.Ctx) error {
+func bulkCreateHandler(c fiber.Ctx) error {
 	// TODO: Parse request body into []Product slice
 	// Validate each product
 	// Continue processing even if some products fail validation

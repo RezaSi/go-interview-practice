@@ -6,7 +6,7 @@ Start with a clean Fiber app:
 
 ```go
 app := fiber.New(fiber.Config{
-    ErrorHandler: func(c *fiber.Ctx, err error) error {
+    ErrorHandler: func(c fiber.Ctx, err error) error {
         // Custom error handler
         return c.Status(500).JSON(fiber.Map{
             "success": false,
@@ -34,7 +34,7 @@ Use UUID for unique request IDs:
 
 ```go
 func RequestIDMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         requestID := uuid.New().String()
         c.Locals("request_id", requestID)
         c.Set("X-Request-ID", requestID)
@@ -49,7 +49,7 @@ Log requests with timing information:
 
 ```go
 func LoggingMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         start := time.Now()
         requestID := c.Locals("request_id").(string)
         
@@ -79,7 +79,7 @@ var rateLimitMap = make(map[string][]time.Time)
 var rateLimitMutex sync.RWMutex
 
 func RateLimitMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         ip := c.IP()
         now := time.Now()
         
