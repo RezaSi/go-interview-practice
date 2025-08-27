@@ -13,7 +13,7 @@ Fiber middleware uses a similar pattern to Express.js with the `c.Next()` functi
 
 ```go
 func MyMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         // Before handler logic
         
         err := c.Next() // Execute next middleware/handler
@@ -49,7 +49,7 @@ Track requests across your application:
 
 ```go
 func RequestIDMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         requestID := uuid.New().String()
         c.Locals("request_id", requestID)
         c.Set("X-Request-ID", requestID)
@@ -63,7 +63,7 @@ Monitor request performance:
 
 ```go
 func LoggingMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         start := time.Now()
         
         err := c.Next()
@@ -86,7 +86,7 @@ Enable cross-origin requests:
 
 ```go
 func CORSMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         c.Set("Access-Control-Allow-Origin", "*")
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
         c.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
@@ -105,7 +105,7 @@ Protect routes with API keys or tokens:
 
 ```go
 func AuthMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         apiKey := c.Get("X-API-Key")
         
         if !isValidAPIKey(apiKey) {
@@ -130,7 +130,7 @@ func FixedWindowRateLimit() fiber.Handler {
     requests := make(map[string]int)
     lastReset := time.Now()
     
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         now := time.Now()
         ip := c.IP()
         
@@ -159,7 +159,7 @@ More accurate but uses more memory:
 func SlidingWindowRateLimit() fiber.Handler {
     requests := make(map[string][]time.Time)
     
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         now := time.Now()
         ip := c.IP()
         
@@ -190,7 +190,7 @@ Handle all errors in one place:
 
 ```go
 func ErrorHandlerMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         defer func() {
             if r := recover(); r != nil {
                 log.Printf("Panic recovered: %v", r)
@@ -254,7 +254,7 @@ type RequestContext struct {
 }
 
 func ContextMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         ctx := &RequestContext{
             RequestID: uuid.New().String(),
             StartTime: time.Now(),
@@ -280,7 +280,7 @@ func EfficientMiddleware() fiber.Handler {
     // Initialize outside the handler
     cache := make(map[string]interface{})
     
-    return func(c *fiber.Ctx) error {
+    return func(c fiber.Ctx) error {
         // Lightweight operations only
         key := c.Get("Cache-Key")
         if data, exists := cache[key]; exists {
@@ -301,7 +301,7 @@ Test middleware in isolation:
 func TestRequestIDMiddleware(t *testing.T) {
     app := fiber.New()
     app.Use(RequestIDMiddleware())
-    app.Get("/test", func(c *fiber.Ctx) error {
+    app.Get("/test", func(c fiber.Ctx) error {
         return c.SendString("OK")
     })
     
