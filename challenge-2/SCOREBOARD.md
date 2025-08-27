@@ -1,6 +1,7 @@
 # Scoreboard for challenge-2
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xarash | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
 | AliNazariii | 7 | 7 |
 | Andresrvaz | 7 | 7 |
@@ -23,6 +24,7 @@
 | RezaSi | 7 | 7 |
 | Seokky | 7 | 7 |
 | TOomaAh | 7 | 7 |
+| VFarsiyants | 7 | 7 |
 | VadimihrSvS | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
 | Z4za01 | 7 | 7 |
@@ -62,6 +64,7 @@
 | omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
+| richcem | 7 | 7 |
 | setarehabhari | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
 | skx | 7 | 7 |

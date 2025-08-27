@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 0xJaskirat | 6 | 6 |
+| 0xarash | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
 | AliNazariii | 6 | 6 |
@@ -25,6 +26,7 @@
 | RezaSi | 6 | 6 |
 | Seokky | 6 | 6 |
 | TOomaAh | 6 | 6 |
+| VFarsiyants | 6 | 6 |
 | VadimihrSvS | 6 | 6 |
 | Ward-R | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
@@ -75,6 +77,7 @@
 | potapkin-pavel | 6 | 6 |
 | puffyguy | 6 | 6 |
 | quangtran666 | 6 | 6 |
+| richcem | 6 | 6 |
 | rohit-jangra-dx | 6 | 6 |
 | s20055232 | 6 | 6 |
 | setarehabhari | 6 | 6 |
