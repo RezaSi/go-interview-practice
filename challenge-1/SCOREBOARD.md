@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 0xJaskirat | 6 | 6 |
+| 0xarash | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
 | AliNazariii | 6 | 6 |
@@ -25,20 +26,24 @@
 | RezaSi | 6 | 6 |
 | Seokky | 6 | 6 |
 | TOomaAh | 6 | 6 |
+| VFarsiyants | 6 | 6 |
 | VadimihrSvS | 6 | 6 |
 | Ward-R | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
 | Z4za01 | 6 | 6 |
 | ZaharBorisenko | 6 | 6 |
 | ZakirAvrora | 6 | 6 |
+| anotnow | 6 | 6 |
 | arashrasoulzadeh | 6 | 6 |
 | arslanoktay | 6 | 6 |
 | aseifi880 | 6 | 6 |
 | ashwinipatankar | 6 | 6 |
 | berikulyBeket | 6 | 6 |
 | betosmith2000 | 6 | 6 |
+| binoymanoj | 6 | 6 |
 | bmeverett | 6 | 6 |
 | cep-ter | 6 | 6 |
+| chandimab | 6 | 6 |
 | chenyao0910 | 6 | 6 |
 | decko | 6 | 6 |
 | deloz | 6 | 6 |
@@ -73,6 +78,7 @@
 | potapkin-pavel | 6 | 6 |
 | puffyguy | 6 | 6 |
 | quangtran666 | 6 | 6 |
+| richcem | 6 | 6 |
 | rohit-jangra-dx | 6 | 6 |
 | s20055232 | 6 | 6 |
 | setarehabhari | 6 | 6 |
