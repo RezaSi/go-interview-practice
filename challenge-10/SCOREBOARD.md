@@ -1,6 +1,7 @@
 # Scoreboard for challenge-10
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Cpoing | 54 | 54 |
 | Gandook | 54 | 54 |
 | JackDalberg | 54 | 54 |
 | PolinaSvet | 54 | 54 |

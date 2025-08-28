@@ -12,9 +12,11 @@
 | MuraliMohan-2000 | 32 | 32 |
 | PolinaSvet | 32 | 32 |
 | RezaSi | 32 | 32 |
+| VFarsiyants | 32 | 32 |
 | ZaharBorisenko | 32 | 32 |
 | ashwinipatankar | 32 | 32 |
 | hodgechung | 32 | 32 |
+| jordanhimawan | 32 | 32 |
 | kuzminprog | 32 | 32 |
 | lanmanul | 32 | 32 |
 | liukw-go | 32 | 32 |
