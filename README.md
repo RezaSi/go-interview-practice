@@ -6,7 +6,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/RezaSi/go-interview-practice?style=for-the-badge&logo=github&color=yellow)](https://github.com/RezaSi/go-interview-practice/stargazers)
 [![Go Version](https://img.shields.io/badge/Go-1.19+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
 [![Challenges](https://img.shields.io/badge/Challenges-30+-brightgreen?style=for-the-badge&logo=checkmarx)](https://github.com/RezaSi/go-interview-practice)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/G2DH2qpF)
+<!-- [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/G2DH2qpF) -->
 
 <a href="https://trendshift.io/repositories/14255" target="_blank">
 <img src="https://trendshift.io/api/badge/repositories/14255" alt="RezaSi%2Fgo-interview-practice | Trendshift" style="width: 250px;" width="250"/>
@@ -102,7 +102,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 104
+- **Active Developers**: 110
 - **Most Challenges Solved**: 30 by odelbos
 
 <!-- END_CLASSIC_LEADERBOARD -->
