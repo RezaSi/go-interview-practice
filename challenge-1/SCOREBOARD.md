@@ -67,6 +67,7 @@
 | kuzminprog | 6 | 6 |
 | lajosbnk | 6 | 6 |
 | lanmanul | 6 | 6 |
+| levwap | 6 | 6 |
 | lyb88999 | 6 | 6 |
 | mayconvm | 6 | 6 |
 | mick4711 | 6 | 6 |
