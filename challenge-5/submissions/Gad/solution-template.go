@@ -20,11 +20,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 
-		// TODO: Implement the logic:
-		//  1) Grab the "X-Auth-Token" header
-		//  2) Compare against validToken
-		//  3) If mismatch or missing, respond with 401
-		//  4) Otherwise pass to next handler
 	})
 }
 
