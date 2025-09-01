@@ -1,0 +1,42 @@
+<svg width="400" height="60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="compactGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#97CA00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7BA428;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="compactBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8f9fa;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="#00000015"/>
+    </filter>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="400" height="60" fill="url(#compactBg)" rx="8" filter="url(#shadow)"/>
+  
+  <!-- Left accent -->
+  <rect width="6" height="60" fill="url(#compactGradient)" rx="8"/>
+  
+  <!-- Go logo and title -->
+  <text x="20" y="20" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#212529">🐹 Go Interview Practice</text>
+  
+  <!-- Username and level -->
+  <text x="20" y="38" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="11" fill="#6c757d">@richcem</text>
+  <text x="20" y="52" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="#97CA00">🌱 Beginner Developer</text>
+  
+  <!-- Progress section -->
+  <text x="220" y="20" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500" fill="#495057">Classic Progress</text>
+  
+  <!-- Progress bar -->
+  <rect x="220" y="25" width="100" height="4" fill="#e9ecef" rx="2"/>
+  <rect x="220" y="25" width="16" height="4" fill="url(#compactGradient)" rx="2"/>
+  
+  <!-- Stats -->
+  <text x="220" y="42" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="#495057">5/30 (16.7%)</text>
+  <circle cx="365" cy="30" r="12" fill="#97CA00" opacity="0.1"/>
+  <text x="365" y="34" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" text-anchor="middle" fill="#97CA00">🌱</text>
+</svg>
