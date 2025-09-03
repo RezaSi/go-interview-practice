@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AkifhanIlgaz | 9 | 9 |
 | Ashutosh652 | 9 | 9 |
+| Gandook | 9 | 9 |
 | JackDalberg | 9 | 9 |
 | MYK12397 | 9 | 9 |
 | PolinaSvet | 9 | 9 |
