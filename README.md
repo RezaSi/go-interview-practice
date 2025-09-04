@@ -21,6 +21,14 @@
 
 Welcome to the **Go Interview Practice** repository! Master Go programming and ace your technical interviews with our interactive coding challenges.
 
+Our interactive platform is now live at **[gointerview.dev](https://gointerview.dev/)** 🎉 Explore challenges, track your progress, and elevate your Go skills with AI-powered mentorship.
+
+<div align="center">
+  <a href="https://gointerview.dev/" target="_blank">
+    <img src="https://img.shields.io/badge/Start%20Practicing-Now-blue?style=for-the-badge&logo=go" alt="Start Practicing Now">
+  </a>
+</div>
+
 ---
 
 ## Visual Overview
