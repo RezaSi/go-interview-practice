@@ -64,6 +64,7 @@
 | jin5335 | 6 | 6 |
 | joaovitoralvares | 6 | 6 |
 | jordanhimawan | 6 | 6 |
+| jvllmr | 6 | 6 |
 | korranat9 | 6 | 6 |
 | krmaxwell | 6 | 6 |
 | kuzminprog | 6 | 6 |
@@ -71,6 +72,7 @@
 | lanmanul | 6 | 6 |
 | levwap | 6 | 6 |
 | lyb88999 | 6 | 6 |
+| malakagl | 6 | 6 |
 | mayconvm | 6 | 6 |
 | mick4711 | 6 | 6 |
 | mks-nerd | 6 | 6 |
@@ -95,5 +97,6 @@
 | t4e1 | 6 | 6 |
 | timlkko | 6 | 6 |
 | tmsankaram | 6 | 6 |
+| wxai2324 | 6 | 6 |
 | xavi5r | 6 | 6 |
 | y1hao | 6 | 6 |
