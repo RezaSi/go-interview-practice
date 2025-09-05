@@ -462,7 +462,7 @@ func getServiceData() *DefaultUserService {
 	if globalService == nil {
 		repo := NewInMemoryUserRepository()
 		globalService = NewUserService(repo)
-		users = []User{
+		/*users = []User{
 			{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
 			{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
 			{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
@@ -471,7 +471,12 @@ func getServiceData() *DefaultUserService {
 
 		for _, user := range users {
 			globalService.CreateUser(&user)
-		}
+		}*/
+
+		globalService.CreateUser(&User{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30})
+		globalService.CreateUser(&User{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25})
+		globalService.CreateUser(&User{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35})
+		nextID = 4
 	}
 
 	return globalService
