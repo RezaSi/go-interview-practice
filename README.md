@@ -86,8 +86,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥈 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **29**/30 | **96.7%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅⬜✅ |
+| 🥇 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥈 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 🥉 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 4 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅✅✅⬜⬜✅ |
 | 5 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
@@ -110,8 +110,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 116
-- **Most Challenges Solved**: 30 by odelbos
+- **Active Developers**: 118
+- **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
 ## 🚀 Package Challenges Leaderboard
@@ -127,6 +127,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥉 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
 | 4 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 | 5 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 6 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
 <div align="center">
 
@@ -158,7 +159,8 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥇 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[GleeN987](https://github.com/GleeN987)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 | 🥉 | **[MarioPaez](https://github.com/MarioPaez)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
-| 4 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 4 | **[PolinaSvet](https://github.com/PolinaSvet)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 5 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 
 #### Gorm Package
 
@@ -170,7 +172,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 17
-- **Active Package Learners**: 5
+- **Active Package Learners**: 6
 - **Available Packages**: 4 (cobra, fiber, gin, gorm)
 
 - **Most Package Challenges Solved**: 17 by odelbos
