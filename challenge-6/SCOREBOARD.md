@@ -32,6 +32,7 @@
 | kuzminprog | 7 | 7 |
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
+| mczajk | 7 | 7 |
 | mick4711 | 7 | 7 |
 | muhammedkucukaslan | 7 | 7 |
 | odelbos | 7 | 7 |
