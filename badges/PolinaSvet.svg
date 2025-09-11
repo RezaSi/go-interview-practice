@@ -45,6 +45,7 @@
   
   <!-- Progress bar background -->
   <rect x="15" y="100" width="140" height="6" fill="#e9ecef" rx="3"/>
+  
   <!-- Progress bar fill -->
   <rect x="15" y="100" width="140" height="6" fill="url(#progressGradient)" rx="3"/>
   
