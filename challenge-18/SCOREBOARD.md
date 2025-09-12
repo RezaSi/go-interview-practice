@@ -1,6 +1,7 @@
 # Scoreboard for challenge-18
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 4592adarsh | 23 | 23 |
 | Gandook | 23 | 23 |
 | GinVlad | 23 | 23 |
 | IBraveMonkey | 23 | 23 |

@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | 0xJaskirat | 6 | 6 |
 | 0xarash | 6 | 6 |
+| 4592adarsh | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
 | AliNazariii | 6 | 6 |
@@ -41,6 +42,7 @@
 | arslanoktay | 6 | 6 |
 | aseifi880 | 6 | 6 |
 | ashwinipatankar | 6 | 6 |
+| awsl1110 | 6 | 6 |
 | berikulyBeket | 6 | 6 |
 | berkaykrc | 6 | 6 |
 | betosmith2000 | 6 | 6 |
@@ -82,6 +84,7 @@
 | muhammedkucukaslan | 6 | 6 |
 | naeswer | 6 | 6 |
 | naghinezhad | 6 | 6 |
+| ne0phyte | 6 | 6 |
 | nima-abdpoor | 6 | 6 |
 | odelbos | 6 | 6 |
 | perekoshik | 6 | 6 |
