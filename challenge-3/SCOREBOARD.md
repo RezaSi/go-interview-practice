@@ -27,6 +27,7 @@
 | ahmedpyarali2 | 5 | 5 |
 | aseifi880 | 5 | 5 |
 | ashwinipatankar | 5 | 5 |
+| awsl1110 | 5 | 5 |
 | berkaykrc | 5 | 5 |
 | chenyao0910 | 5 | 5 |
 | decko | 5 | 5 |
@@ -50,6 +51,7 @@
 | mczajk | 5 | 5 |
 | mick4711 | 5 | 5 |
 | muhammedkucukaslan | 5 | 5 |
+| ne0phyte | 5 | 5 |
 | odelbos | 5 | 5 |
 | perekoshik | 5 | 5 |
 | richcem | 5 | 5 |
