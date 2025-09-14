@@ -20,6 +20,6 @@ func main() {
 
 // Sum returns the sum of a and b.
 func Sum(a int, b int) int {
-	c := a + b
-	return c
+	// TODO: Implement the function
+	return a + b
 }
