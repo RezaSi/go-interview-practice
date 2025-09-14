@@ -1,6 +1,7 @@
 # Scoreboard for challenge-21
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Cpoing | 35 | 35 |
 | Gandook | 35 | 35 |
 | GinVlad | 35 | 35 |
 | IBraveMonkey | 35 | 35 |

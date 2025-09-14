@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | 0xarash | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
+| Ali-Fartoot | 7 | 7 |
 | AliNazariii | 7 | 7 |
 | Andresrvaz | 7 | 7 |
 | Ashutosh652 | 7 | 7 |
@@ -36,6 +37,7 @@
 | arslanoktay | 7 | 7 |
 | aseifi880 | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
+| awsl1110 | 7 | 7 |
 | berkaykrc | 7 | 7 |
 | betosmith2000 | 7 | 7 |
 | binoymanoj | 7 | 7 |
@@ -66,12 +68,14 @@
 | mks-nerd | 7 | 7 |
 | muhammedkucukaslan | 7 | 7 |
 | naghinezhad | 7 | 7 |
+| ne0phyte | 7 | 7 |
 | odelbos | 7 | 7 |
 | omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
 | richcem | 7 | 7 |
 | setarehabhari | 7 | 7 |
+| shapoclack | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
 | skx | 7 | 7 |
 | sultaAann | 7 | 7 |
