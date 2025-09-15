@@ -6,12 +6,14 @@
 | 4592adarsh | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
+| Ali-Fartoot | 6 | 6 |
 | AliNazariii | 6 | 6 |
 | Andresrvaz | 6 | 6 |
 | Ashutosh652 | 6 | 6 |
 | Cpoing | 6 | 6 |
 | Gandook | 6 | 6 |
 | GinVlad | 6 | 6 |
+| Hikitak | 6 | 6 |
 | IBraveMonkey | 6 | 6 |
 | JackDalberg | 6 | 6 |
 | JarhsonNing | 6 | 6 |
@@ -103,6 +105,7 @@
 | t4e1 | 6 | 6 |
 | timlkko | 6 | 6 |
 | tmsankaram | 6 | 6 |
+| truthofmatthew | 6 | 6 |
 | wxai2324 | 6 | 6 |
 | xavi5r | 6 | 6 |
 | y1hao | 6 | 6 |
