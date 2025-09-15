@@ -106,16 +106,32 @@ func NewProductServiceServer() *ProductServiceServer {
 
 // GetProduct retrieves a product by ID
 func (s *ProductServiceServer) GetProduct(ctx context.Context, productID int64) (*Product, error) {
-	// TODO: Implement this method
+	// TO DO: Implement this method
 	// Hint: check if product exists, return product or gRPC NotFound error
-	return nil, status.Errorf(codes.Unimplemented, "method GetProduct not implemented")
+	product, ok := s.products[productID]
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "product with ID %d not found", productID)
+	}
+	return product, nil
+	//return nil, status.Errorf(codes.Unimplemented, "method GetProduct not implemented")
 }
 
 // CheckInventory checks if a product is available in the requested quantity
 func (s *ProductServiceServer) CheckInventory(ctx context.Context, productID int64, quantity int32) (bool, error) {
-	// TODO: Implement this method
+	// TO DO: Implement this method
 	// Hint: check product exists and has sufficient inventory
-	return false, status.Errorf(codes.Unimplemented, "method CheckInventory not implemented")
+	product, err := s.GetProduct(ctx, productID)
+	if err != nil {
+		return false, err
+	}
+	if quantity <= 0 {
+		return false, status.Errorf(codes.InvalidArgument, "quantity must be positive, got %d", quantity)
+	}
+	if product.Inventory >= quantity {
+		return true, nil
+	}
+	return false, nil
+	//return false, status.Errorf(codes.Unimplemented, "method CheckInventory not implemented")
 }
 
 // gRPC method handlers for UserService
