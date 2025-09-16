@@ -167,7 +167,7 @@ The test script will:
 ```go
 app := fiber.New()
 
-app.Get("/", func(c *fiber.Ctx) error {
+app.Get("/", func(c fiber.Ctx) error {
     return c.JSON(fiber.Map{
         "message": "Hello, World!",
     })
@@ -183,7 +183,7 @@ app.Use(logger.New())
 app.Use(cors.New())
 
 // Custom middleware
-app.Use(func(c *fiber.Ctx) error {
+app.Use(func(c fiber.Ctx) error {
     // Custom logic
     return c.Next()
 })
@@ -191,7 +191,7 @@ app.Use(func(c *fiber.Ctx) error {
 
 ### Error Handling
 ```go
-app.Get("/users/:id", func(c *fiber.Ctx) error {
+app.Get("/users/:id", func(c fiber.Ctx) error {
     id := c.Params("id")
     if id == "" {
         return c.Status(400).JSON(fiber.Map{

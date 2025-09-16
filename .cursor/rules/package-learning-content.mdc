@@ -1,0 +1,363 @@
+---
+description: Generate comprehensive learning content for Go package challenges with educational depth and practical examples
+globs: ["packages/**/learning.md", "packages/**/hints.md"]
+alwaysApply: false
+---
+
+# Package Challenge Learning Content Generator
+
+Create comprehensive, educational learning materials that teach Go package concepts effectively.
+
+## learning.md Structure Requirements
+
+### Required Sections (400+ lines minimum):
+
+#### 1. Introduction Section
+```markdown
+# Learning: {Package Name} {Concept} Fundamentals
+
+## 🌟 **What is {Package}?**
+
+{Package} is a {description} for {purpose}. It's used by {popular projects/companies}.
+
+### **Why {Package}?**
+- **{Benefit 1}**: {Explanation}
+- **{Benefit 2}**: {Explanation}
+- **{Benefit 3}**: {Explanation}
+- **{Benefit 4}**: {Explanation}
+```
+
+#### 2. Core Concepts Section
+```markdown
+## 🏗️ **Core Concepts**
+
+### **1. {Concept 1}**
+{Detailed explanation with purpose and usage}
+
+```go
+// Basic example
+{code example}
+```
+
+### **2. {Concept 2}**
+{Detailed explanation}
+
+```go
+// Advanced example
+{code example}
+```
+```
+
+#### 3. Architecture/Structure Section
+```markdown
+## 📖 **{Package} Architecture**
+
+### **{Component} Structure**
+```
+{visual representation or hierarchy}
+```
+
+### **{Component} Properties**
+- **{Property 1}**: {Description and usage}
+- **{Property 2}**: {Description and usage}
+```
+
+#### 4. Practical Implementation Section
+```markdown
+## 🔧 **Building Your First {Application Type}**
+
+### **Step 1: {Setup Step}**
+```go
+{setup code with comments}
+```
+
+### **Step 2: {Configuration Step}**
+```go
+{configuration code with comments}
+```
+
+### **Step 3: {Implementation Step}**
+```go
+{implementation code with comments}
+```
+```
+
+#### 5. Advanced Features Section
+```markdown
+## ⚡ **Advanced Features**
+
+### **{Advanced Feature 1}**
+{Explanation of when and why to use}
+
+```go
+{advanced example with detailed comments}
+```
+
+### **{Advanced Feature 2}**
+{Explanation with real-world context}
+
+```go
+{complex example showing best practices}
+```
+```
+
+#### 6. Best Practices Section
+```markdown
+## 🎯 **Best Practices**
+
+### **{Category 1} Best Practices**
+1. **{Practice 1}**: {Explanation and reasoning}
+   ```go
+   // Good
+   {good example}
+   
+   // Bad
+   {bad example}
+   ```
+
+2. **{Practice 2}**: {Explanation}
+   ```go
+   {example demonstrating the practice}
+   ```
+
+### **{Category 2} Best Practices**
+{Continue pattern}
+```
+
+#### 7. Common Patterns Section
+```markdown
+## 🔄 **Common Patterns**
+
+### **{Pattern 1}**
+{When to use this pattern}
+
+```go
+{pattern implementation}
+```
+
+### **{Pattern 2}**
+{Use cases and benefits}
+
+```go
+{pattern implementation with variations}
+```
+```
+
+#### 8. Error Handling Section
+```markdown
+## 🚨 **Error Handling**
+
+### **{Package} Error Types**
+{Explanation of error handling philosophy}
+
+```go
+{error handling examples}
+```
+
+### **Best Practices for Error Handling**
+1. {Practice with example}
+2. {Practice with example}
+```
+
+#### 9. Testing Section
+```markdown
+## 🧪 **Testing {Package} Applications**
+
+### **Unit Testing**
+```go
+{unit test examples}
+```
+
+### **Integration Testing**
+```go
+{integration test examples}
+```
+
+### **Testing Best Practices**
+- {Testing practice 1}
+- {Testing practice 2}
+```
+
+#### 10. Real-World Examples Section
+```markdown
+## 🌍 **Real-World Examples**
+
+### **Example 1: {Realistic Scenario}**
+{Context and requirements}
+
+```go
+{complete working example}
+```
+
+### **Example 2: {Another Scenario}**
+{Context and requirements}
+
+```go
+{complete working example}
+```
+```
+
+#### 11. Performance Section
+```markdown
+## ⚡ **Performance Considerations**
+
+### **{Performance Aspect 1}**
+{Explanation of performance implications}
+
+```go
+// Optimized approach
+{optimized code}
+
+// Less efficient approach
+{less efficient code}
+```
+
+### **Benchmarking**
+```go
+{benchmark examples}
+```
+```
+
+#### 12. Troubleshooting Section
+```markdown
+## 🔍 **Troubleshooting**
+
+### **Common Issues**
+
+#### **Issue 1: {Problem Description}**
+**Symptoms:** {What you see}
+**Cause:** {Why it happens}
+**Solution:** 
+```go
+{solution code}
+```
+
+#### **Issue 2: {Problem Description}**
+**Symptoms:** {What you see}
+**Cause:** {Why it happens}
+**Solution:**
+```go
+{solution code}
+```
+```
+
+#### 13. Further Reading Section
+```markdown
+## 📚 **Further Reading**
+
+### **Official Documentation**
+- [{Package} Official Docs]({url})
+- [{Package} API Reference]({url})
+
+### **Community Resources**
+- [{Resource 1}]({url}) - {Description}
+- [{Resource 2}]({url}) - {Description}
+
+### **Advanced Topics**
+- [{Advanced Topic 1}]({url})
+- [{Advanced Topic 2}]({url})
+
+### **Related Packages**
+- [{Related Package 1}]({url}) - {How it relates}
+- [{Related Package 2}]({url}) - {How it relates}
+```
+
+## hints.md Structure Requirements
+
+### Progressive Hint System:
+```markdown
+# Hints for Challenge {N}: {Title}
+
+## Hint 1: {Basic Setup/Understanding}
+
+{Gentle guidance about the fundamental approach}
+
+```go
+{basic code structure or pattern}
+```
+
+## Hint 2: {Core Implementation}
+
+{More specific guidance about the main functionality}
+
+```go
+{more detailed code example}
+```
+
+## Hint 3: {Specific Feature Implementation}
+
+{Detailed implementation guidance}
+
+```go
+{specific implementation with comments}
+```
+
+## Hint 4: {Integration/Connection}
+
+{How to connect different parts}
+
+```go
+{integration code example}
+```
+
+## Hint 5: {Error Handling/Edge Cases}
+
+{Guidance on proper error handling}
+
+```go
+{error handling implementation}
+```
+
+## Hint 6: {Testing/Validation}
+
+{How to test the implementation}
+
+```bash
+{testing commands}
+```
+
+## Hint 7: {Bonus/Advanced Features}
+
+{Optional advanced implementations}
+
+```go
+{advanced feature code}
+```
+```
+
+## Content Quality Standards
+
+### Writing Style:
+- Use clear, concise explanations
+- Include practical examples for every concept
+- Provide context for when to use features
+- Explain the "why" behind patterns and practices
+- Use consistent terminology throughout
+
+### Code Examples:
+- Include complete, runnable examples
+- Add detailed comments explaining each step
+- Show both basic and advanced usage
+- Demonstrate error handling
+- Include performance considerations
+
+### Educational Approach:
+- Build concepts progressively
+- Connect to real-world scenarios
+- Explain trade-offs and alternatives
+- Include troubleshooting guidance
+- Provide paths for further learning
+
+### Technical Accuracy:
+- Verify all code examples work
+- Use current package versions
+- Follow Go best practices
+- Include proper imports and dependencies
+- Test examples before publishing
+
+## Content Length Guidelines:
+- **learning.md**: Minimum 400 lines, target 600-800 lines
+- **hints.md**: 7-10 progressive hints with code examples
+- Each section should be substantial and educational
+- Include multiple code examples per concept
+- Provide comprehensive coverage of the package's capabilities

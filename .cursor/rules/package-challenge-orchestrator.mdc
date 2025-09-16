@@ -1,0 +1,259 @@
+---
+description: Master orchestrator for creating complete Go package challenges with all required components
+globs: ["packages/**"]
+alwaysApply: false
+---
+
+# Package Challenge Orchestrator
+
+Master rule for creating complete, production-ready Go package challenges following the established format and quality standards.
+
+## Challenge Creation Workflow
+
+When creating a new package challenge, follow this systematic approach:
+
+### Phase 1: Research and Planning
+1. **Package Research**
+   - Study official documentation thoroughly
+   - Analyze popular usage patterns and examples
+   - Identify key concepts and features to teach
+   - Review existing similar challenges for inspiration
+   - Determine appropriate difficulty progression
+
+2. **Learning Path Design**
+   - Create 3-4 progressive challenges (beginner → advanced)
+   - Ensure each challenge builds upon previous knowledge
+   - Map real-world use cases to challenge scenarios
+   - Define clear learning objectives for each challenge
+
+3. **Challenge Scoping**
+   - Define specific, measurable requirements
+   - Create realistic, practical scenarios
+   - Ensure challenges mirror production usage
+   - Balance educational value with time constraints
+
+### Phase 2: Package Structure Creation
+
+#### Create Package Directory Structure:
+```
+packages/{package-name}/
+├── package.json                    # Package metadata and learning path
+├── README.md                      # Package overview
+└── challenge-{n}-{name}/          # Individual challenges
+    ├── README.md                  # Challenge description
+    ├── solution-template.go       # Starter code with TODOs
+    ├── solution-template_test.go  # Comprehensive test suite
+    ├── go.mod                     # Module with dependencies
+    ├── hints.md                   # Progressive hints (7-10 hints)
+    ├── learning.md               # Educational content (400+ lines)
+    ├── run_tests.sh              # Test execution script
+    ├── SCOREBOARD.md             # Submissions tracking
+    ├── metadata.json             # Challenge metadata
+    └── submissions/              # Participant solutions directory
+```
+
+### Phase 3: Content Creation Priority Order
+
+#### 1. Create package.json (Package Metadata)
+```json
+{
+  "name": "{package-name}",
+  "display_name": "{Package Display Name}",
+  "description": "{Brief package description}",
+  "version": "v{x.y.z}",
+  "github_url": "https://github.com/{owner}/{repo}",
+  "documentation_url": "https://{docs-url}",
+  "stars": {github-stars},
+  "category": "web|cli|database|other",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "{domain}_concepts"],
+  "learning_path": [
+    "challenge-1-{basic-name}",
+    "challenge-2-{intermediate-name}",
+    "challenge-3-{advanced-name}"
+  ],
+  "tags": ["{relevant}", "{tags}"],
+  "estimated_time": "{x-y} hours",
+  "real_world_usage": [
+    "{Production use case 1}",
+    "{Production use case 2}"
+  ]
+}
+```
+
+#### 2. Create Package README.md
+- Overview of the package and its capabilities
+- Learning path explanation and progression
+- Challenge difficulty breakdown
+- Prerequisites and estimated time
+- Getting started instructions
+- Common patterns and best practices section
+
+#### 3. For Each Challenge, Create in This Order:
+
+##### A. solution-template_test.go (Test-Driven Development)
+- Start with comprehensive test suite
+- Include functionality, structure, and output tests
+- Cover edge cases and error conditions
+- Use table-driven test patterns
+- Include helper functions for testing
+
+##### B. solution-template.go (Starter Code)
+- Create template with clear TODO markers
+- Include helpful hints in comments
+- Provide proper package structure
+- Include necessary imports and setup
+- Leave implementation details for participants
+
+##### C. README.md (Challenge Description)
+- Clear problem statement and requirements
+- Expected functionality and behavior
+- Sample inputs/outputs with formatting
+- Implementation requirements by section
+- Testing requirements checklist
+
+##### D. metadata.json (Challenge Metadata)
+```json
+{
+  "title": "{Challenge Title}",
+  "description": "{Detailed description}",
+  "short_description": "{Brief card description}",
+  "difficulty": "Beginner|Intermediate|Advanced",
+  "estimated_time": "{minutes} min",
+  "learning_objectives": ["{objective1}", "{objective2}"],
+  "prerequisites": ["{prereq1}"],
+  "tags": ["{tag1}", "{tag2}"],
+  "real_world_connection": "{Production relevance}",
+  "requirements": ["{req1}", "{req2}"],
+  "bonus_points": ["{bonus1}"],
+  "icon": "bi-{icon-name}",
+  "order": {number}
+}
+```
+
+##### E. learning.md (Educational Content)
+- Comprehensive 400+ line educational content
+- Progressive concept building
+- Multiple code examples with explanations
+- Real-world usage patterns
+- Best practices and common pitfalls
+- Performance considerations
+- Troubleshooting guide
+- Further reading resources
+
+##### F. hints.md (Progressive Guidance)
+- 7-10 progressive hints from basic to advanced
+- Each hint includes code examples
+- Build from conceptual to implementation-specific
+- Include testing and validation guidance
+- Provide debugging tips
+
+##### G. go.mod (Module Configuration)
+- Proper module naming: `{package-name}-challenge-{n}`
+- Current Go version (1.21+)
+- Exact dependency versions
+- All required packages included
+
+##### H. run_tests.sh (Test Automation)
+- Executable bash script with proper permissions
+- Username prompt and validation
+- Temporary directory creation and cleanup
+- Dependency management
+- Clear success/failure feedback
+- Proper error handling and exit codes
+
+##### I. SCOREBOARD.md (Submissions Tracking)
+- Standard scoreboard format with ranking
+- Clear scoring criteria breakdown
+- Submission instructions
+- Encouragement for participation
+
+### Phase 4: Quality Assurance
+
+#### Content Validation Checklist:
+- [ ] All required files present and properly formatted
+- [ ] Tests compile and run successfully
+- [ ] Learning materials are comprehensive (400+ lines)
+- [ ] Challenges progress logically in difficulty
+- [ ] Real-world applicability is clear and documented
+- [ ] Code follows Go best practices and conventions
+- [ ] Dependencies are properly specified and tested
+- [ ] Metadata is complete and accurate
+- [ ] Shell scripts are executable and robust
+- [ ] All TODOs are clearly marked with helpful hints
+- [ ] Error handling is properly implemented
+- [ ] Package structure follows exact established format
+
+#### Testing Validation:
+- [ ] All tests pass with template implementation
+- [ ] Edge cases and error conditions covered
+- [ ] Test names are descriptive and meaningful
+- [ ] Helper functions work correctly
+- [ ] Command structure tests validate properly
+- [ ] Output format tests check exact requirements
+
+#### Educational Content Validation:
+- [ ] Learning objectives are clear and achievable
+- [ ] Content builds progressively from basic to advanced
+- [ ] Code examples are complete and functional
+- [ ] Real-world connections are relevant and practical
+- [ ] Troubleshooting section addresses common issues
+- [ ] Further reading provides valuable resources
+
+### Phase 5: Integration and Documentation
+
+#### Package Integration:
+- Update main packages README.md with new package
+- Ensure package appears in web UI automatically
+- Verify learning path progression makes sense
+- Test package discovery and challenge loading
+- Validate metadata parsing and display
+
+#### Documentation Updates:
+- Add package to available packages list
+- Update category counts and statistics
+- Include package in relevant documentation
+- Add to contribution guidelines if needed
+
+## Quality Standards Enforcement
+
+### Code Quality Requirements:
+- Follow established Go conventions and best practices
+- Include comprehensive error handling
+- Use meaningful variable and function names
+- Include appropriate comments and documentation
+- Ensure code is production-ready and maintainable
+
+### Educational Quality Requirements:
+- Content must be technically accurate and current
+- Examples must be practical and relevant
+- Progression must be logical and well-paced
+- Learning objectives must be clearly defined
+- Assessment must be fair and comprehensive
+
+### User Experience Requirements:
+- Clear, actionable instructions
+- Helpful error messages and guidance
+- Consistent formatting and structure
+- Accessible to target skill level
+- Engaging and motivating content
+
+## Automation and Tooling
+
+### Recommended Development Flow:
+1. Use `create_challenge.sh` to generate directory structure
+2. Follow TDD approach: write tests first
+3. Create template with clear TODOs
+4. Write comprehensive learning materials
+5. Use `validate_challenge.sh` for quality assurance
+6. Test locally with `run_tests.sh`
+7. Submit for review and integration
+
+### Continuous Improvement:
+- Gather feedback from participants
+- Monitor completion rates and difficulty
+- Update content based on package evolution
+- Refine based on real-world usage patterns
+- Maintain currency with package updates
+
+This orchestrator ensures every package challenge meets the high standards established in the codebase while providing comprehensive educational value for Go developers.

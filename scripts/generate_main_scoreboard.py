@@ -6,6 +6,7 @@ Script to generate the main scoreboard for README.md by aggregating data from al
 import os
 import re
 import sys
+import requests
 from collections import defaultdict
 from pathlib import Path
 
@@ -63,6 +64,39 @@ def parse_scoreboard_file(filepath):
     return users
 
 
+def load_sponsors():
+    """Load sponsor list by scraping the public GitHub sponsors page."""
+    sponsors = set()
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; PythonSponsorScraper/1.0)'
+        }
+        
+        response = requests.get(
+            'https://github.com/sponsors/RezaSi',
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            html = response.text
+            
+            # Extract usernames from alt="@username" attributes
+            avatar_pattern = r'alt="@([a-zA-Z0-9][a-zA-Z0-9\-]*)"'
+            matches = re.findall(avatar_pattern, html)
+            
+            for username in matches:
+                # Filter out the repository owner from sponsors list
+                if username != "RezaSi":
+                    sponsors.add(username)
+    
+    except Exception as e:
+        pass  # Silently handle sponsor loading errors
+    
+    return sponsors
+
+
 def get_challenge_title(challenge_dir):
     """Extract challenge title from README.md or directory name."""
     readme_path = os.path.join(challenge_dir, 'README.md')
@@ -98,6 +132,9 @@ def get_challenge_title(challenge_dir):
 
 def generate_main_scoreboard():
     """Generate the main scoreboard by aggregating all challenge scoreboards."""
+    
+    # Load sponsors from GitHub API
+    sponsors = load_sponsors()
     
     # Dictionary to track user completion counts
     user_completions = defaultdict(lambda: {'count': 0, 'challenges': []})
@@ -150,7 +187,7 @@ def generate_main_scoreboard():
     
     if sorted_users:
         # Generate HTML table with styling
-        html_table = generate_html_leaderboard(sorted_users[:10], total_challenges, challenge_dirs)
+        html_table = generate_html_leaderboard(sorted_users[:10], total_challenges, challenge_dirs, sponsors)
         markdown_lines.append(html_table)
     else:
         markdown_lines.extend([
@@ -176,7 +213,7 @@ def generate_main_scoreboard():
     return '\n'.join(markdown_lines)
 
 
-def generate_html_leaderboard(top_users, total_challenges, challenge_dirs):
+def generate_html_leaderboard(top_users, total_challenges, challenge_dirs, sponsors):
     """Generate a beautiful GitHub-compatible leaderboard table."""
     
     # Get list of challenge numbers for indicators
@@ -241,7 +278,8 @@ def generate_html_leaderboard(top_users, total_challenges, challenge_dirs):
         indicators = f"{first_row}<br/>{second_row}"
         
         # Create simple profile with GitHub avatar - centered
-        profile_cell = f'<img src="https://github.com/{username}.png" width="24" height="24" style="border-radius: 50%;"><br/>**[{username}](https://github.com/{username})**'
+        sponsor_badge = " ❤️" if username in sponsors else ""
+        profile_cell = f'<img src="https://github.com/{username}.png" width="24" height="24" style="border-radius: 50%;"><br/>**[{username}](https://github.com/{username})**{sponsor_badge}'
         
         # Create solved count
         solved_cell = f"**{count}**/{total_challenges}"

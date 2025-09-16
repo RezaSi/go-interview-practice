@@ -133,9 +133,9 @@ func filterProducts(products []Product, filters map[string]string) []Product {
 Handle bulk creation with partial failures:
 
 ```go
-func bulkCreateHandler(c *fiber.Ctx) error {
+func bulkCreateHandler(c fiber.Ctx) error {
     var products []Product
-    if err := c.BodyParser(&products); err != nil {
+    if err := c.Bind().Body(&products); err != nil {
         return c.Status(400).JSON(ErrorResponse{
             Success: false,
             Error:   "Invalid JSON format",

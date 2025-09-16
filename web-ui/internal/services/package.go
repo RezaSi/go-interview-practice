@@ -16,6 +16,8 @@ import (
 type PackageService struct {
 	httpClient   *http.Client
 	packagesPath string
+	// In-memory cache to avoid repeated GitHub API calls (no TTL; load once per process)
+	cachedPackages map[string]*models.Package
 }
 
 func NewPackageService() *PackageService {
@@ -23,7 +25,8 @@ func NewPackageService() *PackageService {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		packagesPath: "../packages", // Relative to web-ui directory
+		packagesPath:   "../packages", // Relative to web-ui directory
+		cachedPackages: nil,
 	}
 }
 
@@ -53,13 +56,20 @@ func (s *PackageService) LoadPackages() error {
 }
 
 func (s *PackageService) GetPackages() map[string]*models.Package {
+	// Serve from cache if already populated
+	if s.cachedPackages != nil {
+		return s.cachedPackages
+	}
+
 	packages := make(map[string]*models.Package)
 
 	// Read packages directory
 	entries, err := os.ReadDir(s.packagesPath)
 	if err != nil {
 		fmt.Printf("Error reading packages directory: %v\n", err)
-		return packages
+		// Populate cache (empty) to prevent repeated attempts this run
+		s.cachedPackages = packages
+		return s.cachedPackages
 	}
 
 	for _, entry := range entries {
@@ -71,7 +81,9 @@ func (s *PackageService) GetPackages() map[string]*models.Package {
 		}
 	}
 
-	return packages
+	// Populate cache once per process lifetime
+	s.cachedPackages = packages
+	return s.cachedPackages
 }
 
 func (s *PackageService) loadPackage(packagePath, packageName string) *models.Package {
@@ -403,13 +415,32 @@ func (s *PackageService) fetchGitHubStars(githubURL string) int {
 	repo := fmt.Sprintf("%s/%s", parts[len(parts)-2], parts[len(parts)-1])
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s", repo)
 
-	resp, err := s.httpClient.Get(apiURL)
+	// Build request with optional auth and proper headers
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return 0
+	}
+
+	// Required header for GitHub API
+	req.Header.Set("User-Agent", "go-interview-practice-web-ui/1.0")
+
+	// Optional GitHub token for higher rate limits
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		token = os.Getenv("GH_TOKEN")
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return 0
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 403 {
+		// Most likely rate limited or missing/invalid auth
 		fmt.Printf("GitHub API returned status 403 for %s\n", githubURL)
 		return 0
 	}

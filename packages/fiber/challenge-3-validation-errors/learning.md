@@ -200,7 +200,7 @@ type Item struct {
 
 ### **Query Parameter Filtering**
 ```go
-func applyFilters(products []Product, c *fiber.Ctx) []Product {
+func applyFilters(products []Product, c fiber.Ctx) []Product {
     var filtered []Product
     
     // Get filter parameters
@@ -242,7 +242,7 @@ func applyFilters(products []Product, c *fiber.Ctx) []Product {
 
 ### **Pagination Support**
 ```go
-func paginateResults(items []Product, c *fiber.Ctx) ([]Product, map[string]interface{}) {
+func paginateResults(items []Product, c fiber.Ctx) ([]Product, map[string]interface{}) {
     page, _ := strconv.Atoi(c.Query("page", "1"))
     limit, _ := strconv.Atoi(c.Query("limit", "10"))
     
@@ -294,7 +294,7 @@ func sanitizeInput(input string) string {
 
 ### **Rate Limiting Validation**
 ```go
-func validateRequestRate(c *fiber.Ctx) error {
+func validateRequestRate(c fiber.Ctx) error {
     // Limit validation requests to prevent abuse
     // Implementation depends on your rate limiting strategy
     return nil
