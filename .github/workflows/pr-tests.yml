@@ -150,19 +150,30 @@ jobs:
           done
           
           # Check for strict security violations (modifying other users' submissions)
+          # Skip this check if manual approval is granted
           if [ -n "$INVALID_DIRS" ] || [ -n "$INVALID_FILES" ]; then
-            if [ -n "$INVALID_DIRS" ]; then
-              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+            if [ "$MANUAL_APPROVAL_GRANTED" == "true" ]; then
+              echo "✅ Manual approval granted - bypassing submission directory security checks"
+              echo "⚠️  WARNING: User '$USERNAME' modified submission directories for other users:$INVALID_DIRS"
+              if [ -n "$INVALID_FILES" ]; then
+                echo "⚠️  WARNING: User '$USERNAME' modified files in other users' submission directories:"
+                echo "$INVALID_FILES"
+              fi
+              echo "🔓 Manual approval allows bypassing normal security restrictions"
+            else
+              if [ -n "$INVALID_DIRS" ]; then
+                echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+              fi
+              if [ -n "$INVALID_FILES" ]; then
+                echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify files in other users' submission directories:"
+                echo "$INVALID_FILES"
+              fi
+              echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
+              echo "✅ Allowed directories: challenge-*/submissions/$USERNAME or packages/*/challenge-*/submissions/$USERNAME"
+              echo "validation_passed=false" >> $GITHUB_OUTPUT
+              echo "validation_needed=true" >> $GITHUB_OUTPUT
+              exit 1
             fi
-            if [ -n "$INVALID_FILES" ]; then
-              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify files in other users' submission directories:"
-              echo "$INVALID_FILES"
-            fi
-            echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
-            echo "✅ Allowed directories: challenge-*/submissions/$USERNAME or packages/*/challenge-*/submissions/$USERNAME"
-            echo "validation_passed=false" >> $GITHUB_OUTPUT
-            echo "validation_needed=true" >> $GITHUB_OUTPUT
-            exit 1
           fi
           
           # Check if manual approval is needed and not granted
@@ -171,7 +182,12 @@ jobs:
             echo "validation_passed=false" >> $GITHUB_OUTPUT
             echo "validation_needed=true" >> $GITHUB_OUTPUT
           else
-            echo "✅ Security validation passed"
+            if [ "$MANUAL_APPROVAL_GRANTED" == "true" ]; then
+              echo "✅ Manual approval granted - security validation bypassed"
+              echo "🔓 All security checks bypassed due to manual approval"
+            else
+              echo "✅ Security validation passed"
+            fi
             echo "validation_passed=true" >> $GITHUB_OUTPUT
             echo "validation_needed=false" >> $GITHUB_OUTPUT
           fi
@@ -227,7 +243,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25.0'
 
       - name: Run Tests for ${{ matrix.challenge }}
         working-directory: ${{ matrix.challenge }}

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"sync"
 	"net/http"
 	"strconv"
+	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // Task represents a task in our task management system
@@ -50,59 +50,59 @@ func main() {
 func setupApp() *fiber.App {
 	app := fiber.New()
 
-	app.Get("/ping", func(c *fiber.Ctx) error {
+	app.Get("/ping", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "pong"})
 	})
 
-	app.Get("/tasks", func(c *fiber.Ctx) error {
+	app.Get("/tasks", func(c fiber.Ctx) error {
 		return c.JSON(taskStore.GetAll())
 	})
 
-	app.Get("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Get("/tasks/:id", func(c fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
 			return c.Status(http.StatusBadRequest).JSON(fiber.Map{"msg": "Invalid ID"})
 		}
 		task, ok := taskStore.GetByID(id)
-		if ! ok {
+		if !ok {
 			return c.Status(http.StatusNotFound).JSON(fiber.Map{"msg": "Not found"})
 		}
 		return c.JSON(task)
 	})
 
-	app.Post("/tasks", func(c *fiber.Ctx) error {
+	app.Post("/tasks", func(c fiber.Ctx) error {
 		var data Task
-		if err := c.BodyParser(&data); err != nil {
+		if err := c.Bind().Body(&data); err != nil {
 			return c.Status(http.StatusBadRequest).JSON(fiber.Map{"msg": "Invalid JSON"})
 		}
 		task := taskStore.Create(data.Title, data.Description, data.Completed)
 		return c.Status(http.StatusCreated).JSON(task)
 	})
 
-	app.Put("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Put("/tasks/:id", func(c fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
 			return c.Status(http.StatusBadRequest).JSON(fiber.Map{"msg": "Invalid ID"})
 		}
 
 		var data Task
-		if err := c.BodyParser(&data); err != nil {
+		if err := c.Bind().Body(&data); err != nil {
 			return c.Status(http.StatusBadRequest).JSON(fiber.Map{"msg": "Invalid JSON"})
 		}
 		task, ok := taskStore.Update(id, data.Title, data.Description, data.Completed)
-		if ! ok {
+		if !ok {
 			return c.Status(http.StatusNotFound).JSON(fiber.Map{"msg": "Task not found"})
 		}
 		return c.JSON(task)
 	})
 
-	app.Delete("/tasks/:id", func(c *fiber.Ctx) error {
+	app.Delete("/tasks/:id", func(c fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
 			return c.Status(http.StatusBadRequest).JSON(fiber.Map{"msg": "Invalid ID"})
 		}
 
-		if ! taskStore.Delete(id) {
+		if !taskStore.Delete(id) {
 			return c.Status(http.StatusNotFound).JSON(fiber.Map{"msg": "Not found"})
 		}
 		return c.SendStatus(http.StatusNoContent)

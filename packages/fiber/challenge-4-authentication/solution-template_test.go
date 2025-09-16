@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +17,8 @@ func setupTestApp() *fiber.App {
 		{ID: 2, Username: "user1", Email: "user1@example.com", Password: "$2a$12$...", Role: "user", Active: true},
 	}
 	nextUserID = 3
+
+	setupCustomValidator()
 
 	app := fiber.New()
 
