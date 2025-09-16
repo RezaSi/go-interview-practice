@@ -4,6 +4,7 @@
 | 4592adarsh | 23 | 23 |
 | Gandook | 23 | 23 |
 | GinVlad | 23 | 23 |
+| Hikitak | 23 | 23 |
 | IBraveMonkey | 23 | 23 |
 | JackDalberg | 23 | 23 |
 | JarhsonNing | 23 | 23 |
@@ -42,6 +43,7 @@
 | odelbos | 23 | 23 |
 | perekoshik | 23 | 23 |
 | richcem | 23 | 23 |
+| rimuhamu | 23 | 23 |
 | t4e1 | 23 | 23 |
 | timlkko | 23 | 23 |
 | tmsankaram | 23 | 23 |
