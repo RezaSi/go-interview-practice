@@ -25,9 +25,12 @@ func main() {
 func ReverseString(s string) string {
 	// TODO: Implement the function
 	rune_s := []rune(s)
-	var reversed_rune []rune 
-	for i := 0; i < len(rune_s); i++ {
-	    reversed_rune = append([]rune{rune_s[i]}, reversed_rune...)
+	left := 0
+	right := len(rune_s) - 1
+	for left < right {
+	    rune_s[left], rune_s[right] = rune_s[right], rune_s[left]
+	    left++
+	    right--
 	}
-	return string(reversed_rune) 
+	return string(rune_s) 
 }
