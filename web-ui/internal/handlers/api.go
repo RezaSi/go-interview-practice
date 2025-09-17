@@ -7,15 +7,142 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"web-ui/internal/models"
 	"web-ui/internal/services"
 	"web-ui/internal/utils"
 )
+
+// GitHubSponsorsResponse represents the GitHub GraphQL response for sponsors
+type GitHubSponsorsResponse struct {
+	Data struct {
+		Viewer struct {
+			SponsorshipsAsMaintainer struct {
+				Nodes []struct {
+					SponsorEntity struct {
+						Login string `json:"login"`
+					} `json:"sponsorEntity"`
+				} `json:"nodes"`
+			} `json:"sponsorshipsAsMaintainer"`
+		} `json:"viewer"`
+	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors"`
+}
+
+// SponsorCache caches sponsor data to avoid hitting API limits
+type SponsorCache struct {
+	sponsors    map[string]bool
+	lastUpdated time.Time
+	mutex       sync.RWMutex
+}
+
+var sponsorCache = &SponsorCache{
+	sponsors: make(map[string]bool),
+}
+
+// LoadSponsors loads sponsor list by scraping the public GitHub sponsors page
+func (h *APIHandler) LoadSponsors() map[string]bool {
+	sponsorCache.mutex.RLock()
+	// Return cached data if it's less than 1 hour old
+	if time.Since(sponsorCache.lastUpdated) < time.Hour && len(sponsorCache.sponsors) > 0 {
+		defer sponsorCache.mutex.RUnlock()
+		return sponsorCache.sponsors
+	}
+	sponsorCache.mutex.RUnlock()
+
+	// Scrape sponsors from the public GitHub sponsors page
+	sponsors := h.scrapeSponsorsFromGitHub()
+
+	// Update cache
+	sponsorCache.mutex.Lock()
+	sponsorCache.sponsors = sponsors
+	sponsorCache.lastUpdated = time.Now()
+	sponsorCache.mutex.Unlock()
+	return sponsors
+}
+
+// scrapeSponsorsFromGitHub scrapes the public GitHub sponsors page
+func (h *APIHandler) scrapeSponsorsFromGitHub() map[string]bool {
+	sponsorMap := make(map[string]bool)
+
+	// Create HTTP client with timeout
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// Fetch the public sponsors page
+	url := "https://github.com/sponsors/RezaSi"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
+		return sponsorMap
+	}
+
+	// Set user agent to avoid being blocked
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; GoSponsorScraper/1.0)")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error fetching sponsors page: %v\n", err)
+		return sponsorMap
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("GitHub sponsors page returned status %d\n", resp.StatusCode)
+		return sponsorMap
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response body: %v\n", err)
+		return sponsorMap
+	}
+
+	html := string(body)
+
+	// Extract usernames from the HTML using regex - look for avatar images with alt="@username"
+	avatarRegex := regexp.MustCompile(`alt="@([a-zA-Z0-9][a-zA-Z0-9\-]*)"`)
+	matches := avatarRegex.FindAllStringSubmatch(html, -1)
+
+	for _, match := range matches {
+		if len(match) >= 2 {
+			username := match[1]
+			// Filter out the repository owner from sponsors list
+			if username != "RezaSi" {
+				sponsorMap[username] = true
+			}
+		}
+	}
+
+	// Fallback: if no sponsors found with avatar method, try href patterns
+	if len(sponsorMap) == 0 {
+		// Look for href="/username" patterns that aren't common GitHub paths
+		linkRegex := regexp.MustCompile(`href="/([a-zA-Z0-9][a-zA-Z0-9\-]+)"`)
+		linkMatches := linkRegex.FindAllStringSubmatch(html, -1)
+
+		for _, match := range linkMatches {
+			if len(match) >= 2 {
+				username := match[1]
+				// Filter out common GitHub paths that aren't usernames
+				if username != "sponsors" && username != "github" && username != "RezaSi" &&
+					!strings.HasPrefix(username, "orgs/") &&
+					!strings.Contains(username, "/") &&
+					len(username) > 2 { // reasonable username length
+					sponsorMap[username] = true
+				}
+			}
+		}
+	}
+
+	return sponsorMap
+}
 
 // APIHandler handles all API endpoints
 type APIHandler struct {
@@ -503,6 +630,9 @@ func (h *APIHandler) createPackageLeaderboard(packageName string, challenges []*
 	}
 	userStats := make(map[string]*userPackageStats)
 
+	// Load sponsors for package leaderboard
+	sponsors := h.LoadSponsors()
+
 	for _, challenge := range challenges {
 		submissionsDir := filepath.Join("..", "packages", packageName, challenge.ID, "submissions")
 		if _, err := os.Stat(submissionsDir); os.IsNotExist(err) {
@@ -556,6 +686,7 @@ func (h *APIHandler) createPackageLeaderboard(packageName string, challenges []*
 				SubmittedAt: stats.lastSubmission,
 				TestsPassed: stats.completedCount,
 				TestsTotal:  len(challenges),
+				IsSponsor:   sponsors[username],
 			})
 		}
 	}
@@ -578,6 +709,7 @@ type LeaderboardUser struct {
 	CompletedChallenges map[int]bool `json:"completedChallenges"`
 	Achievement         string       `json:"achievement"`
 	Rank                int          `json:"rank"`
+	IsSponsor           bool         `json:"isSponsor"`
 }
 
 // calculateMainLeaderboard calculates the main leaderboard data
@@ -585,6 +717,9 @@ func (h *APIHandler) calculateMainLeaderboard() []LeaderboardUser {
 	challenges := h.challengeService.GetChallenges()
 	totalChallenges := len(challenges)
 	userCompletions := make(map[string]map[int]bool)
+
+	// Load sponsor information
+	sponsors := h.LoadSponsors()
 
 	// Process all challenge scoreboards to find completions
 	for challengeID := range challenges {
@@ -660,6 +795,7 @@ func (h *APIHandler) calculateMainLeaderboard() []LeaderboardUser {
 			CompletionRate:      completionRate,
 			CompletedChallenges: completions,
 			Achievement:         achievement,
+			IsSponsor:           sponsors[username],
 		})
 	}
 
@@ -1080,6 +1216,66 @@ func (h *APIHandler) AIDebugResponse(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		response.Error = err.Error()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GitHubWebhookHandler handles GitHub sponsor webhooks
+func (h *APIHandler) GitHubWebhookHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	// Parse the webhook payload
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	// Check if this is a sponsorship event
+	eventType := r.Header.Get("X-GitHub-Event")
+	if eventType == "sponsorship" {
+		// Clear the sponsor cache to force a refresh on next request
+		sponsorCache.mutex.Lock()
+		sponsorCache.sponsors = make(map[string]bool)
+		sponsorCache.lastUpdated = time.Time{} // Reset to zero time to force refresh
+		sponsorCache.mutex.Unlock()
+
+		fmt.Printf("Sponsor cache cleared due to webhook event: %s\n", eventType)
+	}
+
+	// Respond with 200 OK to acknowledge receipt
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// GetSponsorsDebug returns current sponsors for debugging
+func (h *APIHandler) GetSponsorsDebug(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	sponsors := h.LoadSponsors()
+
+	response := struct {
+		Sponsors map[string]bool `json:"sponsors"`
+		Count    int             `json:"count"`
+		Success  bool            `json:"success"`
+	}{
+		Sponsors: sponsors,
+		Count:    len(sponsors),
+		Success:  true,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

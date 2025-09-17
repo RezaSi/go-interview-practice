@@ -1,0 +1,295 @@
+---
+description: Generate automation scripts and configuration files for Go package challenges
+globs: ["packages/**/*.sh", "packages/**/*.mod", "packages/**/SCOREBOARD.md"]
+alwaysApply: false
+---
+
+# Package Challenge Automation Scripts Generator
+
+Generate robust automation scripts and configuration files for package challenges.
+
+## run_tests.sh Script Requirements
+
+### Standard Script Template:
+```bash
+#!/bin/bash
+
+# Script to run tests for a participant's submission
+
+# Function to display usage
+usage() {
+    echo "Usage: $0"
+    exit 1
+}
+
+# Verify that we are in a challenge directory
+if [ ! -f "solution-template_test.go" ]; then
+    echo "Error: solution-template_test.go not found. Please run this script from a challenge directory."
+    exit 1
+fi
+
+# Prompt for GitHub username
+read -p "Enter your GitHub username: " USERNAME
+
+SUBMISSION_DIR="submissions/$USERNAME"
+SUBMISSION_FILE="$SUBMISSION_DIR/solution.go"
+
+# Check if the submission file exists
+if [ ! -f "$SUBMISSION_FILE" ]; then
+    echo "Error: Solution file '$SUBMISSION_FILE' not found."
+    echo "Note: Package challenges use 'solution.go' instead of 'solution-template.go'"
+    exit 1
+fi
+
+# Create a temporary directory to avoid modifying the original files
+TEMP_DIR=$(mktemp -d)
+
+# Copy the participant's solution, test file, and go.mod to the temporary directory
+cp "$SUBMISSION_FILE" "solution-template_test.go" "go.mod" "go.sum" "$TEMP_DIR/" 2>/dev/null
+
+# Rename solution.go to solution-template.go for the test
+mv "$TEMP_DIR/solution.go" "$TEMP_DIR/solution-template.go"
+
+echo "Running tests for user '$USERNAME'..."
+
+# Navigate to the temporary directory
+pushd "$TEMP_DIR" > /dev/null
+
+# Download dependencies
+go mod download || {
+  echo "Failed to download dependencies."
+  popd > /dev/null
+  rm -rf "$TEMP_DIR"
+  exit 1
+}
+
+# Run the tests
+go test -v
+
+TEST_EXIT_CODE=$?
+
+# Return to the original directory
+popd > /dev/null
+
+# Clean up the temporary directory
+rm -rf "$TEMP_DIR"
+
+exit $TEST_EXIT_CODE
+```
+
+### Script Features Required:
+- ✅ Executable permissions (`chmod +x`)
+- ✅ Proper error handling and cleanup
+- ✅ Username validation
+- ✅ Temporary directory creation
+- ✅ Safe file copying
+- ✅ Dependency management
+- ✅ Clear success/failure feedback
+- ✅ Exit code propagation
+
+## go.mod File Requirements
+
+### Standard Module Template:
+```
+module {package-name}-challenge-{number}
+
+go 1.21
+
+require (
+	{main-package} v{version}
+)
+
+require (
+	{indirect-dependency-1} v{version} // indirect
+	{indirect-dependency-2} v{version} // indirect
+)
+```
+
+### Module Naming Convention:
+- Format: `{package-name}-challenge-{number}`
+- Examples: `cobra-challenge-1`, `gin-challenge-2`
+- Use lowercase package names
+- Include challenge number for uniqueness
+
+### Dependency Management:
+- Always specify exact versions
+- Include all direct dependencies in `require` block
+- Let Go manage indirect dependencies
+- Test with `go mod tidy` before committing
+
+## SCOREBOARD.md Template
+
+### Standard Scoreboard Format:
+```markdown
+# Challenge {N} Scoreboard
+
+| Rank | Participant | Score | Submission Date | Notes |
+|------|-------------|-------|-----------------|-------|
+| 🥇 | - | - | - | *Be the first to solve this challenge!* |
+| 🥈 | - | - | - | |
+| 🥉 | - | - | - | |
+
+## Scoring Criteria
+- ✅ All tests pass (60 points)
+- ✅ Code quality and style (20 points)  
+- ✅ Proper error handling (10 points)
+- ✅ Bonus requirements (10 points)
+
+## How to Submit
+1. Fork this repository
+2. Create your solution in `submissions/{your-username}/solution.go`
+3. Test locally using `./run_tests.sh`
+4. Submit a pull request
+
+*Updated automatically when submissions are merged.*
+```
+
+### Scoreboard Features:
+- Clear ranking system with emojis
+- Transparent scoring criteria
+- Submission instructions
+- Automatic update notice
+- Encouragement for first solver
+
+## Additional Automation Scripts
+
+### create_challenge.sh (Optional Helper):
+```bash
+#!/bin/bash
+
+# Helper script to create new package challenge structure
+
+PACKAGE_NAME=$1
+CHALLENGE_NUM=$2
+CHALLENGE_NAME=$3
+
+if [ $# -ne 3 ]; then
+    echo "Usage: $0 <package-name> <challenge-number> <challenge-name>"
+    echo "Example: $0 cobra 1 basic-cli"
+    exit 1
+fi
+
+CHALLENGE_DIR="packages/$PACKAGE_NAME/challenge-$CHALLENGE_NUM-$CHALLENGE_NAME"
+
+# Create directory structure
+mkdir -p "$CHALLENGE_DIR/submissions"
+
+# Create required files
+touch "$CHALLENGE_DIR/README.md"
+touch "$CHALLENGE_DIR/solution-template.go"
+touch "$CHALLENGE_DIR/solution-template_test.go"
+touch "$CHALLENGE_DIR/go.mod"
+touch "$CHALLENGE_DIR/hints.md"
+touch "$CHALLENGE_DIR/learning.md"
+touch "$CHALLENGE_DIR/metadata.json"
+touch "$CHALLENGE_DIR/SCOREBOARD.md"
+
+# Create executable test script
+cat > "$CHALLENGE_DIR/run_tests.sh" << 'EOF'
+#!/bin/bash
+# [Include standard run_tests.sh content here]
+EOF
+
+chmod +x "$CHALLENGE_DIR/run_tests.sh"
+
+echo "Created challenge structure at $CHALLENGE_DIR"
+```
+
+### validate_challenge.sh (Quality Assurance):
+```bash
+#!/bin/bash
+
+# Script to validate challenge structure and content
+
+CHALLENGE_DIR=$1
+
+if [ ! -d "$CHALLENGE_DIR" ]; then
+    echo "Error: Challenge directory '$CHALLENGE_DIR' not found."
+    exit 1
+fi
+
+echo "Validating challenge: $CHALLENGE_DIR"
+
+# Check required files
+REQUIRED_FILES=(
+    "README.md"
+    "solution-template.go"
+    "solution-template_test.go"
+    "go.mod"
+    "hints.md"
+    "learning.md"
+    "metadata.json"
+    "SCOREBOARD.md"
+    "run_tests.sh"
+)
+
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "$CHALLENGE_DIR/$file" ]; then
+        echo "❌ Missing required file: $file"
+        exit 1
+    else
+        echo "✅ Found: $file"
+    fi
+done
+
+# Check if run_tests.sh is executable
+if [ ! -x "$CHALLENGE_DIR/run_tests.sh" ]; then
+    echo "❌ run_tests.sh is not executable"
+    exit 1
+else
+    echo "✅ run_tests.sh is executable"
+fi
+
+# Validate go.mod
+cd "$CHALLENGE_DIR"
+if ! go mod verify; then
+    echo "❌ go.mod validation failed"
+    exit 1
+else
+    echo "✅ go.mod is valid"
+fi
+
+# Check if tests compile
+if ! go test -c -o /dev/null; then
+    echo "❌ Tests do not compile"
+    exit 1
+else
+    echo "✅ Tests compile successfully"
+fi
+
+echo "✅ Challenge validation passed!"
+```
+
+## File Permissions and Execution
+
+### Required Permissions:
+- `run_tests.sh`: `755` (executable)
+- `create_challenge.sh`: `755` (executable)
+- `validate_challenge.sh`: `755` (executable)
+- All other files: `644` (readable)
+
+### Shell Script Best Practices:
+- Always include shebang (`#!/bin/bash`)
+- Use proper error handling with `set -e` when appropriate
+- Validate inputs and provide usage information
+- Use meaningful variable names
+- Include comments for complex operations
+- Clean up temporary files and directories
+- Provide clear success/failure messages
+- Use consistent exit codes (0 for success, non-zero for failure)
+
+## Integration with CI/CD
+
+### GitHub Actions Compatibility:
+- Scripts should work in Ubuntu environment
+- Handle missing dependencies gracefully
+- Provide machine-readable output when needed
+- Support automated testing workflows
+- Include timeout handling for long-running tests
+
+### Local Development Support:
+- Work across different operating systems
+- Handle different shell environments
+- Provide helpful error messages
+- Support both manual and automated execution
+- Include debugging options when needed
