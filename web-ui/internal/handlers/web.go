@@ -651,6 +651,11 @@ func (h *WebHandler) countPackageChallengeSubmissions(packageName, challengeID s
 func (h *WebHandler) createPackageLeaderboard(packageName string, challenges []*models.PackageChallenge) []models.PackageScoreboardEntry {
 	var leaderboard []models.PackageScoreboardEntry
 	userStats := make(map[string]*userPackageStats)
+	
+	// Load sponsors for package leaderboard (reuse from API handler)
+	// Create a temporary API handler instance to access LoadSponsors
+	tempHandler := &APIHandler{}
+	sponsors := tempHandler.LoadSponsors()
 
 	// Collect submission data for each challenge
 	for _, challenge := range challenges {
@@ -717,6 +722,7 @@ func (h *WebHandler) createPackageLeaderboard(packageName string, challenges []*
 				SubmittedAt: stats.lastSubmission,
 				TestsPassed: stats.completedCount,
 				TestsTotal:  len(challenges),
+				IsSponsor:   sponsors[username],
 			}
 			leaderboard = append(leaderboard, entry)
 		}

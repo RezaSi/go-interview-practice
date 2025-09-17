@@ -9,7 +9,7 @@
 
 2. **Basic Route Structure**
    ```go
-   app.Get("/path", func(c *fiber.Ctx) error {
+   app.Get("/path", func(c fiber.Ctx) error {
        // Your handler logic
        return c.JSON(response)
    })
@@ -19,7 +19,7 @@
 
 ### 1. Health Check Endpoint (`GET /ping`)
 ```go
-app.Get("/ping", func(c *fiber.Ctx) error {
+app.Get("/ping", func(c fiber.Ctx) error {
     return c.JSON(fiber.Map{
         "message": "pong",
     })
@@ -28,7 +28,7 @@ app.Get("/ping", func(c *fiber.Ctx) error {
 
 ### 2. Get All Tasks (`GET /tasks`)
 ```go
-app.Get("/tasks", func(c *fiber.Ctx) error {
+app.Get("/tasks", func(c fiber.Ctx) error {
     tasks := taskStore.GetAll()
     return c.JSON(tasks)
 })
@@ -36,7 +36,7 @@ app.Get("/tasks", func(c *fiber.Ctx) error {
 
 ### 3. Get Task by ID (`GET /tasks/:id`)
 ```go
-app.Get("/tasks/:id", func(c *fiber.Ctx) error {
+app.Get("/tasks/:id", func(c fiber.Ctx) error {
     // Extract ID from URL parameter
     idStr := c.Params("id")
     
@@ -62,11 +62,11 @@ app.Get("/tasks/:id", func(c *fiber.Ctx) error {
 
 ### 4. Create Task (`POST /tasks`)
 ```go
-app.Post("/tasks", func(c *fiber.Ctx) error {
+app.Post("/tasks", func(c fiber.Ctx) error {
     var newTask Task
     
     // Parse JSON body into struct
-    if err := c.BodyParser(&newTask); err != nil {
+    if err := c.Bind().Body(&newTask); err != nil {
         return c.Status(400).JSON(fiber.Map{
             "error": "Invalid JSON",
         })
@@ -82,7 +82,7 @@ app.Post("/tasks", func(c *fiber.Ctx) error {
 
 ### 5. Update Task (`PUT /tasks/:id`)
 ```go
-app.Put("/tasks/:id", func(c *fiber.Ctx) error {
+app.Put("/tasks/:id", func(c fiber.Ctx) error {
     // Extract and validate ID
     idStr := c.Params("id")
     id, err := strconv.Atoi(idStr)
@@ -94,7 +94,7 @@ app.Put("/tasks/:id", func(c *fiber.Ctx) error {
     
     // Parse update data
     var updateTask Task
-    if err := c.BodyParser(&updateTask); err != nil {
+    if err := c.Bind().Body(&updateTask); err != nil {
         return c.Status(400).JSON(fiber.Map{
             "error": "Invalid JSON",
         })
@@ -114,7 +114,7 @@ app.Put("/tasks/:id", func(c *fiber.Ctx) error {
 
 ### 6. Delete Task (`DELETE /tasks/:id`)
 ```go
-app.Delete("/tasks/:id", func(c *fiber.Ctx) error {
+app.Delete("/tasks/:id", func(c fiber.Ctx) error {
     // Extract and validate ID
     idStr := c.Params("id")
     id, err := strconv.Atoi(idStr)
@@ -145,7 +145,7 @@ app.Listen(":3000")
 ## Key Fiber Methods
 
 - **`c.Params(key)`** - Extract URL parameters
-- **`c.BodyParser(&struct)`** - Parse JSON request body
+- **`c.Bind().Body(&struct)`** - Parse JSON request body
 - **`c.JSON(data)`** - Send JSON response
 - **`c.Status(code)`** - Set HTTP status code
 - **`c.SendStatus(code)`** - Send status code only
