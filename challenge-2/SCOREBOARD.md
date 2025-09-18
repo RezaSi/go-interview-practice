@@ -10,6 +10,7 @@
 | Cpoing | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
+| Hikitak | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
@@ -74,6 +75,7 @@
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
 | richcem | 7 | 7 |
+| rimuhamu | 7 | 7 |
 | setarehabhari | 7 | 7 |
 | shapoclack | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
