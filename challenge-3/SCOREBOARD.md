@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AkifhanIlgaz | 5 | 5 |
+| Ali-Fartoot | 5 | 5 |
 | AliNazariii | 5 | 5 |
 | Ashutosh652 | 5 | 5 |
 | Cpoing | 5 | 5 |
