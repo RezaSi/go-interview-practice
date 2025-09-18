@@ -110,7 +110,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 123
+- **Active Developers**: 130
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -128,6 +128,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 4 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 | 5 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 | 6 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 7 | <img src="https://github.com/kelvin-yong.png" width="24" height="24" style="border-radius: 50%;"><br/>**[kelvin-yong](https://github.com/kelvin-yong)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
 <div align="center">
 
@@ -178,7 +179,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 21
-- **Active Package Learners**: 6
+- **Active Package Learners**: 7
 - **Available Packages**: 5 (cobra, echo, fiber, gin, gorm)
 
 - **Most Package Challenges Solved**: 17 by odelbos
@@ -294,7 +295,27 @@ Want to get started instantly without setting up anything locally? Use GitHub Co
 - All dependencies pre-installed
 - Works on any device with a browser
 
-### Option 3: Command Line
+### Option 3: Railway Deployment (One-Click Cloud Hosting)
+
+Deploy your own instance of the platform to the cloud with Railway!
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/go-interview-practice?referralCode=F6emx6&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+**Perfect for:**
+- **Teams & Organizations**: Private instance for internal use
+- **Educators**: Custom environment for students
+- **Customization**: Fork and modify for specific needs
+- **Always Available**: 24/7 cloud hosting with automatic scaling
+
+**Setup Steps:**
+1. **Click Deploy Button** above
+2. **Configure AI Features** (optional but recommended):
+   - Choose AI provider: `gemini` (recommended - free tier)
+   - Add API key: [Get free Gemini key](https://makersuite.google.com/app/apikey)
+3. **Access Your Platform**: Railway provides instant public URL
+4. **Start Using**: Full platform with all challenges immediately available
+
+### Option 4: Command Line
 
 ```bash
 # 1. Fork the repository first (see step 1 above)
