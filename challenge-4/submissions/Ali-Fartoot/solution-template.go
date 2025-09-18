@@ -39,6 +39,7 @@ func BFS(graph map[int][]int, start int) []int {
 	return result
 }
 
+
 // ConcurrentBFSQueries processes BFS queries concurrently using worker goroutines
 // Each worker processes queries from a shared job queue
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
