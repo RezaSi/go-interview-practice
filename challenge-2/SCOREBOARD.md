@@ -3,12 +3,14 @@
 |------------|--------------|-------------|
 | 0xarash | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
+| Ali-Fartoot | 7 | 7 |
 | AliNazariii | 7 | 7 |
 | Andresrvaz | 7 | 7 |
 | Ashutosh652 | 7 | 7 |
 | Cpoing | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
+| Hikitak | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
@@ -30,11 +32,13 @@
 | YounesBouchbouk | 7 | 7 |
 | Z4za01 | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
+| abhishek622 | 7 | 7 |
 | adwantay | 7 | 7 |
 | arashrasoulzadeh | 7 | 7 |
 | arslanoktay | 7 | 7 |
 | aseifi880 | 7 | 7 |
 | ashwinipatankar | 7 | 7 |
+| awsl1110 | 7 | 7 |
 | berkaykrc | 7 | 7 |
 | betosmith2000 | 7 | 7 |
 | binoymanoj | 7 | 7 |
@@ -44,6 +48,8 @@
 | decko | 7 | 7 |
 | deloz | 7 | 7 |
 | dimozavrrrik | 7 | 7 |
+| grozdovk | 7 | 7 |
+| himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
@@ -59,16 +65,22 @@
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
 | lyb88999 | 7 | 7 |
+| malakagl | 7 | 7 |
+| mczajk | 7 | 7 |
 | mick4711 | 7 | 7 |
 | mks-nerd | 7 | 7 |
 | muhammedkucukaslan | 7 | 7 |
 | naghinezhad | 7 | 7 |
+| ne0phyte | 7 | 7 |
 | odelbos | 7 | 7 |
 | omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
+| preetsinghmakkar | 7 | 7 |
 | richcem | 7 | 7 |
+| rimuhamu | 7 | 7 |
 | setarehabhari | 7 | 7 |
+| shapoclack | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
 | skx | 7 | 7 |
 | sultaAann | 7 | 7 |
@@ -76,4 +88,5 @@
 | t4e1 | 7 | 7 |
 | timlkko | 7 | 7 |
 | tmsankaram | 7 | 7 |
+| wxai2324 | 7 | 7 |
 | y1hao | 7 | 7 |
