@@ -13,7 +13,7 @@
       },
       "build": {
         "builder": "DOCKERFILE",
-        "dockerfilePath": "Dockerfile"
+        "dockerfilePath": "web-ui/Dockerfile"
       },
       "deploy": {
         "startCommand": "./web-ui",

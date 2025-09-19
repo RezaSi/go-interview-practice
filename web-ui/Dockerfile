@@ -12,13 +12,18 @@ COPY . .
 
 # Build the web-ui application
 WORKDIR /repo/web-ui
+
+# Initialize Go module and download dependencies
+RUN go mod tidy
+
+# Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o web-ui .
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests (needed for AI services) and wget for health checks
-RUN apk --no-cache add ca-certificates git wget
+# Install ca-certificates for HTTPS requests (needed for AI services), wget for health checks, and Go for runtime execution
+RUN apk --no-cache add ca-certificates git wget go
 
 # Create app user
 RUN addgroup -g 1001 -S appgroup && \
@@ -45,6 +50,9 @@ EXPOSE 8080
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Set environment variable to allow template literals in JavaScript
+ENV GODEBUG=jstmpllitinterp=1
 
 # Run the application
 CMD ["./web-ui"]
