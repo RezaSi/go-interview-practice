@@ -2,10 +2,12 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AkifhanIlgaz | 7 | 7 |
+| Ali-Fartoot | 7 | 7 |
 | Ashutosh652 | 7 | 7 |
 | Cpoing | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
+| Hikitak | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
 | JunLog | 7 | 7 |
@@ -24,6 +26,7 @@
 | berkaykrc | 7 | 7 |
 | binoymanoj | 7 | 7 |
 | grozdovk | 7 | 7 |
+| himanshum9 | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
 | jasonnfeng | 7 | 7 |

@@ -1,6 +1,7 @@
 # Scoreboard for challenge-16
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Hikitak | 36 | 36 |
 | PolinaSvet | 36 | 36 |
 | YounesBouchbouk | 36 | 36 |
 | longbui98 | 36 | 36 |

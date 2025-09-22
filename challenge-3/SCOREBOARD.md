@@ -2,11 +2,13 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AkifhanIlgaz | 5 | 5 |
+| Ali-Fartoot | 5 | 5 |
 | AliNazariii | 5 | 5 |
 | Ashutosh652 | 5 | 5 |
 | Cpoing | 5 | 5 |
 | Gandook | 5 | 5 |
 | GinVlad | 5 | 5 |
+| Hikitak | 5 | 5 |
 | IBraveMonkey | 5 | 5 |
 | JackDalberg | 5 | 5 |
 | JarhsonNing | 5 | 5 |
@@ -32,6 +34,7 @@
 | chenyao0910 | 5 | 5 |
 | decko | 5 | 5 |
 | grozdovk | 5 | 5 |
+| himanshum9 | 5 | 5 |
 | hodgechung | 5 | 5 |
 | idk2me | 5 | 5 |
 | igorek890 | 5 | 5 |
@@ -54,7 +57,9 @@
 | ne0phyte | 5 | 5 |
 | odelbos | 5 | 5 |
 | perekoshik | 5 | 5 |
+| preetsinghmakkar | 5 | 5 |
 | richcem | 5 | 5 |
+| rimuhamu | 5 | 5 |
 | s20055232 | 5 | 5 |
 | t4e1 | 5 | 5 |
 | timlkko | 5 | 5 |

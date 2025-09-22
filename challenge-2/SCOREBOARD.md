@@ -10,6 +10,7 @@
 | Cpoing | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
+| Hikitak | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
@@ -47,6 +48,8 @@
 | decko | 7 | 7 |
 | deloz | 7 | 7 |
 | dimozavrrrik | 7 | 7 |
+| grozdovk | 7 | 7 |
+| himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
@@ -55,6 +58,7 @@
 | jasonnfeng | 7 | 7 |
 | jersonzc | 7 | 7 |
 | jin5335 | 7 | 7 |
+| john-otienoh | 7 | 7 |
 | jordanhimawan | 7 | 7 |
 | korranat9 | 7 | 7 |
 | krmaxwell | 7 | 7 |
@@ -73,7 +77,9 @@
 | omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |
 | potapkin-pavel | 7 | 7 |
+| preetsinghmakkar | 7 | 7 |
 | richcem | 7 | 7 |
+| rimuhamu | 7 | 7 |
 | setarehabhari | 7 | 7 |
 | shapoclack | 7 | 7 |
 | shivamnarkar47 | 7 | 7 |
