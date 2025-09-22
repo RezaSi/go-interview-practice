@@ -61,6 +61,7 @@
 | gaba-bouliva | 6 | 6 |
 | globallstudent | 6 | 6 |
 | grozdovk | 6 | 6 |
+| himanshum9 | 6 | 6 |
 | hodgechung | 6 | 6 |
 | idk2me | 6 | 6 |
 | igorek890 | 6 | 6 |
@@ -70,6 +71,7 @@
 | jersonzc | 6 | 6 |
 | jin5335 | 6 | 6 |
 | joaovitoralvares | 6 | 6 |
+| john-otienoh | 6 | 6 |
 | jordanhimawan | 6 | 6 |
 | jvllmr | 6 | 6 |
 | korranat9 | 6 | 6 |
@@ -106,6 +108,7 @@
 | skx | 6 | 6 |
 | sultaAann | 6 | 6 |
 | suminitgo | 6 | 6 |
+| sw00z | 6 | 6 |
 | sytayav | 6 | 6 |
 | t4e1 | 6 | 6 |
 | timlkko | 6 | 6 |

@@ -1,6 +1,7 @@
 # Scoreboard for challenge-4
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Ali-Fartoot | 22 | 22 |
 | AliNazariii | 22 | 22 |
 | Ashutosh652 | 22 | 22 |
 | Cpoing | 22 | 22 |
