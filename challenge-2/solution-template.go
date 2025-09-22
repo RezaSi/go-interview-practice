@@ -23,5 +23,9 @@ func main() {
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
 	// TODO: Implement the function
-	return ""
+	var resString string
+	for _, r := range s {
+		fmt.Println(r)
+	}
+	return resString
 }
