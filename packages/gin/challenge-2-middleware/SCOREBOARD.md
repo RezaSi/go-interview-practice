@@ -2,4 +2,5 @@
 
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
-| odelbos | 14 | 14 |
+| PolinaSvet | 16 | 16 |
+| odelbos | 16 | 16 |
