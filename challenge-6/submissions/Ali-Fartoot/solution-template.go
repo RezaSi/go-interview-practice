@@ -27,3 +27,4 @@ func CountWordFrequency(text string) map[string]int {
 
 	return counter
 }
+

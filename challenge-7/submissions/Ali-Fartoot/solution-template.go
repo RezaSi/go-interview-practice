@@ -231,6 +231,7 @@ func (a *BankAccount) GetBalance() float64 {
 	return a.Balance
 }
 
+
 // String returns a string representation of the account
 func (a *BankAccount) String() string {
 	a.mu.Lock()

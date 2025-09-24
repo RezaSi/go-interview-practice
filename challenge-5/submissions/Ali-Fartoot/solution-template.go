@@ -32,6 +32,7 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello!")
 }
 
+
 // secureHandler returns "You are authorized!" on GET /secure
 func secureHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "You are authorized!")
