@@ -5,6 +5,7 @@
 | Ali-Fartoot | 5 | 5 |
 | AliNazariii | 5 | 5 |
 | Ashutosh652 | 5 | 5 |
+| BrianHuang813 | 5 | 5 |
 | Cpoing | 5 | 5 |
 | Gandook | 5 | 5 |
 | GinVlad | 5 | 5 |
@@ -43,6 +44,7 @@
 | jasonnfeng | 5 | 5 |
 | jersonzc | 5 | 5 |
 | jin5335 | 5 | 5 |
+| john-otienoh | 5 | 5 |
 | jordanhimawan | 5 | 5 |
 | korranat9 | 5 | 5 |
 | krmaxwell | 5 | 5 |
