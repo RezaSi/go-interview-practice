@@ -124,7 +124,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 |:---:|:---:|:---:|:---:|:---:|:---|
 | 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **17** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 4 • **gin**: 4 • **gorm**: 5 |
 | 🥈 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **8** | **2** pkgs | 💪 Package Advanced | **cobra**: 4 • **gin**: 4 |
-| 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **5** | **5** pkgs | 💪 Package Advanced | **cobra**: 1 • **echo**: 1 • **fiber**: 1 • **gin**: 1 • **gorm**: 1 |
+| 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **7** | **6** pkgs | 💪 Package Advanced | **cobra**: 1 • **echo**: 1 • **fiber**: 1 • **gin**: 1 • **gorm**: 1 • **mongodb**: 2 |
 | 4 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
 | 5 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 | 6 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
@@ -177,11 +177,17 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥇 | **[odelbos](https://github.com/odelbos)** | 5/5 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[RezaSi](https://github.com/RezaSi)** | 1/5 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% |
 
+#### Mongodb Package
+
+| Rank | Developer | Completed | Progress |
+|:---:|:---:|:---:|:---|
+| 🥇 | **[RezaSi](https://github.com/RezaSi)** | 2/5 | 🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% |
+
 ### 📊 Package Challenge Statistics
 
-- **Total Package Challenges Available**: 21
+- **Total Package Challenges Available**: 26
 - **Active Package Learners**: 7
-- **Available Packages**: 5 (cobra, echo, fiber, gin, gorm)
+- **Available Packages**: 6 (cobra, echo, fiber, gin, gorm, mongodb)
 
 - **Most Package Challenges Solved**: 17 by odelbos
 
