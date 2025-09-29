@@ -1,6 +1,7 @@
 # Scoreboard for challenge-21
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| BrianHuang813 | 35 | 35 |
 | Cpoing | 35 | 35 |
 | Gandook | 35 | 35 |
 | GinVlad | 35 | 35 |

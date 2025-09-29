@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 4592adarsh | 23 | 23 |
+| BrianHuang813 | 23 | 23 |
 | Cpoing | 23 | 23 |
 | Gandook | 23 | 23 |
 | GinVlad | 23 | 23 |

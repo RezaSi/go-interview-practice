@@ -1,0 +1,51 @@
+{
+  "title": "Transactions & Advanced Features",
+  "description": "Build a production-ready banking transaction system using MongoDB's advanced features including multi-document transactions, change streams, GridFS, and enterprise-grade error handling.",
+  "short_description": "Master MongoDB advanced features by building a banking transaction system",
+  "difficulty": "Advanced",
+  "estimated_time": "90-120 min",
+  "learning_objectives": [
+    "Implement multi-document ACID transactions",
+    "Use change streams for real-time data monitoring",
+    "Implement GridFS for large file storage",
+    "Build production-grade error handling and retry logic",
+    "Handle concurrent operations and race conditions",
+    "Implement audit logging and compliance features"
+  ],
+  "prerequisites": [
+    "Completed Challenge 4 (Indexing & Performance)",
+    "Understanding of ACID transaction principles",
+    "Knowledge of concurrent programming concepts",
+    "Familiarity with financial system requirements"
+  ],
+  "tags": [
+    "mongodb",
+    "transactions",
+    "acid",
+    "change-streams",
+    "gridfs",
+    "production",
+    "enterprise"
+  ],
+  "real_world_connection": "Advanced MongoDB features are essential for financial systems, enterprise applications, and mission-critical platforms. This challenge teaches the skills used by senior engineers at banks, fintech companies, and enterprise software providers.",
+  "requirements": [
+    "Implement BankingService with transaction support",
+    "Create atomic money transfer operations",
+    "Build real-time balance monitoring with change streams",
+    "Implement document storage with GridFS",
+    "Handle concurrent transactions and conflicts",
+    "Create comprehensive audit logging",
+    "Build retry logic for transient failures",
+    "Implement transaction rollback and recovery"
+  ],
+  "bonus_points": [
+    "Implement distributed transaction coordination",
+    "Add real-time fraud detection",
+    "Create transaction performance monitoring",
+    "Build compliance reporting features",
+    "Add automated backup and recovery",
+    "Implement advanced security features"
+  ],
+  "icon": "bi-shield-check",
+  "order": 5
+}
