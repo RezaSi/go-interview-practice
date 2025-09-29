@@ -15,6 +15,7 @@
 | korranat9 | 25 | 25 |
 | mick4711 | 25 | 25 |
 | ne0phyte | 25 | 25 |
+| nosrio | 25 | 25 |
 | odelbos | 25 | 25 |
 | t4e1 | 25 | 25 |
 | y1hao | 25 | 25 |
