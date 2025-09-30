@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Gandook | 36 | 36 |
+| Hikitak | 36 | 36 |
 | JackDalberg | 36 | 36 |
 | KhaledMosaad | 36 | 36 |
 | PolinaSvet | 36 | 36 |
