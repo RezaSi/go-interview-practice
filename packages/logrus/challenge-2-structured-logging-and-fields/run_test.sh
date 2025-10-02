@@ -34,7 +34,7 @@ TEMP_DIR=$(mktemp -d)
 cp "$SUBMISSION_FILE" "solution-template_test.go" "go.mod" "go.sum" "$TEMP_DIR/" 2>/dev/null
 
 # Rename solution.go to solution-template.go for the test to build correctly
-# The test file expects to be in the `main` package alongside the functions it's testing
+# The test file expects to be in the `main` package alongside the functions it's testing.
 mv "$TEMP_DIR/solution.go" "$TEMP_DIR/solution-template.go"
 
 echo "Running tests for user '$USERNAME'..."
@@ -43,7 +43,7 @@ echo "Running tests for user '$USERNAME'..."
 pushd "$TEMP_DIR" > /dev/null
 
 # Tidy up dependencies to ensure everything is consistent
-echo "Tidying dependencies"
+echo "Tidying dependencies..."
 go mod tidy || {
     echo "Failed to tidy dependencies."
     popd > /dev/null
@@ -52,7 +52,7 @@ go mod tidy || {
 }
 
 # Run the tests with verbosity and coverage
-echo "Executing tests"
+echo "Executing tests..."
 go test -v -cover
 
 TEST_EXIT_CODE=$?

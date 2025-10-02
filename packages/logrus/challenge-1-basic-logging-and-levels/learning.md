@@ -32,7 +32,7 @@ Output looks like:
 2025/10/02 18:00:00 Hello from standard log
 ```
 
-It’s fine for basics, but:
+It’s nice for basics, but:
 
 * No levels (everything is just a line)
 * No JSON/structured output
@@ -98,7 +98,7 @@ logrus.Panic("Database connection issue")    // panics
 
 ### **3. Choosing Levels at Runtime**
 
-You can set the level dynamically from input (e.g. CLI arg):
+You can set the level dynamically from input:
 
 ```go
 func setupLogger(level string) {
@@ -139,16 +139,9 @@ func main() {
 }
 ```
 
-Run with different levels:
-
-```sh
-go run main.go debug
-go run main.go warn
-```
-
 ---
 
-## ✅ **Best Practices (Beginner)**
+## **Best Practices**
 
 1. Pick the right level: `Debug` for dev, `Info` for normal ops, `Error` when something breaks.
 2. Default to JSON formatter — easy to parse later.
