@@ -66,6 +66,7 @@
 | grozdovk | 6 | 6 |
 | himanshum9 | 6 | 6 |
 | hodgechung | 6 | 6 |
+| hudazaan | 6 | 6 |
 | idk2me | 6 | 6 |
 | igorek890 | 6 | 6 |
 | ilder | 6 | 6 |
@@ -102,6 +103,7 @@
 | potapkin-pavel | 6 | 6 |
 | preetsinghmakkar | 6 | 6 |
 | puffyguy | 6 | 6 |
+| q1ngy | 6 | 6 |
 | quangtran666 | 6 | 6 |
 | radish-miyazaki | 6 | 6 |
 | richcem | 6 | 6 |

@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | Cpoing | 54 | 54 |
 | Gandook | 54 | 54 |
+| Hikitak | 54 | 54 |
 | JackDalberg | 54 | 54 |
 | PolinaSvet | 54 | 54 |
 | RezaSi | 54 | 54 |

@@ -24,6 +24,7 @@
 | Mersad-Moghaddam | 7 | 7 |
 | MiladJlz | 7 | 7 |
 | MuraliMohan-2000 | 7 | 7 |
+| Patriotic20 | 7 | 7 |
 | PolinaSvet | 7 | 7 |
 | RezaSi | 7 | 7 |
 | Seokky | 7 | 7 |
@@ -53,9 +54,11 @@
 | decko | 7 | 7 |
 | deloz | 7 | 7 |
 | dimozavrrrik | 7 | 7 |
+| evvellex | 7 | 7 |
 | grozdovk | 7 | 7 |
 | himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
+| hudazaan | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
 | ilder | 7 | 7 |
@@ -63,6 +66,7 @@
 | jasonnfeng | 7 | 7 |
 | jersonzc | 7 | 7 |
 | jin5335 | 7 | 7 |
+| jnandezp | 7 | 7 |
 | john-otienoh | 7 | 7 |
 | jordanhimawan | 7 | 7 |
 | korranat9 | 7 | 7 |

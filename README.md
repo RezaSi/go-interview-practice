@@ -95,7 +95,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 7 | <img src="https://github.com/Cpoing.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Cpoing](https://github.com/Cpoing)** | **17**/30 | **56.7%** | Expert | ✅✅✅✅⬜✅✅✅✅✅✅✅✅✅✅<br/>⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
 | 8 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **17**/30 | **56.7%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜⬜✅✅⬜⬜⬜✅⬜⬜✅ |
 | 9 | <img src="https://github.com/t4e1.png" width="24" height="24" style="border-radius: 50%;"><br/>**[t4e1](https://github.com/t4e1)** | **15**/30 | **50.0%** | Expert | ✅✅✅✅✅✅✅⬜⬜✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅⬜⬜⬜⬜✅⬜⬜⬜ |
-| 10 | <img src="https://github.com/KhaledMosaad.png" width="24" height="24" style="border-radius: 50%;"><br/>**[KhaledMosaad](https://github.com/KhaledMosaad)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅⬜⬜✅✅⬜⬜✅ |
+| 10 | <img src="https://github.com/Hikitak.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Hikitak](https://github.com/Hikitak)** | **14**/30 | **46.7%** | Advanced | ✅✅✅⬜✅✅⬜⬜⬜✅⬜⬜✅⬜⬜<br/>✅⬜✅✅⬜✅✅✅⬜⬜⬜⬜⬜⬜✅ |
 
 <div align="center">
 
@@ -110,7 +110,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 142
+- **Active Developers**: 147
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -125,11 +125,13 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥇 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **17** | **4** pkgs | 🔥 Package Master | **cobra**: 4 • **fiber**: 4 • **gin**: 4 • **gorm**: 5 |
 | 🥈 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **8** | **2** pkgs | 💪 Package Advanced | **cobra**: 4 • **gin**: 4 |
 | 🥉 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **7** | **6** pkgs | 💪 Package Advanced | **cobra**: 1 • **echo**: 1 • **fiber**: 1 • **gin**: 1 • **gorm**: 1 • **mongodb**: 2 |
-| 4 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
-| 5 | <img src="https://github.com/BrianHuang813.png" width="24" height="24" style="border-radius: 50%;"><br/>**[BrianHuang813](https://github.com/BrianHuang813)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
-| 6 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
-| 7 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
-| 8 | <img src="https://github.com/kelvin-yong.png" width="24" height="24" style="border-radius: 50%;"><br/>**[kelvin-yong](https://github.com/kelvin-yong)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 4 | <img src="https://github.com/BrianHuang813.png" width="24" height="24" style="border-radius: 50%;"><br/>**[BrianHuang813](https://github.com/BrianHuang813)** | **3** | **1** pkg | 🚀 Package Intermediate | **gin**: 3 |
+| 5 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
+| 6 | <img src="https://github.com/22-7-co.png" width="24" height="24" style="border-radius: 50%;"><br/>**[22-7-co](https://github.com/22-7-co)** | **2** | **1** pkg | 🌱 Package Beginner | **gin**: 2 |
+| 7 | <img src="https://github.com/q1ngy.png" width="24" height="24" style="border-radius: 50%;"><br/>**[q1ngy](https://github.com/q1ngy)** | **2** | **1** pkg | 🌱 Package Beginner | **gin**: 2 |
+| 8 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 9 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 10 | <img src="https://github.com/kelvin-yong.png" width="24" height="24" style="border-radius: 50%;"><br/>**[kelvin-yong](https://github.com/kelvin-yong)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
 <div align="center">
 
@@ -167,9 +169,9 @@ Master Go packages through hands-on challenges! Each package offers a structured
 |:---:|:---:|:---:|:---|
 | 🥇 | **[PolinaSvet](https://github.com/PolinaSvet)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
-| 🥉 | **[BrianHuang813](https://github.com/BrianHuang813)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
-| 4 | **[GleeN987](https://github.com/GleeN987)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
-| 5 | **[MarioPaez](https://github.com/MarioPaez)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 🥉 | **[BrianHuang813](https://github.com/BrianHuang813)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 4 | **[22-7-co](https://github.com/22-7-co)** | 2/4 | 🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ 50% |
+| 5 | **[q1ngy](https://github.com/q1ngy)** | 2/4 | 🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ 50% |
 
 #### Gorm Package
 
@@ -187,7 +189,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 26
-- **Active Package Learners**: 8
+- **Active Package Learners**: 10
 - **Available Packages**: 6 (cobra, echo, fiber, gin, gorm, mongodb)
 
 - **Most Package Challenges Solved**: 17 by odelbos
