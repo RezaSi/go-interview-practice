@@ -1,0 +1,41 @@
+{
+  "title": "Advanced Configuration & Hooks",
+  "description": "Learn professional logging patterns by building a task scheduler that uses a custom Logrus hook to route critical error logs to a separate, machine-readable destination, while keeping general logs in a human-friendly format",
+  "short_description": "Use a custom Logrus hook to send logs to multiple destinations",
+  "difficulty": "Intermediate",
+  "estimated_time": "50-80 minutes",
+  "learning_objectives": [
+    "Implement the `logrus.Hook` interface from scratch",
+    "Configure a single logger to write to multiple output destinations",
+    "Use different formatters for different log streams (e.g., Text vs. JSON)",
+    "Understand the real-world use case for routing logs based on severity",
+    "Perform basic log file I/O using the Go standard library"
+  ],
+  "prerequisites": [
+    "Completion of 'Challenge 2: Structured Logging & Fields'",
+    "A solid understanding of Go interfaces"
+  ],
+  "tags": [
+    "logging",
+    "logrus",
+    "hooks",
+    "configuration",
+    "interfaces",
+    "files"
+  ],
+  "real_world_connection": "This pattern is essential for production systems where logs are fed into different tools: human-readable logs for developers, and structured JSON logs for automated monitoring, alerting, and analysis platforms like Splunk or Datadog",
+  "requirements": [
+    "Create a struct that correctly implements the `logrus.Hook` interface",
+    "Configure a logger to write to both the console and the custom hook",
+    "Ensure the main logger's output is in Text format",
+    "Ensure the hook's output is in JSON format",
+    "The hook must only trigger for Error and Fatal level logs"
+  ],
+  "bonus_points": [
+    "Implement a simple, on-startup log rotation (renaming the old log file)",
+    "Make the hook asynchronous using a goroutine and a channel",
+    "Add a new field to the log entry from within the hook's `Fire` method"
+  ],
+  "icon": "bi-sign-split",
+  "order": 3
+}
