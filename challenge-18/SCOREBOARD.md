@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 4592adarsh | 23 | 23 |
+| Ali-Fartoot | 23 | 23 |
 | BrianHuang813 | 23 | 23 |
 | Cpoing | 23 | 23 |
 | Gandook | 23 | 23 |
@@ -32,6 +33,7 @@
 | dimozavrrrik | 23 | 23 |
 | grozdovk | 23 | 23 |
 | himanshum9 | 23 | 23 |
+| hudazaan | 23 | 23 |
 | igorek890 | 23 | 23 |
 | in1yan | 23 | 23 |
 | john-otienoh | 23 | 23 |
