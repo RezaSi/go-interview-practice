@@ -14,12 +14,11 @@ func main() {
 	}
 
 	// Call the Sum function and print the result
-	result := Sum(2, 3)
+	result := Sum(a, b)
 	fmt.Println(result)
 }
 
 // Sum returns the sum of a and b.
 func Sum(a int, b int) int {
-	// TODO: Implement the function
 	return a + b
 }
