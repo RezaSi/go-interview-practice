@@ -42,14 +42,14 @@ const updateQuantitySql = `UPDATE products SET quantity = ? WHERE id = ?`
 
 // InitDB sets up a new SQLite database and creates the products table
 func InitDB(dbPath string) (*sql.DB, error) {
-    db, err := sql.Open("sqlite3", dbPath)
-    if err != nil {
-        return nil, err
-    }
-    if _, err := db.Exec(createTableSql); err != nil {
-        db.Close()
-        return nil, err
-    }
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := db.Exec(createTableSql); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return db, nil
 }
 
@@ -57,11 +57,11 @@ func InitDB(dbPath string) (*sql.DB, error) {
 func (ps *ProductStore) CreateProduct(product *Product) error {
 	result, err := ps.db.Exec(insertProductSql, product.Name, product.Price, product.Quantity, product.Category)
 	if err != nil {
-	    return err
+		return err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-	    return err
+		return err
 	}
 	product.ID = id
 	return nil
@@ -79,14 +79,14 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 func (ps *ProductStore) UpdateProduct(product *Product) error {
 	result, err := ps.db.Exec(updateProductSql, product.Name, product.Price, product.Quantity, product.Category, product.ID)
 	if err != nil {
-	    return err
+		return err
 	}
 	updated, err := result.RowsAffected()
 	if err != nil {
-	    return err
+		return err
 	}
 	if updated == 0 {
-	    return fmt.Errorf("product with id = %d was not updated", product.ID)
+		return fmt.Errorf("product with id = %d was not updated", product.ID)
 	}
 	return nil
 }
@@ -95,71 +95,71 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 func (ps *ProductStore) DeleteProduct(id int64) error {
 	result, err := ps.db.Exec(deleteProductSql, id)
 	if err != nil {
-	    return err
+		return err
 	}
 	deleted, err := result.RowsAffected()
 	if err != nil {
-	    return err
+		return err
 	}
 	if deleted == 0 {
-	    return fmt.Errorf("product with id = %d was not deleted", id)
+		return fmt.Errorf("product with id = %d was not deleted", id)
 	}
 	return nil
 }
 
 // ListProducts returns all products with optional filtering by category
 func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
-    var rows *sql.Rows
-    var err error
+	var rows *sql.Rows
+	var err error
 
-    if len(category) > 0 {
-        rows, err = ps.db.Query(listProductsSql + ` WHERE category = ?`, category)
-    } else {
-        rows, err = ps.db.Query(listProductsSql)
-    }
-    if err != nil {
-        return []*Product{}, err
-    }
-    defer rows.Close()
+	if len(category) > 0 {
+		rows, err = ps.db.Query(listProductsSql+` WHERE category = ?`, category)
+	} else {
+		rows, err = ps.db.Query(listProductsSql)
+	}
+	if err != nil {
+		return []*Product{}, err
+	}
+	defer rows.Close()
 
-    var products []*Product
+	var products []*Product
 
-    for rows.Next() {
-        product := &Product{}
-        err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.Quantity, &product.Category)
-        if err != nil {
-            return []*Product{}, err
-        }
-        products = append(products, product)
-    }
+	for rows.Next() {
+		product := &Product{}
+		err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.Quantity, &product.Category)
+		if err != nil {
+			return []*Product{}, err
+		}
+		products = append(products, product)
+	}
 
 	return products, nil
 }
 
 // BatchUpdateInventory updates the quantity of multiple products in a single transaction
 func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
-    tx, err := ps.db.Begin()
-    if err != nil {
-        return err
-    }
-    defer tx.Rollback()
-    
-    for id, quantity := range updates {
-        result, err := tx.Exec(updateQuantitySql, quantity, id)
-        if err != nil {
-            return err
-        }
-        updated, err := result.RowsAffected()
-        if err != nil {
-            return err
-        }
-        if updated == 0 {
-            return fmt.Errorf("product with id = %d was not updated", id)
-        }
-    }
-    
+	tx, err := ps.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for id, quantity := range updates {
+		result, err := tx.Exec(updateQuantitySql, quantity, id)
+		if err != nil {
+			return err
+		}
+		updated, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if updated == 0 {
+			return fmt.Errorf("product with id = %d was not updated", id)
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
-	    return err
+		return err
 	}
 
 	return nil
