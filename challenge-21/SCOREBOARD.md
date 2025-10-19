@@ -1,5 +1,44 @@
 # Scoreboard for challenge-21
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
-| RezaSi | 32 | 32 |
-| odelbos | 32 | 32 |
+| Ali-Fartoot | 35 | 35 |
+| Be1chenok | 35 | 35 |
+| BrianHuang813 | 35 | 35 |
+| Cpoing | 35 | 35 |
+| Gandook | 35 | 35 |
+| GinVlad | 35 | 35 |
+| Hikitak | 35 | 35 |
+| IBraveMonkey | 35 | 35 |
+| JackDalberg | 35 | 35 |
+| JarhsonNing | 35 | 35 |
+| JunLog | 35 | 35 |
+| KhaledMosaad | 35 | 35 |
+| MYK12397 | 35 | 35 |
+| MuraliMohan-2000 | 35 | 35 |
+| PolinaSvet | 35 | 35 |
+| RezaSi | 35 | 35 |
+| ZaharBorisenko | 35 | 35 |
+| akolpakov-somehash | 35 | 35 |
+| awsl1110 | 35 | 35 |
+| binoymanoj | 35 | 35 |
+| grozdovk | 35 | 35 |
+| himanshum9 | 35 | 35 |
+| hodgechung | 35 | 35 |
+| hudazaan | 35 | 35 |
+| jordanhimawan | 35 | 35 |
+| kuzminprog | 35 | 35 |
+| lanmanul | 35 | 35 |
+| liukw-go | 35 | 35 |
+| longbui98 | 35 | 35 |
+| lyb88999 | 35 | 35 |
+| mick4711 | 35 | 35 |
+| muhammedkucukaslan | 35 | 35 |
+| odelbos | 35 | 35 |
+| perekoshik | 35 | 35 |
+| preetsinghmakkar | 35 | 35 |
+| t4e1 | 35 | 35 |
+| tmsankaram | 35 | 35 |
+| wxai2324 | 35 | 35 |
+| y1hao | 35 | 35 |
+| ashwinipatankar | 33 | 35 |
+| VFarsiyants | 24 | 26 |
