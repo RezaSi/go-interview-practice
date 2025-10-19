@@ -1,0 +1,27 @@
+{
+  "name": "cobra",
+  "display_name": "Cobra CLI Framework",
+  "description": "Modern CLI application framework for Go",
+  "version": "v1.8.0",
+  "github_url": "https://github.com/spf13/cobra",
+  "documentation_url": "https://cobra.dev/",
+  "stars": 35000,
+  "category": "cli",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "command_line_concepts"],
+  "learning_path": [
+    "challenge-1-basic-cli",
+    "challenge-2-flags-args",
+    "challenge-3-subcommands-persistence",
+    "challenge-4-advanced-features"
+  ],
+  "tags": ["cli", "command-line", "terminal", "tools", "commands"],
+  "estimated_time": "4-6 hours",
+  "real_world_usage": [
+    "CLI tools and utilities",
+    "DevOps automation scripts", 
+    "System administration tools",
+    "Build tools and generators",
+    "Database migration tools"
+  ]
+} 

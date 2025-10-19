@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 )
 
 func setupTestServer() *httptest.Server {
@@ -521,4 +518,4 @@ func TestSearchBooksByTitleNoResults(t *testing.T) {
 	if len(foundBooks) != 0 {
 		t.Errorf("Expected 0 books; got %d", len(foundBooks))
 	}
-} 
+}
