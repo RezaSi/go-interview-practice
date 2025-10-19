@@ -28,14 +28,14 @@ func main() {
 // FindMax returns the maximum value in a slice of integers.
 // If the slice is empty, it returns 0.
 func FindMax(numbers []int) int {
-    if len(numbers) == 0 {
-        return 0
-    }
+	if len(numbers) == 0 {
+		return 0
+	}
 	var result = numbers[0]
 	for _, number := range numbers {
-	    if number > result {
-	        result = number
-	    }
+		if number > result {
+			result = number
+		}
 	}
 	return result
 }
@@ -46,10 +46,10 @@ func RemoveDuplicates(numbers []int) []int {
 	result := make([]int, 0, len(numbers))
 	corr := make(map[int]struct{}, len(numbers))
 	for _, number := range numbers {
-	    if _, found := corr[number]; !found {
-	        result = append(result, number)
-	        corr[number] = struct{}{}
-	    }
+		if _, found := corr[number]; !found {
+			result = append(result, number)
+			corr[number] = struct{}{}
+		}
 	}
 	return result
 }
@@ -58,7 +58,7 @@ func RemoveDuplicates(numbers []int) []int {
 func ReverseSlice(slice []int) []int {
 	result := make([]int, 0, len(slice))
 	for i := len(slice) - 1; i >= 0; i-- {
-	    result = append(result, slice[i])
+		result = append(result, slice[i])
 	}
 	return result
 }
@@ -68,9 +68,9 @@ func ReverseSlice(slice []int) []int {
 func FilterEven(numbers []int) []int {
 	result := make([]int, 0, len(numbers))
 	for _, number := range numbers {
-	    if number % 2 == 0 {
-	        result = append(result, number)
-	    }
+		if number%2 == 0 {
+			result = append(result, number)
+		}
 	}
 	return result
 }
