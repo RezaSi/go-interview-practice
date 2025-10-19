@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
-	"errors"
 )
 
 // ContextManager defines a simplified interface for basic context operations
@@ -53,62 +53,62 @@ func (cm *simpleContextManager) AddValue(parent context.Context, key, value inte
 
 // GetValue retrieves a value from the context
 func (cm *simpleContextManager) GetValue(ctx context.Context, key interface{}) (interface{}, bool) {
-    val := ctx.Value(key)
-    if val != nil {
-        return val, true
-    }
+	val := ctx.Value(key)
+	if val != nil {
+		return val, true
+	}
 	return nil, false
 }
 
 // ExecuteWithContext executes a task that can be cancelled via context
 func (cm *simpleContextManager) ExecuteWithContext(ctx context.Context, task func() error) error {
 	ch := make(chan error)
-	
+
 	go func() {
-	    ch <- task()
-	    close(ch)
+		ch <- task()
+		close(ch)
 	}()
-	
+
 	for {
-	    select {
-	        case <-ctx.Done():
-	            return ctx.Err()
-	        case err, ok := <-ch:
-	            if !ok {
-	                return nil
-	            }
-	            return err
-	    }
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case err, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			return err
+		}
 	}
-	
+
 	return nil
 }
 
 // WaitForCompletion waits for a duration or until context is cancelled
 func (cm *simpleContextManager) WaitForCompletion(ctx context.Context, duration time.Duration) error {
 	for {
-	    select {
-	        case <-ctx.Done():
-	            return ctx.Err()
-	        case <-time.After(duration):
-	            return nil
-	    }
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(duration):
+			return nil
+		}
 	}
-	
+
 	return nil
 }
 
 // Helper function - simulate work that can be cancelled
 func SimulateWork(ctx context.Context, workDuration time.Duration, _ string) error {
 	for {
-	    select {
-	        case <-ctx.Done():
-	            return ctx.Err()
-	        case <-time.After(workDuration):
-	            return nil
-	    }
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(workDuration):
+			return nil
+		}
 	}
-	
+
 	return nil
 }
 
@@ -118,35 +118,35 @@ func ProcessItems(ctx context.Context, items []string) ([]string, error) {
 	// Process each item but check for cancellation between items
 	// Return partial results if cancelled
 	var result []string
-	
+
 	ch := make(chan string)
-	
+
 	go func() {
-	    for _, item := range items {
-	        ch <- fmt.Sprintf("processed_%s", item)
-	        time.Sleep(50 * time.Millisecond)
-	    }
-	    close(ch)
+		for _, item := range items {
+			ch <- fmt.Sprintf("processed_%s", item)
+			time.Sleep(50 * time.Millisecond)
+		}
+		close(ch)
 	}()
-	
+
 	for {
-	    select {
-	        case <-ctx.Done():
-	            err := ctx.Err()
+		select {
+		case <-ctx.Done():
+			err := ctx.Err()
 
-	            if errors.Is(err, context.Canceled) {
-	                return result, err
-	            }
+			if errors.Is(err, context.Canceled) {
+				return result, err
+			}
 
-	            return []string{}, err
-            case item, ok := <-ch:
-                if !ok {
-                    return result, nil
-                }
-                result = append(result, item)
-	    }
+			return []string{}, err
+		case item, ok := <-ch:
+			if !ok {
+				return result, nil
+			}
+			result = append(result, item)
+		}
 	}
-	
+
 	return result, nil
 }
 
