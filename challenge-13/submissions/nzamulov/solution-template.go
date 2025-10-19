@@ -46,7 +46,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := db.Exec(createTableSql); err != nil {
+	if _, err = db.Exec(createTableSql); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -122,11 +122,11 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	}
 	defer rows.Close()
 
-	var products []*Product
+	products := make([]*Product, 0)
 
 	for rows.Next() {
 		product := &Product{}
-		err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.Quantity, &product.Category)
+		err = rows.Scan(&product.ID, &product.Name, &product.Price, &product.Quantity, &product.Category)
 		if err != nil {
 			return []*Product{}, err
 		}
@@ -158,7 +158,7 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 
