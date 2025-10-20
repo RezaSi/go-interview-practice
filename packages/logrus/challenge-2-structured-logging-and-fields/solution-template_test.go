@@ -37,6 +37,14 @@ func isValidUUID(u string) bool {
 
 // For JSON Format
 func TestLoggingMiddleware_JSONFormatter(t *testing.T) {
+	// Save original configuration
+	originalFormatter := logrus.StandardLogger().Formatter
+	originalOutput := logrus.StandardLogger().Out
+	t.Cleanup(func() {
+		logrus.SetFormatter(originalFormatter)
+		logrus.SetOutput(originalOutput)
+	})
+
 	// Ensure the global logger is set to JSON format for the test
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
@@ -101,6 +109,14 @@ func TestLoggingMiddleware_JSONFormatter(t *testing.T) {
 
 // For Text Format
 func TestLoggingMiddleware_TextFormatter(t *testing.T) {
+	// Save original configuration
+	originalFormatter := logrus.StandardLogger().Formatter
+	originalOutput := logrus.StandardLogger().Out
+	t.Cleanup(func() {
+		logrus.SetFormatter(originalFormatter)
+		logrus.SetOutput(originalOutput)
+	})
+
 	// Ensure the global logger is set to Text format
 	logrus.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,

@@ -1,6 +1,6 @@
 {
   "title": "Production Logging Patterns",
-  "description": "Build a robust logging pipeline for a background task worker. This advanced challenge covers routing logs to multiple destinations (console, file, and an alert stream) with different formats, and implementing a custom hook for error trackin",
+  "description": "Build a robust logging pipeline for a background task worker. This advanced challenge covers routing logs to multiple destinations (console, file, and an alert stream) with different formats, and implementing a custom hook for error tracking",
   "short_description": "Implement a production-grade logging pipeline with multiple destinations",
   "difficulty": "Advanced",
   "estimated_time": "90-120 minutes",

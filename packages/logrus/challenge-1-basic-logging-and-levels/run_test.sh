@@ -39,14 +39,18 @@ mv "$TEMP_DIR/solution.go" "$TEMP_DIR/solution-template.go"
 
 echo "Running tests for user '$USERNAME'..."
 
-# Navigate to the temporary directory
-pushd "$TEMP_DIR" > /dev/null
+# Navigate to the temporary directory (with error handling)
+pushd "$TEMP_DIR" > /dev/null || {
+    echo "Failed to navigate to temporary directory."
+    rm -rf "$TEMP_DIR"
+    exit 1
+}
 
 # Tidy up dependencies to ensure everything is consistent
 echo "Tidying dependencies"
 go mod tidy || {
     echo "Failed to tidy dependencies."
-    popd > /dev/null
+    popd > /dev/null || exit 1
     rm -rf "$TEMP_DIR"
     exit 1
 }
@@ -57,8 +61,8 @@ go test -v -cover
 
 TEST_EXIT_CODE=$?
 
-# Return to the original directory
-popd > /dev/null
+# Return to the original directory (with error handling)
+popd > /dev/null || exit 1
 
 # Clean up the temporary directory
 rm -rf "$TEMP_DIR"

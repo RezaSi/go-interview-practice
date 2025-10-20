@@ -57,22 +57,25 @@ func runTaskScheduler(logger *logrus.Logger) {
 func main() {
 	// TODO: Create a new instance of the logger
 	// Hint: logger := logrus.New()
-	var logger *logrus.Logger // Replace this line
+	logger := logrus.New() // Basic initialization - configure below
 
 	// TODO: Set the logger's formatter to TextFormatter
-	
+	logger.SetFormatter(&logrus.TextFormatter{})
+
 	// TODO: Set the logger's output to standard out
-	
+	logger.SetOutput(os.Stdout)
+
 	// The hook will write to a separate buffer. In a real app, this could be a file
 	var hookWriter io.Writer = &bytes.Buffer{}
 
 	// TODO: Create an instance of your ErrorHook
 	// It needs an output writer (hookWriter) and a JSON formatter
 	// Hint: hook := &ErrorHook{ Out: hookWriter, Formatter: &logrus.JSONFormatter{} }
-	var hook logrus.Hook // Replace this line
+	hook := &ErrorHook{Out: hookWriter, Formatter: &logrus.JSONFormatter{}}
 
 	// TODO: Add the hook to the logger
-	
+	logger.AddHook(hook)
+
 	// Run the scheduler simulation
 	runTaskScheduler(logger)
 

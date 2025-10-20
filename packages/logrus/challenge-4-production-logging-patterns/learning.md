@@ -106,7 +106,7 @@ func main() {
 
 Console (`stdout` - text):
 
-```
+```text
 INFO[0000] Normal info log (console only)
 WARN[0000] Retry attempt failed (also goes to stderr as JSON)
 ERRO[0000] Task permanently failed (also goes to stderr as JSON)

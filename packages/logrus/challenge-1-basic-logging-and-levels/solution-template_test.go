@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -90,13 +91,15 @@ func TestLogLevelFiltering(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Mock the exit function to prevent test termination
-			var wg sync.WaitGroup
-			wg.Add(1)
-
+			// Mock the exit function to prevent test termination and signal with timeout
+			done := make(chan struct{}, 1)
 			originalExitFunc := logrus.StandardLogger().ExitFunc
-			logrus.StandardLogger().ExitFunc = func(int) { wg.Done() }
-
+			logrus.StandardLogger().ExitFunc = func(int) {
+				select {
+				case done <- struct{}{}:
+				default:
+				}
+			}
 			defer func() { logrus.StandardLogger().ExitFunc = originalExitFunc }()
 
 			setupLogger(os.Stdout, tc.levelToSet)
@@ -111,9 +114,13 @@ func TestLogLevelFiltering(t *testing.T) {
 				runLogbookOperations()
 			})
 
-			// For fatal logs, we need to wait for the mocked exit
+			// For fatal logs, wait for the mocked exit with timeout to avoid hangs
 			if tc.levelToSet != "panic" {
-				wg.Wait()
+				select {
+				case <-done:
+				case <-time.After(2 * time.Second):
+					t.Fatal("timed out waiting for logrus.Fatal ExitFunc")
+				}
 			}
 
 			lines := strings.Split(strings.TrimSpace(output), "\n")

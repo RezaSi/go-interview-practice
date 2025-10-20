@@ -25,11 +25,19 @@ func (h *RetryHook) Levels() []logrus.Level {
 // Fire is invoked when a log entry matches the levels above
 // It formats the entry with the hook’s formatter and writes to Out
 func (h *RetryHook) Fire(entry *logrus.Entry) error {
-	line, err := h.Formatter.Format(entry)
+	formatter := h.Formatter
+	if formatter == nil {
+	  formatter = &logrus.JSONFormatter{}
+	}
+	out := h.Out
+	if out == nil {
+	  out = os.Stderr
+	}
+	line, err := formatter.Format(entry)
 	if err != nil {
 		return err
 	}
-	_, err = h.Out.Write(line)
+	_, err = out.Write(line)
 	return err
 }
 

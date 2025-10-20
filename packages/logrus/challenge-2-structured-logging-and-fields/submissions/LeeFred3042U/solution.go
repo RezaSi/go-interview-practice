@@ -61,5 +61,7 @@ func main() {
 	// Wrap handler with middleware
 	finalHandler := loggingMiddleware(http.HandlerFunc(helloHandler))
 
-	http.ListenAndServe(":8080", finalHandler)
+	if err := http.ListenAndServe(":8080", finalHandler); err != nil {
+		logrus.WithError(err).Fatal("Server failed to start")
+	}
 }

@@ -23,11 +23,11 @@ func setupLogger(out io.Writer, level string) {
 // runLogbookOperations simulates the main logic of the logbook application
 func runLogbookOperations() {
 	logrus.Debug("Checking system status")
-	logrus.Info("Logbook application starting up")
-	logrus.Warn("Disk space is running low")
-	logrus.Error("Failed to connect to remote backup service")
-	logrus.Fatal("Critical configuration file 'config.yml' not found")
-	logrus.Panic("Unhandled database connection issue")
+	logrus.Info("Logbook application starting up.")
+	logrus.Warn("Disk space is running low.")
+	logrus.Error("Failed to connect to remote backup service.")
+	logrus.Fatal("Critical configuration file 'config.yml' not found.")
+	logrus.Panic("Unhandled database connection issue.")
 }
 
 func main() {
