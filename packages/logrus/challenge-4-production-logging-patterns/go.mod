@@ -1,6 +1,6 @@
 module challenge-4-production-logging-patterns
 
-go 1.25.1
+go 1.21
 
 require (
 	github.com/sirupsen/logrus v1.9.3

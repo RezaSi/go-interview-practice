@@ -26,6 +26,14 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## **How to Contribute**
 
+## Go Version Policy
+
+   - The repository supports Go 1.19+ (README).
+   - CI workflows use **Go 1.25** (`.github/workflows/pr-tests.yml` sets `go-version: 1.25.0`).
+   - Some modules declare higher Go versions due to dependencies:
+     - Go 1.24 (`golang.org/x/sys v0.37.0` requires 1.24)
+   - Contributors using Go versions ≥1.19 should be aware that CI may run a newer Go version, which could produce warnings if older syntax or deprecated features are used.
+
 ### **Submitting a Solution**
 
 You can submit solutions to both Classic and Package challenges:

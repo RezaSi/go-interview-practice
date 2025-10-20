@@ -49,7 +49,11 @@ pushd "$TEMP_DIR" > /dev/null || {
 echo "Tidying dependencies..."
 go mod tidy || {
     echo "Failed to tidy dependencies."
-    popd > /dev/null || true
+    popd > /dev/null || {
+        echo "Failed to return to original directory."
+        rm -rf "$TEMP_DIR"
+        exit 1
+    }
     rm -rf "$TEMP_DIR"
     exit 1
 }
@@ -61,7 +65,11 @@ go test -v -cover
 TEST_EXIT_CODE=$?
 
 # Return to the original directory
-popd > /dev/null || true
+popd > /dev/null || {
+    echo "Failed to return to original directory."
+    rm -rf "$TEMP_DIR"
+    exit 1
+}
 
 # Clean up the temporary directory
 rm -rf "$TEMP_DIR"
