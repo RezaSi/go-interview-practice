@@ -2,12 +2,6 @@
 
 # Script to run tests for a participant's submission
 
-# Function to display usage
-usage() {
-    echo "Usage: $0"
-    exit 1
-}
-
 # Verify that we are in a challenge directory
 if [ ! -f "solution-template_test.go" ]; then
     echo "Error: solution-template_test.go not found. Please run this script from a challenge directory"
@@ -31,7 +25,11 @@ fi
 TEMP_DIR=$(mktemp -d)
 
 # Copy the participant's solution, test file, and go.mod/go.sum to the temporary directory
-cp "$SUBMISSION_FILE" "solution-template_test.go" "go.mod" "go.sum" "$TEMP_DIR/" 2>/dev/null
+cp "$SUBMISSION_FILE" "solution-template_test.go" "go.mod" "go.sum" "$TEMP_DIR/" || {
+    echo "Error: Failed to copy required files to temporary directory."
+    rm -rf "$TEMP_DIR"
+    exit 1
+}
 
 # The test file expects to be in the `main` package alongside the functions it's testing
 mv "$TEMP_DIR/solution.go" "$TEMP_DIR/solution-template.go"
