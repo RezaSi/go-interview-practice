@@ -18,22 +18,13 @@ type Manager struct {
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
-	// TODO: Implement this method
-	employee := Employee{
-		ID:     e.ID,
-		Name:   e.Name,
-		Age:    e.Age,
-		Salary: e.Salary,
-	}
-	m.Employees = append(m.Employees, employee)
+	m.Employees = append(m.Employees, e)
 }
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-	// TODO: Implement this method
 	for i, employee := range m.Employees {
 		if employee.ID == id {
-			//m.Employees = append(m.Employees[:i], m.Employees[i+1:]...)
 			m.Employees = slices.Delete(m.Employees, i, i+1)
 			return
 		}
@@ -42,26 +33,23 @@ func (m *Manager) RemoveEmployee(id int) {
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-	// TODO: Implement this method
-	var salarySumm, count int
+	var salarySumm float64
 	
 	if len(m.Employees)==0 {
 		return 0
 	}
 
 	for _, employee := range m.Employees {
-		salarySumm += int(employee.Salary)
-		count++
+		salarySumm += employee.Salary
 	}
-	return float64(salarySumm / count)
+	return salarySumm/float64(len(m.Employees))
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	// TODO: Implement this method
-	for _, employee := range m.Employees {
-		if employee.ID == id {
-			return &employee
+	for i := range m.Employees {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
 		}
 	}
 	return nil
