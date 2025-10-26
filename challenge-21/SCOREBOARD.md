@@ -1,8 +1,13 @@
 # Scoreboard for challenge-21
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Ali-Fartoot | 35 | 35 |
+| Be1chenok | 35 | 35 |
+| BrianHuang813 | 35 | 35 |
+| Cpoing | 35 | 35 |
 | Gandook | 35 | 35 |
 | GinVlad | 35 | 35 |
+| Hikitak | 35 | 35 |
 | IBraveMonkey | 35 | 35 |
 | JackDalberg | 35 | 35 |
 | JarhsonNing | 35 | 35 |
@@ -13,8 +18,13 @@
 | PolinaSvet | 35 | 35 |
 | RezaSi | 35 | 35 |
 | ZaharBorisenko | 35 | 35 |
+| akolpakov-somehash | 35 | 35 |
+| awsl1110 | 35 | 35 |
 | binoymanoj | 35 | 35 |
+| grozdovk | 35 | 35 |
+| himanshum9 | 35 | 35 |
 | hodgechung | 35 | 35 |
+| hudazaan | 35 | 35 |
 | jordanhimawan | 35 | 35 |
 | kuzminprog | 35 | 35 |
 | lanmanul | 35 | 35 |
@@ -25,6 +35,8 @@
 | muhammedkucukaslan | 35 | 35 |
 | odelbos | 35 | 35 |
 | perekoshik | 35 | 35 |
+| preetsinghmakkar | 35 | 35 |
+| stratos-code | 35 | 35 |
 | t4e1 | 35 | 35 |
 | tmsankaram | 35 | 35 |
 | wxai2324 | 35 | 35 |
