@@ -2,6 +2,8 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 4592adarsh | 23 | 23 |
+| Ali-Fartoot | 23 | 23 |
+| Be1chenok | 23 | 23 |
 | BrianHuang813 | 23 | 23 |
 | Cpoing | 23 | 23 |
 | Gandook | 23 | 23 |
@@ -17,6 +19,7 @@
 | MuraliMohan-2000 | 23 | 23 |
 | PolinaSvet | 23 | 23 |
 | RezaSi | 23 | 23 |
+| Sairaviteja27 | 23 | 23 |
 | Seokky | 23 | 23 |
 | TOomaAh | 23 | 23 |
 | VFarsiyants | 23 | 23 |
@@ -32,6 +35,7 @@
 | dimozavrrrik | 23 | 23 |
 | grozdovk | 23 | 23 |
 | himanshum9 | 23 | 23 |
+| hudazaan | 23 | 23 |
 | igorek890 | 23 | 23 |
 | in1yan | 23 | 23 |
 | john-otienoh | 23 | 23 |
