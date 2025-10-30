@@ -15,23 +15,38 @@ type Manager struct {
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
-	// TODO: Implement this method
+	m.Employees = append(m.Employees, e)
 }
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-	// TODO: Implement this method
+	var removeValue []Employee
+	for i := 0; i < len(m.Employees); i++ {
+		if m.Employees[i].ID == id {
+			continue
+		} else {
+			removeValue = append(removeValue, m.Employees[i])
+		}
+		m.Employees = removeValue
+	}
 }
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-	// TODO: Implement this method
-	return 0
+	var aveSal float64
+	for i := 0; i < len(m.Employees); i++ {
+		aveSal += m.Employees[i].Salary
+	}
+	return aveSal / float64(len(m.Employees))
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	// TODO: Implement this method
+	for i := 0; i < len(m.Employees); i++ {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
+		}
+	}
 	return nil
 }
 
