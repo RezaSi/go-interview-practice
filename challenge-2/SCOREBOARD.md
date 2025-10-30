@@ -4,6 +4,7 @@
 | 0xarash | 7 | 7 |
 | ADEMOLA200 | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
+| AlexandrZlnov | 7 | 7 |
 | Ali-Fartoot | 7 | 7 |
 | AliNazariii | 7 | 7 |
 | Andresrvaz | 7 | 7 |
@@ -36,6 +37,7 @@
 | VFarsiyants | 7 | 7 |
 | VadimihrSvS | 7 | 7 |
 | Xmilton | 7 | 7 |
+| Xxploiter | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
 | Z4za01 | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
@@ -59,7 +61,9 @@
 | decko | 7 | 7 |
 | deloz | 7 | 7 |
 | dimozavrrrik | 7 | 7 |
+| eksly | 7 | 7 |
 | evvellex | 7 | 7 |
+| fzzv | 7 | 7 |
 | grozdovk | 7 | 7 |
 | himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
@@ -78,6 +82,7 @@
 | krmaxwell | 7 | 7 |
 | krypton-io | 7 | 7 |
 | kuzminprog | 7 | 7 |
+| labib99 | 7 | 7 |
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
 | lesiona-z | 7 | 7 |

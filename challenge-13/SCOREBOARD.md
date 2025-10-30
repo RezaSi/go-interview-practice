@@ -1,6 +1,7 @@
 # Scoreboard for challenge-13
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Ali-Fartoot | 15 | 15 |
 | Cpoing | 15 | 15 |
 | Gandook | 15 | 15 |
 | Hikitak | 15 | 15 |

@@ -1,6 +1,7 @@
 # Scoreboard for challenge-19
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Ali-Fartoot | 27 | 27 |
 | Gandook | 27 | 27 |
 | Hikitak | 27 | 27 |
 | IBraveMonkey | 27 | 27 |

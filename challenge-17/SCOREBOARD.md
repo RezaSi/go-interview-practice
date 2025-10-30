@@ -1,6 +1,7 @@
 # Scoreboard for challenge-17
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| Ali-Fartoot | 18 | 18 |
 | Cpoing | 18 | 18 |
 | Gandook | 18 | 18 |
 | IBraveMonkey | 18 | 18 |
