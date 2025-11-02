@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,12 +28,15 @@ type Response struct {
 }
 
 // In-memory storage
-var users = []User{
-	{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
-	{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
-	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
-}
-var nextID = 4
+var (
+	usersMutex sync.RWMutex
+	users      = []User{
+		{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
+		{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
+		{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
+	}
+	nextID = 4
+)
 
 func main() {
 	r := gin.Default()
@@ -50,14 +54,14 @@ func main() {
 	// GET /users/search - Search users by name
 	r.GET("/users/search", searchUsers)
 
-	// TODO: Start server on port 8080
 	r.Run()
 }
 
-// TODO: Implement handler functions
-
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
+	usersMutex.RLock()
+	defer usersMutex.RUnlock()
+
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Code:    http.StatusOK,
@@ -67,18 +71,13 @@ func getAllUsers(c *gin.Context) {
 
 // getUserByID handles GET /users/:id
 func getUserByID(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := parseIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, Response{
-			Success: false,
-			Message: "bad id",
-			Error:   err.Error(),
-			Code:    http.StatusBadRequest,
-		})
 		return
 	}
 
+	usersMutex.RLock()
+	defer usersMutex.RUnlock()
 	user, idx := findUserByID(id)
 	if idx < 0 {
 		c.JSON(http.StatusNotFound, Response{
@@ -122,6 +121,8 @@ func createUser(c *gin.Context) {
 	}
 
 	// Add user to storage
+	usersMutex.Lock()
+	defer usersMutex.Unlock()
 	inputUser.ID = nextID
 	nextID++
 	users = append(users, inputUser)
@@ -136,16 +137,8 @@ func createUser(c *gin.Context) {
 
 // updateUser handles PUT /users/:id
 func updateUser(c *gin.Context) {
-
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := parseIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, Response{
-			Success: false,
-			Message: "bad id",
-			Error:   err.Error(),
-			Code:    http.StatusBadRequest,
-		})
 		return
 	}
 
@@ -172,7 +165,9 @@ func updateUser(c *gin.Context) {
 	}
 
 	// Find and update user
-	user, idx := findUserByID(id)
+	usersMutex.Lock()
+	defer usersMutex.Unlock()
+	_, idx := findUserByID(id)
 	if idx < 0 {
 		c.JSON(http.StatusNotFound, Response{
 			Success: false,
@@ -182,34 +177,28 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
-	user.Age = inputUser.Age
-	user.Email = inputUser.Email
-	user.Name = inputUser.Name
+	users[idx].Age = inputUser.Age
+	users[idx].Email = inputUser.Email
+	users[idx].Name = inputUser.Name
 
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: "updated user",
 		Code:    http.StatusOK,
-		Data:    user,
+		Data:    users[idx],
 	})
 }
 
 // deleteUser handles DELETE /users/:id
 func deleteUser(c *gin.Context) {
-	// Get user ID from path
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+	id, err := parseIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, Response{
-			Success: false,
-			Message: "bad id",
-			Error:   err.Error(),
-			Code:    http.StatusBadRequest,
-		})
 		return
 	}
 
 	// Find and remove user
+	usersMutex.Lock()
+	defer usersMutex.Unlock()
 	_, idx := findUserByID(id)
 	if idx < 0 {
 		c.JSON(http.StatusNotFound, Response{
@@ -230,6 +219,9 @@ func deleteUser(c *gin.Context) {
 
 // searchUsers handles GET /users/search?name=value
 func searchUsers(c *gin.Context) {
+	usersMutex.RLock()
+	defer usersMutex.RUnlock()
+
 	// Get name query parameter
 	name := c.Query("name")
 	if len(name) == 0 {
@@ -261,7 +253,7 @@ func searchUsers(c *gin.Context) {
 func findUserByID(id int) (*User, int) {
 	for i, user := range users {
 		if user.ID == id {
-			return &user, i
+			return &users[i], i
 		}
 	}
 	return nil, -1
@@ -277,9 +269,25 @@ func validateUser(user User) error {
 		return errors.New("email is required")
 	}
 
-	if !strings.Contains(user.Email, "@") {
+	atIndex := strings.Index(user.Email, "@")
+	if atIndex <= 0 || atIndex >= len(user.Email)-1 {
 		return errors.New("invalid email format")
 	}
 
 	return nil
+}
+
+// parseIDParam parses and validates the ID parameter from the URL
+func parseIDParam(c *gin.Context) (int, error) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: "bad id",
+			Error:   err.Error(),
+			Code:    http.StatusBadRequest,
+		})
+	}
+	return id, err
 }
