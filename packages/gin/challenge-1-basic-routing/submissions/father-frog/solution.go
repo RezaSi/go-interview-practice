@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"net/mail"
 	"strconv"
 	"strings"
 	"sync"
@@ -269,9 +270,9 @@ func validateUser(user User) error {
 		return errors.New("email is required")
 	}
 
-	atIndex := strings.Index(user.Email, "@")
-	if atIndex <= 0 || atIndex >= len(user.Email)-1 {
-		return errors.New("invalid email format")
+	_, err := mail.ParseAddress(user.Email)
+	if err != nil {
+		return err
 	}
 
 	return nil
