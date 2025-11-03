@@ -280,8 +280,6 @@ func createProduct(c *gin.Context) {
 	sanitizeProduct(&product)
 
 	// Apply custom validation
-	productsMu.Lock()
-	defer productsMu.Unlock()
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
@@ -293,6 +291,8 @@ func createProduct(c *gin.Context) {
 	}
 
 	// Set ID and add to products slice
+	productsMu.Lock()
+	defer productsMu.Unlock()
 	product.ID = nextProductID
 	nextProductID++
 	products = append(products, product)
@@ -328,8 +328,6 @@ func createProductsBulk(c *gin.Context) {
 	var successCount int
 
 	// Process each product and populate results
-	productsMu.Lock()
-	defer productsMu.Unlock()
 	for i, product := range inputProducts {
 		// Sanitize products before validating
 		sanitizeProduct(&product)
@@ -343,9 +341,11 @@ func createProductsBulk(c *gin.Context) {
 				Errors:  validationErrors,
 			})
 		} else {
+			productsMu.Lock()
 			product.ID = nextProductID
 			nextProductID++
 			products = append(products, product)
+			productsMu.Unlock()
 
 			results = append(results, BulkResult{
 				Index:   i,
