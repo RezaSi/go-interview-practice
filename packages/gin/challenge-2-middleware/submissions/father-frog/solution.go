@@ -158,11 +158,16 @@ func CORSMiddleware() gin.HandlerFunc {
 		// Set CORS headers
 
 		// Allow origins: http://localhost:3000, https://myblog.com
-		if c.Request.Host == "myblog.com" {
-			c.Header("Access-Control-Allow-Origin", "https://myblog.com")
-		} else {
-			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		origin := c.GetHeader("Origin")
+		allowedOrigins := []string{"http://localhost:3000", "https://myblog.com"}
+		for _, allowedOrigin := range allowedOrigins {
+			if origin == allowedOrigin {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Vary", "Origin")
+				break
+			}
 		}
+
 		// Allow methods: GET, POST, PUT, DELETE, OPTIONS
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		// Allow headers: Content-Type, X-API-Key, X-Request-ID
@@ -288,8 +293,9 @@ func getArticle(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, APIResponse{
-		Success: true,
-		Data:    article,
+		Success:   true,
+		Data:      article,
+		RequestID: c.GetString(RequestIDKey),
 	})
 }
 
