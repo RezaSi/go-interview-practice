@@ -185,16 +185,15 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		limiterMu.Lock()
 		limiter, exists := ipLimiters[c.ClientIP()]
 		if !exists {
-			limiter = rate.NewLimiter(rate.Limit(100.0/60.0), 100)
+			limiter = rate.NewLimiter(rate.Every(time.Minute/100.0), 100)
 			ipLimiters[c.ClientIP()] = limiter
 		}
 		limiterMu.Unlock()
 		// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
 		c.Header("X-RateLimit-Limit", "100")
 		c.Header("X-RateLimit-Reset", strconv.Itoa(int(time.Now().Add(time.Minute).UnixMilli())))
-		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(limiter.Tokens())))
-
 		if !limiter.Allow() {
+			c.Header("X-RateLimit-Remaining", "0")
 			// Return 429 if rate limit exceeded
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, APIResponse{
 				Success:   false,
@@ -202,6 +201,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			})
 			return
 		}
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(limiter.Tokens())))
 
 		c.Next()
 	}
