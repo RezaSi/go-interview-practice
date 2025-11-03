@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
@@ -206,7 +207,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			})
 			return
 		}
-		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(limiter.Tokens())))
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(math.Round(limiter.Tokens()))))
 
 		c.Next()
 	}
@@ -439,9 +440,13 @@ func getStats(c *gin.Context) {
 		return
 	}
 
+	articlesMutex.RLock()
+	totalArticles := len(articles)
+	articlesMutex.RUnlock()
+
 	// Return mock statistics
 	stats := map[string]interface{}{
-		"total_articles": len(articles),
+		"total_articles": totalArticles,
 		"total_requests": 0, // Could track this in middleware
 		"uptime":         "24h",
 	}
