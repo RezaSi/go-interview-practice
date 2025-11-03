@@ -47,7 +47,6 @@ type LRUCache struct {
 	cache   map[string]*lruNode
 	head    *lruNode
 	tail    *lruNode
-	size    int
 	maxSize int
 }
 
@@ -69,8 +68,8 @@ func NewLRUCache(maxSize int) *LRUCache {
 
 // Get retrieves a value from the cache
 func (c *LRUCache) Get(key string) (*rate.Limiter, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	node, exists := c.cache[key]
 	if !exists {
