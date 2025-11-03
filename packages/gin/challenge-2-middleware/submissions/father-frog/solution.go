@@ -268,6 +268,8 @@ func getArticle(c *gin.Context) {
 		return
 	}
 	// Find article by ID
+	articlesMutex.RLock()
+	defer articlesMutex.RUnlock()
 	article, _ := findArticleByID(id)
 	if article == nil {
 		// return 404 if article not found
