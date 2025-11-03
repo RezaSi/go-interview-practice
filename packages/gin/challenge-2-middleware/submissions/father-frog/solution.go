@@ -158,10 +158,10 @@ func CORSMiddleware() gin.HandlerFunc {
 		// Set CORS headers
 
 		// Allow origins: http://localhost:3000, https://myblog.com
-		if c.Request.Host == "localhost:3000" {
-			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
-		} else {
+		if c.Request.Host == "myblog.com" {
 			c.Header("Access-Control-Allow-Origin", "https://myblog.com")
+		} else {
+			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
 		}
 		// Allow methods: GET, POST, PUT, DELETE, OPTIONS
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
