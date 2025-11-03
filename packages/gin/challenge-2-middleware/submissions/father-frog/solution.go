@@ -41,6 +41,143 @@ type APIResponse struct {
 	RequestID string      `json:"request_id,omitempty"`
 }
 
+// LRUCache implements a thread-safe LRU cache for rate limiters
+type LRUCache struct {
+	mu      sync.RWMutex
+	cache   map[string]*lruNode
+	head    *lruNode
+	tail    *lruNode
+	size    int
+	maxSize int
+}
+
+// lruNode represents a node in the doubly-linked list
+type lruNode struct {
+	key   string
+	value *rate.Limiter
+	next  *lruNode
+	prev  *lruNode
+}
+
+// NewLRUCache creates a new LRU cache with the given maximum size
+func NewLRUCache(maxSize int) *LRUCache {
+	return &LRUCache{
+		cache:   make(map[string]*lruNode),
+		maxSize: maxSize,
+	}
+}
+
+// Get retrieves a value from the cache
+func (c *LRUCache) Get(key string) (*rate.Limiter, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	node, exists := c.cache[key]
+	if !exists {
+		return nil, false
+	}
+
+	// Move to front (most recently used)
+	c.moveToFront(node)
+	return node.value, true
+}
+
+// Put adds a value to the cache
+func (c *LRUCache) Put(key string, value *rate.Limiter) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// If key already exists, update it
+	if node, exists := c.cache[key]; exists {
+		node.value = value
+		c.moveToFront(node)
+		return
+	}
+
+	// Create new node
+	newNode := &lruNode{
+		key:   key,
+		value: value,
+	}
+
+	// Add to front
+	c.addToFront(newNode)
+	c.cache[key] = newNode
+
+	// Check if we need to evict
+	if len(c.cache) > c.maxSize {
+		c.evict()
+	}
+}
+
+// Remove removes a key from the cache
+func (c *LRUCache) Remove(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if node, exists := c.cache[key]; exists {
+		c.removeNode(node)
+		delete(c.cache, key)
+	}
+}
+
+// moveToFront moves a node to the front of the list
+func (c *LRUCache) moveToFront(node *lruNode) {
+	if c.head == node {
+		return
+	}
+
+	c.removeNode(node)
+	c.addToFront(node)
+}
+
+// addToFront adds a node to the front of the list
+func (c *LRUCache) addToFront(node *lruNode) {
+	if c.head == nil {
+		c.head = node
+		c.tail = node
+	} else {
+		node.next = c.head
+		c.head.prev = node
+		c.head = node
+	}
+}
+
+// removeNode removes a node from the list
+func (c *LRUCache) removeNode(node *lruNode) {
+	if node.prev != nil {
+		node.prev.next = node.next
+	} else {
+		c.head = node.next
+	}
+
+	if node.next != nil {
+		node.next.prev = node.prev
+	} else {
+		c.tail = node.prev
+	}
+}
+
+// evict removes the least recently used item
+func (c *LRUCache) evict() {
+	if c.tail == nil {
+		return
+	}
+
+	// Remove from cache map
+	delete(c.cache, c.tail.key)
+
+	// Remove from list
+	if c.tail.prev != nil {
+		c.tail.prev.next = nil
+		c.tail = c.tail.prev
+	} else {
+		// Only one node
+		c.head = nil
+		c.tail = nil
+	}
+}
+
 // In-memory storage
 var (
 	articlesMutex sync.RWMutex
@@ -50,8 +187,7 @@ var (
 	}
 	nextID = 3
 
-	ipLimiters = make(map[string]*rate.Limiter)
-	limiterMu  sync.RWMutex
+	ipLimiters = NewLRUCache(1000)
 
 	keys = map[string]string{
 		"admin-key-123": "admin",
@@ -188,15 +324,16 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	// Limit: 100 requests per IP per minute
 	// Use golang.org/x/time/rate package
 	return func(c *gin.Context) {
-		limiterMu.Lock()
-		limiter, exists := ipLimiters[c.ClientIP()]
+		clientIP := c.ClientIP()
+		limiter, exists := ipLimiters.Get(clientIP)
 		if !exists {
 			limiter = rate.NewLimiter(rate.Every(time.Minute/100.0), 100)
-			ipLimiters[c.ClientIP()] = limiter
+			ipLimiters.Put(clientIP, limiter)
 		}
-		limiterMu.Unlock()
 		// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
 		c.Header("X-RateLimit-Limit", "100")
+		// Token bucket rate limiters refill continuously at a constant rate rather than resetting at a fixed time,
+		// This header value is an approximation of the reset time.
 		c.Header("X-RateLimit-Reset", strconv.Itoa(int(time.Now().Add(time.Minute).UnixMilli())))
 		if !limiter.Allow() {
 			c.Header("X-RateLimit-Remaining", "0")
