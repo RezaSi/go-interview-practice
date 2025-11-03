@@ -142,6 +142,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				Success:   false,
 				RequestID: c.GetString(RequestIDKey),
 			})
+			return
 		}
 
 		// Set user role in context
@@ -157,7 +158,11 @@ func CORSMiddleware() gin.HandlerFunc {
 		// Set CORS headers
 
 		// Allow origins: http://localhost:3000, https://myblog.com
-		c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		if c.Request.Host == "localhost:3000" {
+			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		} else {
+			c.Header("Access-Control-Allow-Origin", "https://myblog.com")
+		}
 		// Allow methods: GET, POST, PUT, DELETE, OPTIONS
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		// Allow headers: Content-Type, X-API-Key, X-Request-ID
@@ -180,7 +185,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		limiterMu.Lock()
 		limiter, exists := ipLimiters[c.ClientIP()]
 		if !exists {
-			limiter = rate.NewLimiter(rate.Every(time.Minute), 100)
+			limiter = rate.NewLimiter(rate.Limit(100.0/60.0), 100)
 			ipLimiters[c.ClientIP()] = limiter
 		}
 		limiterMu.Unlock()
@@ -195,6 +200,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 				Success:   false,
 				RequestID: c.GetString(RequestIDKey),
 			})
+			return
 		}
 
 		c.Next()
@@ -213,6 +219,7 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 					Success:   false,
 					RequestID: c.GetString(RequestIDKey),
 				})
+				return
 			}
 		}
 
@@ -274,8 +281,9 @@ func getArticle(c *gin.Context) {
 	if article == nil {
 		// return 404 if article not found
 		c.JSON(http.StatusNotFound, APIResponse{
-			Success: false,
-			Message: "article not found",
+			Success:   false,
+			Message:   "article not found",
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -291,8 +299,9 @@ func createArticle(c *gin.Context) {
 	var inputArticle Article
 	if err := c.ShouldBindJSON(&inputArticle); err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Message: err.Error(),
+			Success:   false,
+			Message:   err.Error(),
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -300,8 +309,9 @@ func createArticle(c *gin.Context) {
 	// Validate required fields
 	if err := validateArticle(inputArticle); err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Message: err.Error(),
+			Success:   false,
+			Message:   err.Error(),
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -318,8 +328,9 @@ func createArticle(c *gin.Context) {
 
 	// Return created article
 	c.JSON(http.StatusCreated, APIResponse{
-		Success: true,
-		Data:    inputArticle,
+		Success:   true,
+		Data:      inputArticle,
+		RequestID: c.GetString(RequestIDKey),
 	})
 }
 
@@ -335,8 +346,9 @@ func updateArticle(c *gin.Context) {
 	var inputArticle Article
 	if err := c.ShouldBindJSON(&inputArticle); err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Message: err.Error(),
+			Success:   false,
+			Message:   err.Error(),
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -344,8 +356,9 @@ func updateArticle(c *gin.Context) {
 	// Validate required fields
 	if err := validateArticle(inputArticle); err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Message: err.Error(),
+			Success:   false,
+			Message:   err.Error(),
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -357,8 +370,9 @@ func updateArticle(c *gin.Context) {
 	if idx < 0 {
 		// return 404 if article not found
 		c.JSON(http.StatusNotFound, APIResponse{
-			Success: false,
-			Message: "article not found",
+			Success:   false,
+			Message:   "article not found",
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -369,8 +383,9 @@ func updateArticle(c *gin.Context) {
 
 	// Return updated article
 	c.JSON(http.StatusOK, APIResponse{
-		Success: true,
-		Data:    articles[idx],
+		Success:   true,
+		Data:      articles[idx],
+		RequestID: c.GetString(RequestIDKey),
 	})
 
 }
@@ -390,8 +405,9 @@ func deleteArticle(c *gin.Context) {
 	if idx < 0 {
 		// return 404 if article not found
 		c.JSON(http.StatusNotFound, APIResponse{
-			Success: false,
-			Message: "article not found",
+			Success:   false,
+			Message:   "article not found",
+			RequestID: c.GetString(RequestIDKey),
 		})
 		return
 	}
@@ -399,8 +415,9 @@ func deleteArticle(c *gin.Context) {
 
 	// Return success message
 	c.JSON(http.StatusOK, APIResponse{
-		Success: true,
-		Message: "article deleted",
+		Success:   true,
+		Message:   "article deleted",
+		RequestID: c.GetString(RequestIDKey),
 	})
 }
 
@@ -410,8 +427,10 @@ func getStats(c *gin.Context) {
 	role := c.GetString(UserRoleKey)
 	if role != "admin" {
 		c.AbortWithStatusJSON(http.StatusForbidden, APIResponse{
-			Success: false,
+			Success:   false,
+			RequestID: c.GetString(RequestIDKey),
 		})
+		return
 	}
 
 	// Return mock statistics
@@ -423,8 +442,9 @@ func getStats(c *gin.Context) {
 
 	// Return stats in standard format
 	c.JSON(http.StatusOK, APIResponse{
-		Success: true,
-		Data:    stats,
+		Success:   true,
+		Data:      stats,
+		RequestID: c.GetString(RequestIDKey),
 	})
 }
 
@@ -464,9 +484,10 @@ func parseIDParam(c *gin.Context) (int, error) {
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Message: "bad id",
-			Error:   err.Error(),
+			Success:   false,
+			Message:   "bad id",
+			Error:     err.Error(),
+			RequestID: c.GetString(RequestIDKey),
 		})
 	}
 	return id, err
