@@ -28,7 +28,7 @@ type Product struct {
 
 // Category represents a product category
 type Category struct {
-	ID       int    `json:"id" binding:"required,min=1"`
+	ID       int    `json:"id"`
 	Name     string `json:"name" binding:"required"`
 	Slug     string `json:"slug" binding:"required"`
 	ParentID *int   `json:"parent_id,omitempty"`
@@ -118,6 +118,8 @@ func isValidCurrency(currency string) bool {
 
 // isValidCategory returns true if the categoryName is in the categories slice
 func isValidCategory(categoryName string) bool {
+	categoriesMu.RLock()
+	defer categoriesMu.RUnlock()
 	// Check if the category name exists in the categories slice
 	for _, c := range categories {
 		if c.Name == categoryName {
@@ -158,6 +160,7 @@ func validateProduct(product *Product) []ValidationError {
 	}
 
 	// Validate SKU uniqueness (check against existing products)
+	productsMu.RLock()
 	for _, p := range products {
 		if p.SKU == product.SKU {
 			errors = append(errors, ValidationError{
@@ -169,6 +172,7 @@ func validateProduct(product *Product) []ValidationError {
 			break
 		}
 	}
+	productsMu.RUnlock()
 
 	// Validate currency
 	if !isValidCurrency(product.Currency) {
@@ -276,6 +280,8 @@ func createProduct(c *gin.Context) {
 	sanitizeProduct(&product)
 
 	// Apply custom validation
+	productsMu.Lock()
+	defer productsMu.Unlock()
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
@@ -287,11 +293,9 @@ func createProduct(c *gin.Context) {
 	}
 
 	// Set ID and add to products slice
-	productsMu.Lock()
 	product.ID = nextProductID
 	nextProductID++
 	products = append(products, product)
-	productsMu.Unlock()
 
 	c.JSON(201, APIResponse{
 		Success: true,
@@ -327,6 +331,10 @@ func createProductsBulk(c *gin.Context) {
 	productsMu.Lock()
 	defer productsMu.Unlock()
 	for i, product := range inputProducts {
+		// Sanitize products before validating
+		sanitizeProduct(&product)
+
+		// Now we have consistent data to check for duplicates
 		validationErrors := validateProduct(&product)
 		if len(validationErrors) > 0 {
 			results = append(results, BulkResult{
@@ -335,7 +343,6 @@ func createProductsBulk(c *gin.Context) {
 				Errors:  validationErrors,
 			})
 		} else {
-			sanitizeProduct(&product)
 			product.ID = nextProductID
 			nextProductID++
 			products = append(products, product)
@@ -373,6 +380,9 @@ func createCategory(c *gin.Context) {
 		return
 	}
 
+	categoriesMu.Lock()
+	defer categoriesMu.Unlock()
+
 	// - Validate slug format
 	if !isValidSlug(category.Slug) {
 		c.JSON(400, APIResponse{
@@ -409,8 +419,6 @@ func createCategory(c *gin.Context) {
 		}
 	}
 
-	categoriesMu.Lock()
-	defer categoriesMu.Unlock()
 	category.ID = nextCategoryID
 	nextCategoryID++
 	categories = append(categories, category)
@@ -449,6 +457,7 @@ func validateSKUEndpoint(c *gin.Context) {
 	}
 
 	// Validate SKU uniqueness (check against existing products)
+	productsMu.RLock()
 	for _, p := range products {
 		if p.SKU == request.SKU {
 			errors = append(errors, ValidationError{
@@ -460,6 +469,7 @@ func validateSKUEndpoint(c *gin.Context) {
 			break
 		}
 	}
+	productsMu.RUnlock()
 
 	if len(errors) != 0 {
 		c.JSON(200, APIResponse{
