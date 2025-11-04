@@ -504,6 +504,14 @@ func logout(c *gin.Context) {
 		return
 	}
 
+	if _, err := validateToken(token); err != nil {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "invalid token",
+		})
+		return
+	}
+
 	// Add token to blacklist
 	blacklistMutex.Lock()
 	blacklistedTokens[token] = true
@@ -885,6 +893,7 @@ func setupRouter() *gin.Engine {
 	{
 		auth.POST("/register", register)
 		auth.POST("/login", login)
+		auth.POST("/logout", logout)
 		auth.POST("/refresh", refreshToken)
 	}
 
@@ -895,7 +904,6 @@ func setupRouter() *gin.Engine {
 		user.GET("/profile", getUserProfile)
 		user.PUT("/profile", updateUserProfile)
 		user.POST("/change-password", changePassword)
-		user.POST("/logout", logout)
 	}
 
 	// Admin routes
