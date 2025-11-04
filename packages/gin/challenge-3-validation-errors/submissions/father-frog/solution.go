@@ -347,10 +347,11 @@ func createProductsBulk(c *gin.Context) {
 			products = append(products, product)
 			productsMu.Unlock()
 
+			productCopy := product
 			results = append(results, BulkResult{
 				Index:   i,
 				Success: true,
-				Product: &product,
+				Product: &productCopy,
 			})
 			successCount++
 		}
@@ -496,6 +497,9 @@ func validateProductEndpoint(c *gin.Context) {
 		})
 		return
 	}
+
+	// sanitize before validating
+	sanitizeProduct(&product)
 
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
