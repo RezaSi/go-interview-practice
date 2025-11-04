@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -242,13 +240,13 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 
 // Implement JWT token validation
 func validateToken(tokenString string) (*JWTClaims, error) {
-	// check
-	blacklistMutex.RLock()
 	// Check if token is blacklisted
-	if _, ok := blacklistedTokens[tokenString]; ok {
+	blacklistMutex.RLock()
+	blocked := blacklistedTokens[tokenString]
+	blacklistMutex.RUnlock()
+	if blocked {
 		return nil, errors.New("blocked jwt token")
 	}
-	blacklistMutex.RUnlock()
 
 	// Parse and validate JWT token
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -310,6 +308,8 @@ func isAccountLocked(user *User) bool {
 
 // recordFailedAttempt increments failed attempts, locks account if max attempts reached
 func recordFailedAttempt(user *User) {
+	usersMu.Lock()
+	defer usersMu.Unlock()
 	// Increment failed attempts counter
 	user.FailedAttempts++
 	// Lock account if max attempts reached
@@ -321,19 +321,10 @@ func recordFailedAttempt(user *User) {
 
 // Reset failed attempts counter and unlock account
 func resetFailedAttempts(user *User) {
+	usersMu.Lock()
+	defer usersMu.Unlock()
 	user.FailedAttempts = 0
 	user.LockedUntil = nil
-}
-
-// Generate secure random token
-func generateRandomToken() (string, error) {
-	// Generate cryptographically secure random token
-	bytes := make([]byte, 32)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }
 
 // POST /auth/register - User registration
@@ -401,7 +392,6 @@ func register(c *gin.Context) {
 		ID:           nextUserID,
 		Username:     req.Username,
 		Email:        req.Email,
-		Password:     req.Password,
 		PasswordHash: hash,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
@@ -466,7 +456,9 @@ func login(c *gin.Context) {
 
 	// Update last login time
 	now := time.Now()
+	usersMu.Lock()
 	user.LastLogin = &now
+	usersMu.Unlock()
 
 	// Generate tokens
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
@@ -557,7 +549,6 @@ func refreshToken(c *gin.Context) {
 	}
 
 	// Find user by ID
-	usersMu.RLock()
 	user := findUserByID(userID)
 	if user == nil {
 		c.JSON(http.StatusUnauthorized, APIResponse{
@@ -566,7 +557,6 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	usersMu.RUnlock()
 
 	// Generate new access token
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
@@ -580,12 +570,14 @@ func refreshToken(c *gin.Context) {
 
 	// Rotate refresh token
 	refreshTokenMu.Lock()
+	delete(refreshTokens, req.RefreshToken)
 	refreshTokens[tokens.RefreshToken] = user.ID
 	refreshTokenMu.Unlock()
 
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Token refreshed successfully",
+		Data:    tokens,
 	})
 }
 
@@ -786,7 +778,6 @@ func changePassword(c *gin.Context) {
 
 	// Update user
 	usersMu.Lock()
-	user.Password = req.NewPassword
 	user.PasswordHash = hash
 	user.UpdatedAt = time.Now()
 	usersMu.Unlock()
@@ -857,6 +848,14 @@ func changeUserRole(c *gin.Context) {
 
 	// Find user by ID
 	user := findUserByID(id)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
+
 	// Update user role
 	usersMu.Lock()
 	user.Role = req.Role
