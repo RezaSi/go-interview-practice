@@ -406,7 +406,7 @@ func register(c *gin.Context) {
 	}
 	nextUserID++
 	users = append(users, inputUser)
-	defer usersMu.Unlock()
+	usersMu.Unlock()
 
 	c.JSON(201, APIResponse{
 		Success: true,
@@ -671,8 +671,6 @@ func getUserProfile(c *gin.Context) {
 	}
 
 	// Return user profile (without sensitive data)
-	usersMu.RLock()
-	defer usersMu.RUnlock()
 	safeUserCopy := safeUser(user)
 
 	c.JSON(200, APIResponse{
