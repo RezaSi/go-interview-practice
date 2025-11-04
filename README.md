@@ -110,7 +110,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 169
+- **Active Developers**: 170
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -129,9 +129,9 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 5 | <img src="https://github.com/q1ngy.png" width="24" height="24" style="border-radius: 50%;"><br/>**[q1ngy](https://github.com/q1ngy)** | **4** | **1** pkg | 🚀 Package Intermediate | **gin**: 4 |
 | 6 | <img src="https://github.com/BrianHuang813.png" width="24" height="24" style="border-radius: 50%;"><br/>**[BrianHuang813](https://github.com/BrianHuang813)** | **3** | **1** pkg | 🚀 Package Intermediate | **gin**: 3 |
 | 7 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **3** | **1** pkg | 🚀 Package Intermediate | **cobra**: 3 |
-| 8 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
-| 9 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
-| 10 | <img src="https://github.com/awsl1110.png" width="24" height="24" style="border-radius: 50%;"><br/>**[awsl1110](https://github.com/awsl1110)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 8 | <img src="https://github.com/father-frog.png" width="24" height="24" style="border-radius: 50%;"><br/>**[father-frog](https://github.com/father-frog)** | **3** | **1** pkg | 🚀 Package Intermediate | **gin**: 3 |
+| 9 | <img src="https://github.com/GleeN987.png" width="24" height="24" style="border-radius: 50%;"><br/>**[GleeN987](https://github.com/GleeN987)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
+| 10 | <img src="https://github.com/MarioPaez.png" width="24" height="24" style="border-radius: 50%;"><br/>**[MarioPaez](https://github.com/MarioPaez)** | **1** | **1** pkg | 🌱 Package Beginner | **gin**: 1 |
 
 <div align="center">
 
