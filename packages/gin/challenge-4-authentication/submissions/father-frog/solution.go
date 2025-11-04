@@ -19,7 +19,6 @@ type User struct {
 	ID             int        `json:"id"`
 	Username       string     `json:"username" binding:"required,min=3,max=30"`
 	Email          string     `json:"email" binding:"required,email"`
-	Password       string     `json:"-"` // Never return in JSON
 	PasswordHash   string     `json:"-"`
 	FirstName      string     `json:"first_name" binding:"required,min=2,max=50"`
 	LastName       string     `json:"last_name" binding:"required,min=2,max=50"`
@@ -266,9 +265,10 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 func findUserByUsername(username string) *User {
 	usersMu.RLock()
 	defer usersMu.RUnlock()
-	for i, u := range users {
+	for _, u := range users {
 		if strings.EqualFold(u.Username, username) {
-			return &users[i]
+			userCopy := u
+			return &userCopy
 		}
 	}
 	return nil
@@ -278,9 +278,10 @@ func findUserByUsername(username string) *User {
 func findUserByEmail(email string) *User {
 	usersMu.RLock()
 	defer usersMu.RUnlock()
-	for i, u := range users {
+	for _, u := range users {
 		if strings.EqualFold(u.Email, email) {
-			return &users[i]
+			userCopy := u
+			return &userCopy
 		}
 	}
 	return nil
@@ -290,9 +291,10 @@ func findUserByEmail(email string) *User {
 func findUserByID(id int) *User {
 	usersMu.RLock()
 	defer usersMu.RUnlock()
-	for i, u := range users {
+	for _, u := range users {
 		if u.ID == id {
-			return &users[i]
+			userCopy := u
+			return &userCopy
 		}
 	}
 	return nil
@@ -700,7 +702,7 @@ func updateUserProfile(c *gin.Context) {
 
 	// Check if new email is already taken
 	userWithEmail := findUserByEmail(req.Email)
-	if userWithEmail != nil {
+	if userWithEmail != nil && userWithEmail.ID != user.ID {
 		c.JSON(http.StatusConflict, APIResponse{
 			Success: false,
 			Error:   "email taken",
@@ -849,7 +851,7 @@ func changeUserRole(c *gin.Context) {
 	// Find user by ID
 	user := findUserByID(id)
 	if user == nil {
-		c.JSON(http.StatusUnauthorized, APIResponse{
+		c.JSON(http.StatusNotFound, APIResponse{
 			Success: false,
 			Error:   "User not found",
 		})
@@ -904,7 +906,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 	// Initialize with a default admin user
-	adminHash, _ := hashPassword("admin123")
+	adminHash, _ := hashPassword("Admin1234!")
 	users = append(users, User{
 		ID:            nextUserID,
 		Username:      "admin",
