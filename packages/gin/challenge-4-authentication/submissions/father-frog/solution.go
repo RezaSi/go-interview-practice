@@ -885,7 +885,6 @@ func setupRouter() *gin.Engine {
 	{
 		auth.POST("/register", register)
 		auth.POST("/login", login)
-		auth.POST("/logout", logout)
 		auth.POST("/refresh", refreshToken)
 	}
 
@@ -896,6 +895,7 @@ func setupRouter() *gin.Engine {
 		user.GET("/profile", getUserProfile)
 		user.PUT("/profile", updateUserProfile)
 		user.POST("/change-password", changePassword)
+		user.POST("/logout", logout)
 	}
 
 	// Admin routes
