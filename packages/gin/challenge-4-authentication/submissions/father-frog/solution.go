@@ -319,6 +319,7 @@ func recordFailedAttempt(user *User) {
 		lockedUntil := time.Now().Add(lockoutDuration)
 		user.LockedUntil = &lockedUntil
 	}
+	putUser(*user)
 }
 
 // Reset failed attempts counter and unlock account
@@ -327,6 +328,7 @@ func resetFailedAttempts(user *User) {
 	defer usersMu.Unlock()
 	user.FailedAttempts = 0
 	user.LockedUntil = nil
+	putUser(*user)
 }
 
 // POST /auth/register - User registration
@@ -460,6 +462,7 @@ func login(c *gin.Context) {
 	now := time.Now()
 	usersMu.Lock()
 	user.LastLogin = &now
+	putUser(*user)
 	usersMu.Unlock()
 
 	// Generate tokens
@@ -716,6 +719,7 @@ func updateUserProfile(c *gin.Context) {
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
 	user.UpdatedAt = time.Now()
+	putUser(*user)
 	usersMu.Unlock()
 
 	c.JSON(200, APIResponse{
@@ -782,6 +786,7 @@ func changePassword(c *gin.Context) {
 	usersMu.Lock()
 	user.PasswordHash = hash
 	user.UpdatedAt = time.Now()
+	putUser(*user)
 	usersMu.Unlock()
 
 	c.JSON(200, APIResponse{
@@ -862,6 +867,7 @@ func changeUserRole(c *gin.Context) {
 	usersMu.Lock()
 	user.Role = req.Role
 	user.UpdatedAt = time.Now()
+	putUser(*user)
 	usersMu.Unlock()
 
 	c.JSON(200, APIResponse{
@@ -945,5 +951,13 @@ func safeUser(user *User) *User {
 		IsActive:  user.IsActive,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
+	}
+}
+
+func putUser(user User) {
+	for i, u := range users {
+		if u.ID == user.ID {
+			users[i] = user
+		}
 	}
 }
