@@ -88,7 +88,7 @@ func FindInsertPosition(arr []int, target int) int {
 			right = mid - 1
 		case target > val:
 			left = mid + 1
-		case target == val:
+		default:
 			return mid // Insert before existing element
 		}
 	}
