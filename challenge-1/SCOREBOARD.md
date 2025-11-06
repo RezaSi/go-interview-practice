@@ -7,6 +7,7 @@
 | ADEMOLA200 | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
+| AlexO-85 | 6 | 6 |
 | AlexandrZlnov | 6 | 6 |
 | Ali-Fartoot | 6 | 6 |
 | AliNazariii | 6 | 6 |
@@ -71,6 +72,7 @@
 | dhevv8 | 6 | 6 |
 | diyorich | 6 | 6 |
 | eksly | 6 | 6 |
+| es-codigo | 6 | 6 |
 | fzzv | 6 | 6 |
 | gaba-bouliva | 6 | 6 |
 | globallstudent | 6 | 6 |
