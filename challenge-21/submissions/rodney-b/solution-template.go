@@ -32,6 +32,7 @@ func BinarySearch(arr []int, target int) int {
 
 	for left <= right {
 		mid := left + (right-left)/2 // avoids potential (left + right) overflow
+		// mid := int(uint(left+right) >> 1) // from Go's standard library
 		val := arr[mid]
 
 		switch {
@@ -50,8 +51,7 @@ func BinarySearch(arr []int, target int) int {
 // BinarySearchRecursive performs binary search using recursion.
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
-	arrLen := len(arr)
-	if left > right || arrLen == 0 {
+	if left > right {
 		return -1
 	}
 
@@ -63,10 +63,8 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 		return BinarySearchRecursive(arr, target, left, mid-1)
 	case target > val:
 		return BinarySearchRecursive(arr, target, mid+1, right)
-	case target == val:
-		return mid
 	default:
-		return -1
+		return mid
 	}
 }
 
@@ -81,7 +79,7 @@ func FindInsertPosition(arr []int, target int) int {
 	left := 0
 	right := arrLen - 1
 
-	for right >= left && left <= right {
+	for left <= right {
 		mid := left + (right-left)/2
 		val := arr[mid]
 
@@ -91,7 +89,7 @@ func FindInsertPosition(arr []int, target int) int {
 		case target > val:
 			left = mid + 1
 		case target == val:
-			return mid // or mid + 1
+			return mid // Insert before existing element
 		}
 	}
 
