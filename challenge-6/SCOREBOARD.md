@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | AkifhanIlgaz | 7 | 7 |
+| AlexO-85 | 7 | 7 |
 | Ali-Fartoot | 7 | 7 |
 | Ashutosh652 | 7 | 7 |
 | Be1chenok | 7 | 7 |
@@ -42,6 +43,7 @@
 | jersonzc | 7 | 7 |
 | john-otienoh | 7 | 7 |
 | jordanhimawan | 7 | 7 |
+| kiramux | 7 | 7 |
 | korranat9 | 7 | 7 |
 | kuzminprog | 7 | 7 |
 | lajosbnk | 7 | 7 |
