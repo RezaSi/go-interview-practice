@@ -38,6 +38,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	// The table should have columns: id, name, price, quantity, category
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, category TEXT)")
 	if err != nil {
+		db.Close()
 		return nil, err
 	}
 	return db, nil
