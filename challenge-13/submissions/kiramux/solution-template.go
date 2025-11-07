@@ -83,7 +83,7 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 // UpdateProduct updates an existing product
 func (ps *ProductStore) UpdateProduct(product *Product) error {
 	// Update the product in the database
-	_, err := ps.db.Exec(
+	result, err := ps.db.Exec(
 		"UPDATE products SET name = ?, price = ?, quantity = ?, category = ? WHERE id = ?",
 		product.Name,
 		product.Price,
@@ -96,19 +96,34 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 	if err != nil {
 		return err
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("product with ID %d not found", product.ID)
+	}
 	return nil
 }
 
 // DeleteProduct removes a product by ID
 func (ps *ProductStore) DeleteProduct(id int64) error {
 	// Delete the product from the database
-	_, err := ps.db.Exec(
+	result, err := ps.db.Exec(
 		"DELETE FROM products WHERE id = ?",
 		id,
 	)
 	// Return an error if the product doesn't exist
 	if err != nil {
 		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("product with ID %d not found", id)
 	}
 	return nil
 }
