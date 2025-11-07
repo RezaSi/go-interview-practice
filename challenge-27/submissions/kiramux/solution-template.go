@@ -119,6 +119,7 @@ func (q *Queue[T]) Dequeue() (T, error) {
 		return zero, ErrEmptyCollection
 	}
 	frontEl := q.elements[0]
+	q.elements[0] = zero
 	q.elements = q.elements[1:]
 	return frontEl, nil
 }
