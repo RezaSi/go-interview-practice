@@ -63,6 +63,7 @@ func (s *Stack[T]) Pop() (T, error) {
 	}
 	last := s.Size() - 1
 	e := s.elements[last]
+	s.elements[last] = zero
 	s.elements = s.elements[:last]
 	return e, nil
 }
