@@ -131,7 +131,6 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		// If category is empty, return all products
 		rows, err = ps.db.Query(
 			"SELECT id, name, price, quantity, category FROM products",
-			category,
 		)
 		if err != nil {
 			return nil, err
