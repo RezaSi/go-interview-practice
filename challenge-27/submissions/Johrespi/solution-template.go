@@ -181,6 +181,9 @@ func NewSet[T comparable]() *Set[T] {
 // Add adds an element to the set if it's not already present
 func (s *Set[T]) Add(value T) {
 	// TODO: Implement this method
+	if s.items == nil {
+		s.items = make(map[T]bool)
+	}
 	s.items[value] = true
 }
 
