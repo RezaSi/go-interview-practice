@@ -4,6 +4,7 @@
 | 0xarash | 7 | 7 |
 | ADEMOLA200 | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
+| AlexO-85 | 7 | 7 |
 | AlexandrZlnov | 7 | 7 |
 | Ali-Fartoot | 7 | 7 |
 | AliNazariii | 7 | 7 |
@@ -39,6 +40,7 @@
 | VadimihrSvS | 7 | 7 |
 | Xmilton | 7 | 7 |
 | Xxploiter | 7 | 7 |
+| YESUBZERO | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
 | Z4za01 | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
@@ -63,12 +65,14 @@
 | deloz | 7 | 7 |
 | dimozavrrrik | 7 | 7 |
 | eksly | 7 | 7 |
+| es-codigo | 7 | 7 |
 | evvellex | 7 | 7 |
 | fzzv | 7 | 7 |
 | grozdovk | 7 | 7 |
 | himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
 | hudazaan | 7 | 7 |
+| iamsurajmandal | 7 | 7 |
 | idk2me | 7 | 7 |
 | igorek890 | 7 | 7 |
 | ilder | 7 | 7 |
@@ -97,6 +101,7 @@
 | naghinezhad | 7 | 7 |
 | ne0phyte | 7 | 7 |
 | nosrio | 7 | 7 |
+| nzamulov | 7 | 7 |
 | odelbos | 7 | 7 |
 | omid9h | 7 | 7 |
 | perekoshik | 7 | 7 |

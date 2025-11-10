@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 4592adarsh | 23 | 23 |
+| AlexO-85 | 23 | 23 |
 | Ali-Fartoot | 23 | 23 |
 | Be1chenok | 23 | 23 |
 | BrianHuang813 | 23 | 23 |
@@ -42,6 +43,7 @@
 | in1yan | 23 | 23 |
 | john-otienoh | 23 | 23 |
 | jordanhimawan | 23 | 23 |
+| kiramux | 23 | 23 |
 | kuzminprog | 23 | 23 |
 | lanmanul | 23 | 23 |
 | longbui98 | 23 | 23 |
@@ -51,6 +53,7 @@
 | mick4711 | 23 | 23 |
 | msanchezdevera | 23 | 23 |
 | muhammedkucukaslan | 23 | 23 |
+| nzamulov | 23 | 23 |
 | odelbos | 23 | 23 |
 | perekoshik | 23 | 23 |
 | preetsinghmakkar | 23 | 23 |
