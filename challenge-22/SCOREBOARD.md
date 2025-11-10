@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 22-7-co | 23 | 23 |
+| AlexO-85 | 23 | 23 |
 | Ali-Fartoot | 23 | 23 |
 | Be1chenok | 23 | 23 |
 | BrianHuang813 | 23 | 23 |
@@ -26,6 +27,7 @@
 | hudazaan | 23 | 23 |
 | idk2me | 23 | 23 |
 | john-otienoh | 23 | 23 |
+| kiramux | 23 | 23 |
 | krypton-io | 23 | 23 |
 | kuzminprog | 23 | 23 |
 | lanmanul | 23 | 23 |
@@ -34,6 +36,7 @@
 | micos7 | 23 | 23 |
 | muhammedkucukaslan | 23 | 23 |
 | ne0phyte | 23 | 23 |
+| nzamulov | 23 | 23 |
 | odelbos | 23 | 23 |
 | sultaAann | 23 | 23 |
 | t4e1 | 23 | 23 |

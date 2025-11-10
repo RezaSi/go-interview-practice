@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | ADEMOLA200 | 5 | 5 |
 | AkifhanIlgaz | 5 | 5 |
+| AlexO-85 | 5 | 5 |
 | AlexandrZlnov | 5 | 5 |
 | Ali-Fartoot | 5 | 5 |
 | AliNazariii | 5 | 5 |
@@ -49,6 +50,7 @@
 | himanshum9 | 5 | 5 |
 | hodgechung | 5 | 5 |
 | hudazaan | 5 | 5 |
+| iamsurajmandal | 5 | 5 |
 | idk2me | 5 | 5 |
 | igorek890 | 5 | 5 |
 | ilder | 5 | 5 |
@@ -58,6 +60,7 @@
 | jin5335 | 5 | 5 |
 | john-otienoh | 5 | 5 |
 | jordanhimawan | 5 | 5 |
+| kiramux | 5 | 5 |
 | korranat9 | 5 | 5 |
 | krmaxwell | 5 | 5 |
 | krypton-io | 5 | 5 |
@@ -72,6 +75,7 @@
 | muhammedkucukaslan | 5 | 5 |
 | ne0phyte | 5 | 5 |
 | nosrio | 5 | 5 |
+| nzamulov | 5 | 5 |
 | odelbos | 5 | 5 |
 | perekoshik | 5 | 5 |
 | preetsinghmakkar | 5 | 5 |

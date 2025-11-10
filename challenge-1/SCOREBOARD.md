@@ -7,6 +7,7 @@
 | ADEMOLA200 | 6 | 6 |
 | AdityaAWP | 6 | 6 |
 | AkifhanIlgaz | 6 | 6 |
+| AlexO-85 | 6 | 6 |
 | AlexandrZlnov | 6 | 6 |
 | Ali-Fartoot | 6 | 6 |
 | AliNazariii | 6 | 6 |
@@ -71,6 +72,7 @@
 | dhevv8 | 6 | 6 |
 | diyorich | 6 | 6 |
 | eksly | 6 | 6 |
+| es-codigo | 6 | 6 |
 | fzzv | 6 | 6 |
 | gaba-bouliva | 6 | 6 |
 | globallstudent | 6 | 6 |
@@ -78,6 +80,7 @@
 | himanshum9 | 6 | 6 |
 | hodgechung | 6 | 6 |
 | hudazaan | 6 | 6 |
+| iamsurajmandal | 6 | 6 |
 | idk2me | 6 | 6 |
 | igorek890 | 6 | 6 |
 | ilder | 6 | 6 |
@@ -113,6 +116,7 @@
 | ne0phyte | 6 | 6 |
 | nima-abdpoor | 6 | 6 |
 | nosrio | 6 | 6 |
+| nzamulov | 6 | 6 |
 | odelbos | 6 | 6 |
 | perekoshik | 6 | 6 |
 | potapkin-pavel | 6 | 6 |
