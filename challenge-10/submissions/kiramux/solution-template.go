@@ -60,7 +60,8 @@ type Circle struct {
 func NewCircle(radius float64) (*Circle, error) {
 	// DONE: Implement validation and construction
 	if radius <= 0 {
-		return nil, errors.New("radius should be a positive numbers")
+		return nil, errors.New("radius should be a positive number")
+	}
 	}
 	return &Circle{
 		Radius: radius,
