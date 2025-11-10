@@ -85,7 +85,7 @@ func (cm *simpleContextManager) ExecuteWithContext(ctx context.Context, task fun
 	// Return context error if cancelled, task error if task fails
 	select {
 	case err := <-done:
-		return err // Task Compeleted first
+		return err // Task completed first
 	case <-ctx.Done():
 		return ctx.Err() // Context cancelled/timeout first
 	}
