@@ -188,7 +188,6 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
-	// TODO: Implement transfer functionality with proper error handling
 	if amount < 0 {
 		return &NegativeAmountError{
 			Code:    "INVALID_TRANSFER_AMOUNT",
@@ -203,8 +202,37 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		}
 	}
 
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	// check targer account is valid or not
+	switch target {
+	case nil:
+		return &AccountError{
+			Code:      "INVALID_TARGET_ACCOUNT",
+			Message:   "target account is not existed",
+			AccountID: "",
+		}
+	case a:
+		return &AccountError{
+			Code:      "INVALID_TARGET_ACCOUNT",
+			Message:   "target account cannot be the from account",
+			AccountID: a.ID,
+		}
+	}
+
+	// The lock order is determined by the account ID number
+	var first, second *BankAccount
+	if a.ID < target.ID {
+		first = a
+		second = target
+	} else if a.ID > target.ID {
+		first = target
+		second = a
+	}
+
+	first.mu.Lock()
+	second.mu.Lock()
+	defer second.mu.Unlock()
+	defer first.mu.Unlock()
+
 	remain := a.Balance - amount
 	if remain < a.MinBalance {
 		return &InsufficientFundsError{
