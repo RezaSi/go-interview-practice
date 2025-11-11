@@ -175,7 +175,7 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	remain := a.Balance - amount
 	if remain < a.MinBalance {
 		return &InsufficientFundsError{
-			Code:       "INVALID_WITHDRAW_AMOUNT",
+			Code:       "INSUFFICIENT_FUNDS",
 			Message:    "account balance cannot be less than min amount",
 			MinBalance: a.MinBalance,
 		}
@@ -202,7 +202,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		}
 	}
 
-	// check targer account is valid or not
+	// check target account is valid or not
 	switch target {
 	case nil:
 		return &AccountError{
@@ -243,7 +243,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	remain := a.Balance - amount
 	if remain < a.MinBalance {
 		return &InsufficientFundsError{
-			Code:       "INVALID_TRANSFER_AMOUNT",
+			Code:       "INSUFFICIENT_FUNDS",
 			Message:    "account balance cannot be less than min amount",
 			MinBalance: a.MinBalance,
 		}
@@ -252,4 +252,3 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	target.Balance += amount
 	return nil
 }
-
