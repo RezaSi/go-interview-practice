@@ -105,7 +105,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 	// 验证 minBalance
 	if minBalance < 0 {
 		return nil, &NegativeAmountError{
-			Code:    "INVALID_INITIAL_BALANCE",
+			Code:    "INVALID_MIN_BALANCE",
 			Message: "min balance cannot be negative",
 			Amount:  minBalance,
 		}
@@ -158,7 +158,7 @@ func (a *BankAccount) Deposit(amount float64) error {
 func (a *BankAccount) Withdraw(amount float64) error {
 	if amount < 0 {
 		return &NegativeAmountError{
-			Code:    "INVALID_WITHDEAW_AMOUNT",
+			Code:    "INVALID_WITHDRAW_AMOUNT",
 			Message: "withdraw amount cannot be negative",
 			Amount:  amount,
 		}
@@ -175,7 +175,7 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	remain := a.Balance - amount
 	if remain < a.MinBalance {
 		return &InsufficientFundsError{
-			Code:       "INVALID_WITHDEAW_AMOUNT",
+			Code:       "INVALID_WITHDRAW_AMOUNT",
 			Message:    "account balance cannot be less than min amount",
 			MinBalance: a.MinBalance,
 		}
@@ -226,6 +226,13 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	} else if a.ID > target.ID {
 		first = target
 		second = a
+	} else {
+		// a.ID == target.ID but a != target (duplicate IDs)
+		return &AccountError{
+			Code:      "DUPLICATE_ACCOUNT_ID",
+			Message:   "source and target accounts have duplicate IDs",
+			AccountID: a.ID,
+		}
 	}
 
 	first.mu.Lock()
