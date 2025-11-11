@@ -75,7 +75,7 @@ func (e *ExceedsLimitError) Error() string {
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
 	// Determine the validity of the parameters.
 
-	// 验证 accountID
+	// Validate accountID
 	if id == "" {
 		return nil, &AccountError{
 			Code:      "INVALID_ACCOUNT_ID",
@@ -84,7 +84,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		}
 	}
 
-	// 验证 owner
+	// Validate owner
 	if owner == "" {
 		return nil, &AccountError{
 			Code:      "INVALID_OWNER",
@@ -93,7 +93,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		}
 	}
 
-	// 验证 initialBalance
+	// Validate initial balance
 	if initialBalance < 0 {
 		return nil, &NegativeAmountError{
 			Code:    "INVALID_INITIAL_BALANCE",
@@ -102,7 +102,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		}
 	}
 
-	// 验证 minBalance
+	// Validate minimum balance
 	if minBalance < 0 {
 		return nil, &NegativeAmountError{
 			Code:    "INVALID_MIN_BALANCE",
@@ -111,7 +111,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		}
 	}
 
-	// 比较 initialBalance 和 minBalance
+	// Compare initial balance and minimum balance
 	if initialBalance < minBalance {
 		return nil, &InsufficientFundsError{
 			Code:       "INSUFFICIENT_FUND",
