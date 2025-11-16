@@ -1,0 +1,28 @@
+{
+  "name": "logrus",
+  "display_name": "Logrus Structured Logging",
+  "description": "Structured, pluggable logging for Go applications",
+  "version": "v1.9.3",
+  "github_url": "https://github.com/sirupsen/logrus",
+  "documentation_url": "https://pkg.go.dev/github.com/sirupsen/logrus",
+  "stars": 24000,
+  "category": "logging",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "json_concepts", "file_operations"],
+  "learning_path": [
+   "challenge-1-basic-logging-and-levels",
+   "challenge-2-structured-logging-and-fields",
+   "challenge-3-advanced-configuration-and-hooks",
+   "challenge-4-production-logging-patterns"
+  ],
+  "tags": ["logging", "structured", "monitoring", "debugging", "observability"],
+  "estimated_time": "4-6 hours",
+  "real_world_usage": [
+    "Application debugging and monitoring",
+    "Error tracking and alerting",
+    "Audit trails and compliance",
+    "Performance monitoring",
+    "Microservices observability",
+    "Production troubleshooting"
+  ]
+}
