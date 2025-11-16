@@ -336,8 +336,8 @@ func listUsersHandler(c fiber.Ctx) error {
 }
 
 func updateUserRoleHandler(c fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	if err != nil {
+	id := fiber.Params[int](c, "id")
+	if id == 0 {
 		return errResponse(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 

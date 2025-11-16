@@ -66,6 +66,56 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
         
+        /* Beautiful Footer Sponsor Section Styling */
+        .sponsor-footer-card {
+            position: relative;
+        }
+        
+        .sponsor-footer-content {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sponsor-footer-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            transition: left 0.8s ease;
+        }
+        
+        .sponsor-footer-link:hover .sponsor-footer-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f3f4 100%) !important;
+            border-color: #adb5bd !important;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
+        }
+        
+        .sponsor-footer-link:hover .sponsor-footer-content::before {
+            left: 100%;
+        }
+        
+        .sponsor-footer-link:hover .sponsor-footer-logo {
+            transform: scale(1.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+        }
+        
+        .sponsor-footer-logo {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sponsor-footer-link:hover + .mt-3 a {
+            color: #6c757d !important;
+        }
+        
+        footer a[href*="sponsors"]:hover {
+            color: #495057 !important;
+            transform: translateY(-1px);
+        }
+        
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             .hero-section {
@@ -94,6 +144,21 @@
             .github-stats {
                 margin-top: 1rem;
                 padding: 4px 8px;
+            }
+            
+            .sponsor-footer-content {
+                flex-direction: column !important;
+                text-align: center !important;
+                padding: 1.5rem !important;
+            }
+            
+            .sponsor-footer-logo {
+                margin-right: 0 !important;
+                margin-bottom: 10px !important;
+            }
+            
+            footer h6 {
+                font-size: 1rem !important;
             }
             
             .card-body {
@@ -866,9 +931,43 @@
         {{template "content" .}}
     </main>
 
-    <footer class="bg-light py-4 mt-auto">
-        <div class="container text-center">
-            <p class="mb-0 text-muted">Go Interview Practice - Build your Go skills with coding challenges</p>
+    <footer class="bg-light py-5 mt-auto">
+        <div class="container">
+            <!-- Proudly Supported By Section -->
+            <div class="text-center mb-4">
+                <h6 class="text-dark mb-4 fw-light" style="font-size: 1.1rem; letter-spacing: 0.5px;">Proudly Supported By</h6>
+                
+                <!-- CodeRabbit Sponsor -->
+                <div class="sponsor-footer-card d-inline-block mb-3">
+                    <a href="https://coderabbit.ai" target="_blank" class="sponsor-footer-link text-decoration-none">
+                        <div class="sponsor-footer-content p-4 rounded-4 d-inline-flex align-items-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+                            <img src="https://github.com/coderabbitai.png" 
+                                 alt="CodeRabbit" 
+                                 width="56" 
+                                 height="56"
+                                 class="sponsor-footer-logo me-3"
+                                 style="border-radius: 14px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div class="text-start">
+                                <div class="text-dark fw-semibold mb-1" style="font-size: 1.1rem;">CodeRabbit</div>
+                                <div class="text-muted" style="font-size: 0.9rem;">AI-powered code reviews</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Become a Sponsor -->
+                <div class="mt-3">
+                    <a href="https://github.com/sponsors/RezaSi" target="_blank" class="text-muted text-decoration-none" style="font-size: 0.95rem; transition: color 0.3s ease;">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Interested in premium sponsorship? Feature your company logo here!
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Main Footer Content -->
+            <div class="text-center pt-3" style="border-top: 1px solid #dee2e6;">
+                <p class="mb-0 text-muted">Go Interview Practice - Build your Go skills with coding challenges</p>
+            </div>
         </div>
     </footer>
 
