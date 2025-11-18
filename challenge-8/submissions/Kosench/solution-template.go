@@ -47,17 +47,15 @@ func newClient(username string, server *ChatServer) *Client {
 // Send sends a message to the client (non-blocking)
 func (c *Client) Send(message string) {
 	c.mu.RLock()
-	active := c.active
-	msgChan := c.messages
-	c.mu.RUnlock()
+	defer c.mu.RUnlock()
 
-	if !active {
+	if !c.active {
 		return
 	}
 
-	// Non-blocking send
+	// Non-blocking send (protected by RLock to prevent close during send)
 	select {
-	case msgChan <- message:
+	case c.messages <- message:
 	default:
 		// Channel full, drop message
 	}
@@ -97,7 +95,7 @@ func (c *Client) markInactive() {
 // ChatServer manages client connections and message routing
 type ChatServer struct {
 	clients   map[string]*Client
-	mu        sync.RWMutex // Only for read operations in Broadcast/PrivateMessage
+	mu        sync.RWMutex // Protects clients map (read and write)
 	broadcast chan Message
 	join      chan joinRequest
 	leave     chan leaveRequest
@@ -128,17 +126,19 @@ func (s *ChatServer) run() {
 	for {
 		select {
 		case req := <-s.join:
-			// Check for duplicate username
+			// Check for duplicate username and register client under lock
+			s.mu.Lock()
 			if _, exists := s.clients[req.username]; exists {
+				s.mu.Unlock()
 				req.errChan <- ErrUsernameAlreadyTaken
 				close(req.response)
 				close(req.errChan)
 				continue
 			}
 
-			// Create and register client
 			client := newClient(req.username, s)
 			s.clients[req.username] = client
+			s.mu.Unlock()
 
 			// Send response
 			req.response <- client
@@ -148,14 +148,21 @@ func (s *ChatServer) run() {
 
 		case req := <-s.leave:
 			// Remove client if exists
-			if client, exists := s.clients[req.client.username]; exists {
+			s.mu.Lock()
+			client, exists := s.clients[req.client.username]
+			if exists {
 				delete(s.clients, req.client.username)
+			}
+			s.mu.Unlock()
+
+			if exists {
 				client.markInactive()
 			}
 			close(req.done)
 
 		case msg := <-s.broadcast:
-			// Deliver message
+			// Deliver message (read clients map under lock)
+			s.mu.RLock()
 			if msg.Recipient == "" {
 				// Broadcast to all except sender
 				for _, client := range s.clients {
@@ -169,13 +176,25 @@ func (s *ChatServer) run() {
 					recipient.Send(msg.Content)
 				}
 			}
+			s.mu.RUnlock()
 
 		case <-s.shutdown:
 			// Cleanup all clients
+			s.mu.RLock()
+			clientsCopy := make([]*Client, 0, len(s.clients))
 			for _, client := range s.clients {
+				clientsCopy = append(clientsCopy, client)
+			}
+			s.mu.RUnlock()
+
+			// Mark inactive outside the lock to avoid deadlock
+			for _, client := range clientsCopy {
 				client.markInactive()
 			}
+
+			s.mu.Lock()
 			s.clients = make(map[string]*Client)
+			s.mu.Unlock()
 			return
 		}
 	}
@@ -254,7 +273,7 @@ func (s *ChatServer) PrivateMessage(sender *Client, recipientUsername string, me
 		return ErrClientDisconnected
 	}
 
-	// Quick check if recipient exists (may race, but handled in run())
+	// Check if recipient exists (under read lock)
 	s.mu.RLock()
 	_, exists := s.clients[recipientUsername]
 	s.mu.RUnlock()
