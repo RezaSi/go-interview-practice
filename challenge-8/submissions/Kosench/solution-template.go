@@ -1,76 +1,108 @@
-// Package challenge8 contains the solution for Challenge 8: Chat Server with Channels.
 package challenge8
 
 import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
-	// Add any other necessary imports
 )
 
+// Message represents a message to be delivered
 type Message struct {
 	Sender    *Client
 	Content   string
-	Recipient string // пустая строка для broadcast
+	Recipient string // empty for broadcast
+}
+
+// joinRequest represents a request to join the chat
+type joinRequest struct {
+	username string
+	response chan *Client
+	errChan  chan error
+}
+
+// leaveRequest represents a request to leave the chat
+type leaveRequest struct {
+	client *Client
+	done   chan struct{}
 }
 
 // Client represents a connected chat client
 type Client struct {
-	username     string
-	messages     chan string
-	server       *ChatServer
-	mu           sync.Mutex
-	disconnected bool
+	username string
+	messages chan string
+	server   *ChatServer
+	mu       sync.RWMutex
+	active   bool
 }
 
 func newClient(username string, server *ChatServer) *Client {
 	return &Client{
-		username:     username,
-		messages:     make(chan string, 50),
-		server:       server,
-		disconnected: false,
+		username: username,
+		messages: make(chan string, 50),
+		server:   server,
+		active:   true,
 	}
 }
 
-// Send sends a message to the client
+// Send sends a message to the client (non-blocking)
 func (c *Client) Send(message string) {
-	c.mu.Lock()
-	disconnected := c.disconnected
-	c.mu.Unlock()
+	c.mu.RLock()
+	active := c.active
+	msgChan := c.messages
+	c.mu.RUnlock()
 
-	if disconnected {
+	if !active {
 		return
 	}
 
-	// Non-blocking send используя select с default [web:49][web:53]
+	// Non-blocking send
 	select {
-	case c.messages <- message:
-		// Сообщение отправлено успешно
+	case msgChan <- message:
 	default:
-		// Канал переполнен, пропускаем сообщение
-		// В production здесь можно логировать
+		// Channel full, drop message
 	}
 }
 
 // Receive returns the next message for the client (blocking)
 func (c *Client) Receive() string {
-	// Blocking read с проверкой закрытого канала [web:7][web:56]
-	message, ok := <-c.messages
+	c.mu.RLock()
+	msgChan := c.messages
+	c.mu.RUnlock()
+
+	msg, ok := <-msgChan
 	if !ok {
-		// Канал закрыт
 		return ""
 	}
-	return message
+	return msg
+}
+
+// isActive checks if client is still active
+func (c *Client) isActive() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.active
+}
+
+// markInactive marks client as inactive and closes channel
+func (c *Client) markInactive() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.active {
+		c.active = false
+		close(c.messages)
+	}
 }
 
 // ChatServer manages client connections and message routing
 type ChatServer struct {
 	clients   map[string]*Client
+	mu        sync.RWMutex // Only for read operations in Broadcast/PrivateMessage
 	broadcast chan Message
-	join      chan *Client
-	leave     chan *Client
-	mu        sync.RWMutex
+	join      chan joinRequest
+	leave     chan leaveRequest
+	shutdown  chan struct{}
+	wg        sync.WaitGroup
 }
 
 // NewChatServer creates a new chat server instance
@@ -78,45 +110,73 @@ func NewChatServer() *ChatServer {
 	server := &ChatServer{
 		clients:   make(map[string]*Client),
 		broadcast: make(chan Message, 100),
-		join:      make(chan *Client, 10),
-		leave:     make(chan *Client, 10),
+		join:      make(chan joinRequest),
+		leave:     make(chan leaveRequest),
+		shutdown:  make(chan struct{}),
 	}
 
+	server.wg.Add(1)
 	go server.run()
 
 	return server
 }
 
+// run is the central goroutine that handles all state modifications
 func (s *ChatServer) run() {
+	defer s.wg.Done()
+
 	for {
 		select {
-		case client := <-s.join:
-			s.mu.Lock()
-			s.clients[client.username] = client
-			s.mu.Unlock()
-
-		case client := <-s.leave:
-			s.mu.Lock()
-			if _, exists := s.clients[client.username]; exists {
-				delete(s.clients, client.username)
-				close(client.messages)
+		case req := <-s.join:
+			// Check for duplicate username
+			if _, exists := s.clients[req.username]; exists {
+				req.errChan <- ErrUsernameAlreadyTaken
+				close(req.response)
+				close(req.errChan)
+				continue
 			}
-			s.mu.Unlock()
+
+			// Create and register client
+			client := newClient(req.username, s)
+			s.clients[req.username] = client
+
+			// Send response
+			req.response <- client
+			req.errChan <- nil
+			close(req.response)
+			close(req.errChan)
+
+		case req := <-s.leave:
+			// Remove client if exists
+			if client, exists := s.clients[req.client.username]; exists {
+				delete(s.clients, req.client.username)
+				client.markInactive()
+			}
+			close(req.done)
 
 		case msg := <-s.broadcast:
-			s.mu.RLock()
+			// Deliver message
 			if msg.Recipient == "" {
+				// Broadcast to all except sender
 				for _, client := range s.clients {
-					if client != msg.Sender {
+					if client != msg.Sender && client.isActive() {
 						client.Send(msg.Content)
 					}
 				}
 			} else {
-				if recipient, exists := s.clients[msg.Recipient]; exists {
+				// Private message
+				if recipient, exists := s.clients[msg.Recipient]; exists && recipient.isActive() {
 					recipient.Send(msg.Content)
 				}
 			}
-			s.mu.RUnlock()
+
+		case <-s.shutdown:
+			// Cleanup all clients
+			for _, client := range s.clients {
+				client.markInactive()
+			}
+			s.clients = make(map[string]*Client)
+			return
 		}
 	}
 }
@@ -127,19 +187,23 @@ func (s *ChatServer) Connect(username string) (*Client, error) {
 		return nil, ErrEmptyUsername
 	}
 
-	s.mu.RLock()
-	_, exist := s.clients[username]
-	s.mu.RUnlock()
-
-	if exist {
-		return nil, ErrUsernameAlreadyTaken
+	// Create request channels
+	req := joinRequest{
+		username: username,
+		response: make(chan *Client, 1),
+		errChan:  make(chan error, 1),
 	}
 
-	client := newClient(username, s)
-	s.join <- client
+	// Send join request to central goroutine
+	s.join <- req
 
-	// Даём время центральной горутине обработать join
-	time.Sleep(10 * time.Millisecond)
+	// Wait for response (blocking until processed)
+	client := <-req.response
+	err := <-req.errChan
+
+	if err != nil {
+		return nil, err
+	}
 
 	return client, nil
 }
@@ -150,26 +214,22 @@ func (s *ChatServer) Disconnect(client *Client) {
 		return
 	}
 
-	client.mu.Lock()
-	client.disconnected = true
-	client.mu.Unlock()
-
-	s.leave <- client
-
-	time.Sleep(10 * time.Millisecond)
-}
-
-// Broadcast sends a message to all connected clients
-func (s *ChatServer) Broadcast(sender *Client, message string) {
-	if sender == nil {
-		return
+	// Create request with done channel
+	req := leaveRequest{
+		client: client,
+		done:   make(chan struct{}),
 	}
 
-	sender.mu.Lock()
-	disconnected := sender.disconnected
-	sender.mu.Unlock()
+	// Send leave request
+	s.leave <- req
 
-	if disconnected {
+	// Wait for completion (blocking until processed)
+	<-req.done
+}
+
+// Broadcast sends a message to all connected clients except sender
+func (s *ChatServer) Broadcast(sender *Client, message string) {
+	if sender == nil || !sender.isActive() {
 		return
 	}
 
@@ -181,47 +241,48 @@ func (s *ChatServer) Broadcast(sender *Client, message string) {
 		Recipient: "",
 	}
 
-	s.broadcast <- msg
-
+	select {
+	case s.broadcast <- msg:
+	default:
+		// Broadcast channel full, skip
+	}
 }
 
 // PrivateMessage sends a message to a specific client
-func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message string) error {
-	if sender == nil {
+func (s *ChatServer) PrivateMessage(sender *Client, recipientUsername string, message string) error {
+	if sender == nil || !sender.isActive() {
 		return ErrClientDisconnected
 	}
 
-	// Проверяем, что отправитель не отключён [web:7]
-	sender.mu.Lock()
-	disconnected := sender.disconnected
-	sender.mu.Unlock()
-
-	if disconnected {
-		return ErrClientDisconnected
-	}
-
-	// Проверяем существование получателя
+	// Quick check if recipient exists (may race, but handled in run())
 	s.mu.RLock()
-	_, exists := s.clients[recipient]
+	_, exists := s.clients[recipientUsername]
 	s.mu.RUnlock()
 
 	if !exists {
 		return ErrRecipientNotFound
 	}
 
-	// Форматируем сообщение (важно: содержит оригинальный message для теста strings.Contains)
 	formattedMsg := fmt.Sprintf("[PM from %s]: %s", sender.username, message)
 
-	// Отправляем в канал broadcast с указанием получателя
 	msg := Message{
 		Sender:    sender,
 		Content:   formattedMsg,
-		Recipient: recipient,
+		Recipient: recipientUsername,
 	}
 
-	s.broadcast <- msg
+	select {
+	case s.broadcast <- msg:
+		return nil
+	default:
+		return errors.New("message queue full")
+	}
+}
 
-	return nil
+// Shutdown gracefully shuts down the chat server
+func (s *ChatServer) Shutdown() {
+	close(s.shutdown)
+	s.wg.Wait()
 }
 
 // Common errors that can be returned by the Chat Server
