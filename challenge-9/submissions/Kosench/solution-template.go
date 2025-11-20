@@ -146,7 +146,8 @@ func (r *InMemoryBookRepository) SearchByAuthor(author string) ([]*Book, error) 
 
 	for _, book := range r.books {
 		if strings.Contains(strings.ToLower(book.Author), author) {
-			result = append(result, book)
+			bookCopy := *book
+			result = append(result, &bookCopy)
 		}
 	}
 
@@ -163,7 +164,8 @@ func (r *InMemoryBookRepository) SearchByTitle(title string) ([]*Book, error) {
 
 	for _, book := range r.books {
 		if strings.Contains(strings.ToLower(book.Title), title) {
-			result = append(result, book)
+			bookCopy := *book
+			result = append(result, &bookCopy)
 		}
 	}
 
@@ -178,7 +180,8 @@ func (r *InMemoryBookRepository) SearchByISBN(isbn string) ([]*Book, error) {
 
 	for _, book := range r.books {
 		if strings.EqualFold(book.ISBN, isbn) {
-			result = append(result, book)
+			bookCopy := *book
+			result = append(result, &bookCopy)
 		}
 	}
 
