@@ -26,6 +26,7 @@ func (m *Manager) RemoveEmployee(id int) {
 	for index, arg := range m.Employees{
 		if arg.ID == id {
 			m.Employees = append(m.Employees[0:index], m.Employees[index+1:]... )
+			break
 		}
 	}
 }
@@ -55,8 +56,8 @@ func (m *Manager) FindEmployeeByID(id int) *Employee{
 
 func main() {
 	manager := Manager{}
-	// manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
-	// manager.AddEmployee(Employee{ID: 2, Name: "Bob", Age: 25, Salary: 65000})
+	manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
+	manager.AddEmployee(Employee{ID: 2, Name: "Bob", Age: 25, Salary: 65000})
 	manager.RemoveEmployee(1)
 	averageSalary := manager.GetAverageSalary()
 	employee := manager.FindEmployeeByID(2)
