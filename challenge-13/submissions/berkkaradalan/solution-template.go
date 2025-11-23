@@ -33,7 +33,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", dbPath)
     if err != nil {
-        return nil, err
+			return nil, err
     }
 
 	_, err = db.Exec(
@@ -156,6 +156,8 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer rows.Close()
 
 	data := []*Product{}
 
