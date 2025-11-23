@@ -198,7 +198,7 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 
 		if rowsAffected == 0 {
 			tx.Rollback()
-			return errors.New("product not found")
+			return fmt.Errorf("product not found: id=%d", id)
 		}
 	}
 
@@ -210,12 +210,13 @@ func main() {
 
 	if err != nil { 
 		fmt.Printf("Error :%v", err)
+		return
 	}
+	defer sqliteDB.Close()
 
 	pS := NewProductStore(sqliteDB)
 
 	testProduct := Product{
-		ID: 1,
 		Name: "Test",
 		Price: 2500,
 		Quantity: 2500,
