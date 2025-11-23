@@ -9,19 +9,25 @@ import (
 	// Add any necessary imports here
 )
 
+// pi is a constant representing the mathematical constant π (pi)
 const pi = math.Pi
 
+// Shape defines the interface for geometric shapes.
+// All shapes must implement Area, Perimeter, and String methods.
 type Shape interface {
 	Area() float64
 	Perimeter() float64
 	fmt.Stringer // Includes String() string method
 }
 
+// Rectangle represents a rectangle with width and height.
 type Rectangle struct {
 	Width  float64
 	Height float64
 }
 
+// NewRectangle creates a new Rectangle with validation.
+// Returns an error if width or height is not positive.
 func NewRectangle(width, height float64) (*Rectangle, error) {
 	if width <= 0 {
 		return nil, errors.New("width must be positive")
@@ -35,18 +41,22 @@ func NewRectangle(width, height float64) (*Rectangle, error) {
 	}, nil
 }
 
+// Area calculates and returns the area of the rectangle (width × height).
 func (r *Rectangle) Area() float64 {
 	return r.Width * r.Height
 }
 
+// Perimeter calculates and returns the perimeter of the rectangle.
 func (r *Rectangle) Perimeter() float64 {
 	return 2 * (r.Width + r.Height)
 }
 
+// String returns a string representation of the rectangle.
 func (r *Rectangle) String() string {
 	return fmt.Sprintf("Rectangle(width=%.2f, height=%.2f)", r.Width, r.Height)
 }
 
+// Circle represents a circle with a radius.
 type Circle struct {
 	Radius float64
 }
@@ -59,24 +69,30 @@ func NewCircle(radius float64) (*Circle, error) {
 	return &Circle{Radius: radius}, nil
 }
 
+// Area calculates and returns the area of the circle (π × r²).
 func (c *Circle) Area() float64 {
 	return pi * c.Radius * c.Radius
 }
 
+// Perimeter calculates and returns the circumference of the circle (2 × π × r).
 func (c *Circle) Perimeter() float64 {
 	return 2 * pi * c.Radius
 }
 
+// String returns a string representation of the circle.
 func (c *Circle) String() string {
 	return fmt.Sprintf("Circle(radius=%.2f)", c.Radius)
 }
 
+// Triangle represents a triangle with three sides.
 type Triangle struct {
 	SideA float64
 	SideB float64
 	SideC float64
 }
 
+// NewTriangle creates a new Triangle with validation.
+// Returns an error if any side is not positive or if the triangle inequality is violated.
 func NewTriangle(a, b, c float64) (*Triangle, error) {
 	// Проверка на положительность сторон
 	if a <= 0 || b <= 0 || c <= 0 {
