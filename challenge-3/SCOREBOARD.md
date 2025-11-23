@@ -1,6 +1,7 @@
 # Scoreboard for challenge-3
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 4m4x | 5 | 5 |
 | ADEMOLA200 | 5 | 5 |
 | AkifhanIlgaz | 5 | 5 |
 | AlexO-85 | 5 | 5 |
@@ -43,6 +44,7 @@
 | awsl1110 | 5 | 5 |
 | baindraraj | 5 | 5 |
 | berkaykrc | 5 | 5 |
+| berkkaradalan | 5 | 5 |
 | binoymanoj | 5 | 5 |
 | chenyao0910 | 5 | 5 |
 | decko | 5 | 5 |
