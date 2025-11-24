@@ -20,6 +20,6 @@ func main() {
 
 // Sum returns the sum of a and b.
 func Sum(a int, b int) int {
-	// TODO: Implement the function
+	// 返回a+b的值
 	return a + b
 }
