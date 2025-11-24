@@ -18,6 +18,10 @@ func main() {
 		// Print the result
 		fmt.Println(output)
 	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 // ReverseString returns the reversed string of s.

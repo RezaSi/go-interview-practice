@@ -18,15 +18,17 @@ type Manager struct {
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
-	// TODO: Implement this method
+	// 增加员工保存至Employees
 	m.Employees = append(m.Employees, e)
 }
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-	// TODO: Implement this method
+	// 遍历Employess
 	for i, employee := range m.Employees {
+	    // 判断需要参数的id与员工ID是否一致
 	    if employee.ID == id {
+	        // 删除Employees中的员工
 	        m.Employees = slices.Delete(m.Employees, i, i+1)
 	        return
 	    }
@@ -35,7 +37,7 @@ func (m *Manager) RemoveEmployee(id int) {
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-	// TODO: Implement this method
+	
 	var sum float64
 	count := len(m.Employees)
 	if count == 0 {
@@ -49,7 +51,7 @@ func (m *Manager) GetAverageSalary() float64 {
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	// TODO: Implement this method
+	// 遍历员工并返回
 	for _, e := range m.Employees {
 	    if e.ID == id {
 	        return &e
