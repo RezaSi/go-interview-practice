@@ -88,8 +88,11 @@ func (ca *ContentAggregator) FetchAndProcess(ctx context.Context, urls []string)
 		ca.mu.RUnlock()
 		return nil, errors.New("aggregator is shutting down")
 	}
-
 	ca.mu.RUnlock()
+
+	// Track this operation
+	ca.wg.Add(1)
+	defer ca.wg.Done()
 
 	result, errs := ca.fanOut(ctx, urls)
 
@@ -111,8 +114,11 @@ func (ca *ContentAggregator) Shutdown() error {
 	ca.isShuttingDown = true
 	ca.mu.Unlock()
 
-	// Сигнализируем о завершении
+	// Signal shutdown to workers
 	close(ca.shutdown)
+
+	// Wait for in-flight operations to complete
+	ca.wg.Wait()
 
 	return nil
 }
@@ -133,6 +139,7 @@ func (ca *ContentAggregator) fanOut(ctx context.Context, urls []string) ([]Proce
 	}()
 
 	go func() {
+		defer close(jobs)
 		for _, url := range urls {
 			select {
 			case jobs <- url:
@@ -142,7 +149,6 @@ func (ca *ContentAggregator) fanOut(ctx context.Context, urls []string) ([]Proce
 				return
 			}
 		}
-		close(jobs)
 	}()
 
 	go func() {
@@ -152,7 +158,7 @@ func (ca *ContentAggregator) fanOut(ctx context.Context, urls []string) ([]Proce
 	}()
 
 	//Fan-In
-	var allResiult []ProcessedData
+	var allResult []ProcessedData
 	var allErrors []error
 
 	for results != nil || errors != nil {
@@ -161,7 +167,7 @@ func (ca *ContentAggregator) fanOut(ctx context.Context, urls []string) ([]Proce
 			if !ok {
 				results = nil
 			} else {
-				allResiult = append(allResiult, result)
+				allResult = append(allResult, result)
 			}
 		case err, ok := <-errors:
 			if !ok {
@@ -172,7 +178,7 @@ func (ca *ContentAggregator) fanOut(ctx context.Context, urls []string) ([]Proce
 		}
 	}
 
-	return allResiult, allErrors
+	return allResult, allErrors
 }
 
 // workerPool implements a worker pool pattern for processing content
@@ -263,7 +269,11 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := hf.Client.Do(req)
+	client := hf.Client
+	if client == nil {
+		client = http.DefaultClient // ← используем стандартный клиент Go
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +302,6 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 
 	text := string(content)
 
-	// Проверяем что это похоже на HTML
 	if !strings.Contains(text, "<") || !strings.Contains(text, ">") {
 		return ProcessedData{}, errors.New("invalid HTML content")
 	}
@@ -301,7 +310,6 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	description := hp.extractDescription(text)
 	keywords := hp.extractKeywords(text)
 
-	// Валидация — нужен хотя бы title или description
 	if title == "No title" && description == "" && len(keywords) == 0 {
 		return ProcessedData{}, errors.New("could not extract any data from HTML")
 	}
@@ -327,12 +335,13 @@ func (hp *HTMLProcessor) extractTitle(html string) string {
 }
 
 func (hp *HTMLProcessor) extractDescription(html string) string {
-	// Ищем <meta name="description" content="...">
+	// Search for <meta name="description" content="...">
 	metaTag := `<meta name="description" content="`
+	quoteChar := `"`
 	start := strings.Index(html, metaTag)
 	if start == -1 {
-		// Пробуем альтернативный формат с одинарными кавычками
 		metaTag = `<meta name='description' content='`
+		quoteChar = `'`
 		start = strings.Index(html, metaTag)
 		if start == -1 {
 			return ""
@@ -340,23 +349,22 @@ func (hp *HTMLProcessor) extractDescription(html string) string {
 	}
 
 	start += len(metaTag)
-	end := strings.Index(html[start:], `"`)
+	end := strings.Index(html[start:], quoteChar)
 	if end == -1 {
-		end = strings.Index(html[start:], `'`)
-		if end == -1 {
-			return ""
-		}
+		return ""
 	}
 
 	return html[start : start+end]
 }
 
 func (hp *HTMLProcessor) extractKeywords(html string) []string {
-	// Ищем <meta name="keywords" content="...">
+	// Search for <meta name="keywords" content="...">
 	metaTag := `<meta name="keywords" content="`
+	quoteChar := `"`
 	start := strings.Index(html, metaTag)
 	if start == -1 {
 		metaTag = `<meta name='keywords' content='`
+		quoteChar = `'`
 		start = strings.Index(html, metaTag)
 		if start == -1 {
 			return []string{}
@@ -364,18 +372,14 @@ func (hp *HTMLProcessor) extractKeywords(html string) []string {
 	}
 
 	start += len(metaTag)
-	end := strings.Index(html[start:], `"`)
+	end := strings.Index(html[start:], quoteChar)
 	if end == -1 {
-		end = strings.Index(html[start:], `'`)
-		if end == -1 {
-			return []string{}
-		}
+		return []string{}
 	}
 
 	keywordsStr := html[start : start+end]
 	keywords := strings.Split(keywordsStr, ",")
 
-	// Очищаем пробелы
 	result := make([]string, 0, len(keywords))
 	for _, k := range keywords {
 		k = strings.TrimSpace(k)
