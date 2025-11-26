@@ -1,6 +1,7 @@
 # Scoreboard for challenge-6
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 4m4x | 7 | 7 |
 | AkifhanIlgaz | 7 | 7 |
 | AlexO-85 | 7 | 7 |
 | Ali-Fartoot | 7 | 7 |

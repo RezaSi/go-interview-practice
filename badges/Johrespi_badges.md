@@ -14,9 +14,9 @@
 [![Go Interview Practice](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/Johrespi.json&style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 📊 Static Badges Collection
-[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-12%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-13%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 [![Achievement Level](https://img.shields.io/badge/Level-⚡_Advanced-orange?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Completion Rate](https://img.shields.io/badge/Completion-40.0%25-orange?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Completion Rate](https://img.shields.io/badge/Completion-43.3%25-orange?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 
 ### 🔗 Repository Link Badge
@@ -28,5 +28,5 @@
 
 **👤 Username:** @Johrespi  
 **🏅 Achievement Level:** ⚡ **Advanced Developer**  
-**📊 Classic Challenges:** 12/30 (40.0% complete)  
+**📊 Classic Challenges:** 13/30 (43.3% complete)  
 **🔗 Repository:** [Go Interview Practice](https://github.com/RezaSi/go-interview-practice)  
