@@ -61,7 +61,7 @@ func (cm *simpleContextManager) GetValue(ctx context.Context, key interface{}) (
 
 // ExecuteWithContext executes a task that can be cancelled via context
 func (cm *simpleContextManager) ExecuteWithContext(ctx context.Context, task func() error) error {
-	ch := make(chan error)
+	ch := make(chan error, 1)
 
 	go func() {
 		ch <- task()
