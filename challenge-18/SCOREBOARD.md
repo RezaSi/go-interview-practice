@@ -2,6 +2,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 4592adarsh | 23 | 23 |
+| 4m4x | 23 | 23 |
 | AlexO-85 | 23 | 23 |
 | Ali-Fartoot | 23 | 23 |
 | Be1chenok | 23 | 23 |
@@ -18,6 +19,7 @@
 | Kesha005 | 23 | 23 |
 | KhaledMosaad | 23 | 23 |
 | MYK12397 | 23 | 23 |
+| Maidomax | 23 | 23 |
 | MuraliMohan-2000 | 23 | 23 |
 | PolinaSvet | 23 | 23 |
 | RezaSi | 23 | 23 |
@@ -32,6 +34,7 @@
 | ashwinipatankar | 23 | 23 |
 | awsl1110 | 23 | 23 |
 | berkaykrc | 23 | 23 |
+| berkkaradalan | 23 | 23 |
 | binoymanoj | 23 | 23 |
 | bmeverett | 23 | 23 |
 | chenyao0910 | 23 | 23 |
@@ -67,4 +70,5 @@
 | tmsankaram | 23 | 23 |
 | wxai2324 | 23 | 23 |
 | y1hao | 23 | 23 |
+| yeay-0 | 23 | 23 |
 | yz4230 | 23 | 23 |

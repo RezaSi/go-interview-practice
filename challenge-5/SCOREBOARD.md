@@ -20,6 +20,7 @@
 | agusu | 9 | 9 |
 | ashwinipatankar | 9 | 9 |
 | baindraraj | 9 | 9 |
+| berkkaradalan | 9 | 9 |
 | bmeverett | 9 | 9 |
 | chenyao0910 | 9 | 9 |
 | grozdovk | 9 | 9 |
