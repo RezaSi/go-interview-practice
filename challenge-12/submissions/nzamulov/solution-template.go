@@ -3,10 +3,10 @@ package challenge12
 
 import (
 	"context"
-	"errors"
-	"os"
-	"fmt"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
 )
 
 // Reader defines an interface for data sources
@@ -79,12 +79,7 @@ func (e *PipelineError) Unwrap() error {
 }
 
 // Sentinel errors for common error conditions
-var (
-	ErrInvalidFormat    = errors.New("invalid data format")
-	ErrMissingField     = errors.New("required field missing")
-	ErrProcessingFailed = errors.New("processing failed")
-	ErrDestinationFull  = errors.New("destination is full")
-)
+var ErrInvalidJSON = errors.New("invalid json")
 
 // Pipeline orchestrates the data processing flow
 type Pipeline struct {
@@ -96,14 +91,14 @@ type Pipeline struct {
 
 // NewPipeline creates a new processing pipeline with specified components
 func NewPipeline(r Reader, v []Validator, t []Transformer, w Writer) *Pipeline {
-    if r == nil || w == nil {
-        return nil
-    }
+	if r == nil || w == nil {
+		return nil
+	}
 	return &Pipeline{
-	    Reader: r,
-	    Validators: v,
-	    Transformers: t,
-	    Writer: w,
+		Reader:       r,
+		Validators:   v,
+		Transformers: t,
+		Writer:       w,
 	}
 }
 
@@ -111,33 +106,21 @@ func NewPipeline(r Reader, v []Validator, t []Transformer, w Writer) *Pipeline {
 func (p *Pipeline) Process(ctx context.Context) error {
 	data, err := p.Reader.Read(ctx)
 	if err != nil {
-	    return err
+		return err
 	}
 	for _, validator := range p.Validators {
-	    err = validator.Validate(data)
-	    if err != nil {
-	        return err
-	    }
+		err = validator.Validate(data)
+		if err != nil {
+			return err
+		}
 	}
 	for _, transformer := range p.Transformers {
-	    data, err = transformer.Transform(data)
-	    if err != nil {
-	        return err
-	    }
-	    if data == nil {
-	        data, err = transformer.Transform(data)
-	        if err != nil {
-	            return err
-	        }
-	    }
+		data, err = transformer.Transform(data)
+		if err != nil {
+			return err
+		}
 	}
-	return p.Writer.Write(ctx, nil)
-}
-
-// handleErrors consolidates errors from concurrent operations
-func (p *Pipeline) handleErrors(ctx context.Context, errs <-chan error) error {
-	// TODO: Implement concurrent error handling
-	return nil
+	return p.Writer.Write(ctx, data)
 }
 
 // FileReader implements the Reader interface for file sources
@@ -148,18 +131,18 @@ type FileReader struct {
 // NewFileReader creates a new file reader
 func NewFileReader(filename string) *FileReader {
 	return &FileReader{
-	    Filename: filename,
+		Filename: filename,
 	}
 }
 
 // Read reads data from a file
 func (fr *FileReader) Read(ctx context.Context) ([]byte, error) {
-    select {
-        case <-ctx.Done():
-            return []byte{}, ctx.Err()
-        default:
-           return os.ReadFile(fr.Filename)
-    }
+	select {
+	case <-ctx.Done():
+		return []byte{}, ctx.Err()
+	default:
+		return os.ReadFile(fr.Filename)
+	}
 }
 
 // JSONValidator implements the Validator interface for JSON validation
@@ -172,10 +155,10 @@ func NewJSONValidator() *JSONValidator {
 
 // Validate validates JSON data
 func (jv *JSONValidator) Validate(data []byte) error {
-    isValid := json.Valid(data)
-    if !isValid {
-        return fmt.Errorf("json is not valid")
-    }
+	isValid := json.Valid(data)
+	if !isValid {
+		return ErrInvalidJSON
+	}
 	return nil
 }
 
@@ -187,7 +170,7 @@ type SchemaValidator struct {
 // NewSchemaValidator creates a new schema validator
 func NewSchemaValidator(schema []byte) *SchemaValidator {
 	return &SchemaValidator{
-	    Schema: schema,
+		Schema: schema,
 	}
 }
 
@@ -199,15 +182,15 @@ func (sv *SchemaValidator) Validate(data []byte) error {
 
 // FieldTransformer implements the Transformer interface for field transformations
 type FieldTransformer struct {
-	FieldName    string
+	FieldName     string
 	TransformFunc func(string) string
 }
 
 // NewFieldTransformer creates a new field transformer
 func NewFieldTransformer(fieldName string, transformFunc func(string) string) *FieldTransformer {
 	return &FieldTransformer{
-	    FieldName: fieldName,
-	    TransformFunc: transformFunc,
+		FieldName:     fieldName,
+		TransformFunc: transformFunc,
 	}
 }
 
@@ -225,7 +208,7 @@ type FileWriter struct {
 // NewFileWriter creates a new file writer
 func NewFileWriter(filename string) *FileWriter {
 	return &FileWriter{
-	    Filename: filename,
+		Filename: filename,
 	}
 }
 
@@ -233,18 +216,18 @@ func NewFileWriter(filename string) *FileWriter {
 func (fw *FileWriter) Write(ctx context.Context, data []byte) error {
 	file, err := os.OpenFile(fw.Filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-	    return fmt.Errorf("error to open file: %v", err)
+		return fmt.Errorf("error to open file: %v", err)
 	}
 	defer file.Close()
-	
-	select{
-	    case <-ctx.Done():
-	        return ctx.Err()
-	    default:
-	        if _, err = file.Write(data); err != nil {
-	            return err
-	        }
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		if _, err = file.Write(data); err != nil {
+			return err
+		}
 	}
 
 	return nil
-} 
+}

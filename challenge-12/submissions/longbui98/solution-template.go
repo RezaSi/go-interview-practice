@@ -134,12 +134,9 @@ func (p *Pipeline) Process(ctx context.Context) error {
 		if data, err = transformer.Transform(data); err != nil {
 			return err
 		}
-		if data == nil {
-			return errors.New("error while transform")
-		}
 	}
 
-	if err = p.Writer.Write(ctx, nil); err != nil {
+	if err = p.Writer.Write(ctx, data); err != nil {
 		return err
 	}
 

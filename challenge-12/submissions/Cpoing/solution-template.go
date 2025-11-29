@@ -140,12 +140,9 @@ func (p *Pipeline) Process(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			if data == nil {
-				return errors.New("transform error")
-			}
 		}
 
-		if err = p.Writer.Write(ctx, nil); err != nil {
+		if err = p.Writer.Write(ctx, data); err != nil {
 			return err
 		}
 
@@ -308,4 +305,3 @@ func (fw *FileWriter) Write(ctx context.Context, data []byte) error {
 		return nil
 	}
 }
-
