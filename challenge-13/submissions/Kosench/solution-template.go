@@ -36,7 +36,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 
 	if err := db.Ping(); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("failed to ping database %w", err)
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	query := `
@@ -51,7 +51,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	_, err = db.Exec(query)
 	if err != nil {
 		db.Close()
-		return nil, fmt.Errorf("failde to create table: %w", err)
+		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
 
 	// The table should have columns: id, name, price, quantity, category
@@ -200,7 +200,7 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 	tx, err := ps.db.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to bedin transaction: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	stmt, err := tx.Prepare("UPDATE products SET quantity = ? WHERE id = ?")
@@ -219,6 +219,7 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("failed to get rows affected: %w", err)
 		}
 
