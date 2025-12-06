@@ -7,8 +7,8 @@ import (
 func main() {
 	var a, b int
 	// Read two integers from standard input
-	_, err := fmt.Scanf("%d, %d", &a, &b)
-	if err != nil {
+	n, err := fmt.Scanf("%d, %d", &a, &b)
+	if err != nil || n != 2 {
 		fmt.Println("Error reading input:", err)
 		return
 	}
@@ -20,5 +20,5 @@ func main() {
 
 // Sum returns the sum of a and b.
 func Sum(a int, b int) int {
-    return a + b
+	return a + b
 }
