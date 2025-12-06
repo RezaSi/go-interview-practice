@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -193,19 +194,26 @@ type CheckInventoryResponse struct {
 
 // OrderService handles order creation
 type OrderService struct {
+	mu            sync.Mutex
 	userClient    UserService
 	productClient ProductService
 	orders        map[int64]*Order
 	nextOrderID   int64
+	userConn      *grpc.ClientConn
+	productConn   *grpc.ClientConn
 }
 
 // NewOrderService creates a new OrderService
-func NewOrderService(userClient UserService, productClient ProductService) *OrderService {
+func NewOrderService(userClient UserService,
+	productClient ProductService,
+	userConn, productConn *grpc.ClientConn) *OrderService {
 	return &OrderService{
 		userClient:    userClient,
 		productClient: productClient,
 		orders:        make(map[int64]*Order),
 		nextOrderID:   1,
+		userConn:      userConn,
+		productConn:   productConn,
 	}
 }
 
@@ -238,6 +246,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID, productID int64,
 	}
 
 	// 4. Create order
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	order := &Order{
 		ID:        s.nextOrderID,
 		UserID:    userID,
@@ -253,11 +263,33 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID, productID int64,
 
 // GetOrder retrieves an order by ID
 func (s *OrderService) GetOrder(orderID int64) (*Order, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	order, exists := s.orders[orderID]
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "order not found")
 	}
 	return order, nil
+}
+
+// Close closes the gRPC connections
+func (s *OrderService) Close() error {
+	var err error
+	if s.userConn != nil {
+		if closeErr := s.userConn.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}
+	if s.productConn != nil {
+		if closeErr := s.productConn.Close(); closeErr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v; %v", err, closeErr)
+			} else {
+				err = closeErr
+			}
+		}
+	}
+	return err
 }
 
 // LoggingInterceptor is a server interceptor for logging
@@ -290,7 +322,11 @@ func StartUserService(port string) (*grpc.Server, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/user/get", func(w http.ResponseWriter, r *http.Request) {
 		userIDStr := r.URL.Query().Get("id")
-		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+		userID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid user id", http.StatusBadRequest)
+			return
+		}
 
 		user, err := userServer.GetUser(r.Context(), userID)
 		if err != nil {
@@ -341,7 +377,7 @@ func StartProductService(port string) (*grpc.Server, error) {
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
 	s := grpc.NewServer(grpc.UnaryInterceptor(LoggingInterceptor))
@@ -402,7 +438,7 @@ func StartProductService(port string) (*grpc.Server, error) {
 func ConnectToServices(userServiceAddr, productServiceAddr string) (*OrderService, error) {
 	// TODO: Implement this function
 	// Hint: create gRPC connections with interceptors, create clients, return OrderService
-	userConn, err := grpc.Dial(
+	userConn, err := grpc.NewClient(
 		userServiceAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(AuthInterceptor))
@@ -410,7 +446,7 @@ func ConnectToServices(userServiceAddr, productServiceAddr string) (*OrderServic
 		return nil, fmt.Errorf("failed to connect to user service: %w", err)
 	}
 
-	productConn, err := grpc.Dial(
+	productConn, err := grpc.NewClient(
 		productServiceAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(AuthInterceptor))
@@ -422,7 +458,7 @@ func ConnectToServices(userServiceAddr, productServiceAddr string) (*OrderServic
 	userClient := NewUserServiceClient(userConn)
 	productClient := NewProductServiceClient(productConn)
 
-	return NewOrderService(userClient, productClient), nil
+	return NewOrderService(userClient, productClient, userConn, productConn), nil
 }
 
 // Client implementations
@@ -433,7 +469,8 @@ type UserServiceClient struct {
 func NewUserServiceClient(conn *grpc.ClientConn) UserService {
 	// Extract address from connection for HTTP calls
 	// In a real gRPC implementation, this would use the connection directly
-	return &UserServiceClient{baseURL: "http://localhost:50051"}
+	target := conn.Target()
+	return &UserServiceClient{baseURL: "http://" + target}
 }
 
 func (c *UserServiceClient) GetUser(ctx context.Context, userID int64) (*User, error) {
@@ -497,7 +534,7 @@ func (c *ProductServiceClient) GetProduct(ctx context.Context, productID int64) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, status.Errorf(codes.NotFound, "prodcut not found")
+		return nil, status.Errorf(codes.NotFound, "product not found")
 	}
 
 	var product Product
