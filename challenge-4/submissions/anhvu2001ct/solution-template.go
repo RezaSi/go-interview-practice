@@ -2,16 +2,27 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 )
 
+// concurrentlyRun is a generic parallel job execution function
+// using WaitGroup and atmic.Int instead of channel for high performance.
+// `numWorkes`: if negative, default to `runtime.NumCPu`, if zero, return immediately
 func concurrentlyRun[T any](jobs []T, numWorkers int, workFn func(idx int, job T)) {
-	if numWorkers == 0 {
+	if numWorkers < 0 {
+		numWorkers = runtime.NumCPU()
+	}
+
+	// if for any reason, numWorkers still <= 0, return immediately
+	if numWorkers <= 0 {
 		return
 	}
 
-	counter := atomic.Int32{}
+	numWorkers = min(numWorkers, len(jobs))
+
+	counter := atomic.Int64{}
 	n := len(jobs)
 	wg := sync.WaitGroup{}
 
@@ -32,7 +43,7 @@ func concurrentlyRun[T any](jobs []T, numWorkers int, workFn func(idx int, job T
 	wg.Wait()
 }
 
-// start bfs at node u
+// bfs start a bfs at node u, using slice as a FIFO queue
 func bfs(graph map[int][]int, u int) []int {
 	queue := []int{}
 	marked := map[int]struct{}{}
@@ -59,6 +70,8 @@ func bfs(graph map[int][]int, u int) []int {
 	return result
 }
 
+// ConcurrentBFSQueries performs bfs at multiple nodes (`queries` params)
+// It run multiple bfs concurrently, based on `numWorkers`
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
 	if numWorkers == 0 {
 		return nil
