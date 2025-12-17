@@ -1,6 +1,6 @@
 
 # Go Interview Practice
-q
+
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/RezaSi/go-interview-practice?style=for-the-badge&logo=github&color=yellow)](https://github.com/RezaSi/go-interview-practice/stargazers)
