@@ -1,6 +1,7 @@
 # Scoreboard for challenge-22
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xtrooper | 23 | 23 |
 | 22-7-co | 23 | 23 |
 | AlexO-85 | 23 | 23 |
 | Ali-Fartoot | 23 | 23 |
