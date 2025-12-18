@@ -48,14 +48,6 @@ func main() {
 	// Use gin.New() instead of gin.Default()
 	router := gin.New()
 
-	// TODO: Setup custom middleware in correct order
-	// 1. ErrorHandlerMiddleware (first to catch panics)
-	// 2. RequestIDMiddleware
-	// 3. LoggingMiddleware
-	// 4. CORSMiddleware
-	// 5. RateLimitMiddleware
-	// 6. ContentTypeMiddleware
-
 	router.Use(
 		ErrorHandlerMiddleware(),
 		RequestIDMiddleware(),
@@ -87,20 +79,18 @@ func main() {
 	{
 		protectedEndpoint.GET("admin/stats", getStats)
 
-		articles := protectedEndpoint.Group("articles")
-		articles.Use(ContentTypeMiddleware())
+		protecetdArticles := protectedEndpoint.Group("articles")
+		protecetdArticles.Use(ContentTypeMiddleware())
 		{
-			articles.POST("/", createArticle)
-			articles.PUT("/:id", updateArticle)
-			articles.DELETE("/:id", deleteArticle)
+			protecetdArticles.POST("/", createArticle)
+			protecetdArticles.PUT("/:id", updateArticle)
+			protecetdArticles.DELETE("/:id", deleteArticle)
 		}
 	}
 
 	// Start server on port 8080
 	router.Run(":8080")
 }
-
-// TODO: Implement middleware functions
 
 // RequestIDMiddleware generates a unique request ID for each request
 func RequestIDMiddleware() gin.HandlerFunc {
@@ -339,11 +329,8 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 	})
 }
 
-// TODO: Implement route handlers
-
 // ping handles GET /ping - health check endpoint
 func ping(c *gin.Context) {
-	// TODO: Return simple pong response with request ID
 	c.JSON(http.StatusOK, APIResponse{
 		Success:   true,
 		Message:   "Pong",
@@ -353,7 +340,6 @@ func ping(c *gin.Context) {
 
 // getArticles handles GET /articles - get all articles with pagination
 func getArticles(c *gin.Context) {
-	// TODO: Implement pagination (optional)
 
 	mu.RLock()
 	defer mu.RUnlock()
@@ -388,7 +374,7 @@ func getArticle(c *gin.Context) {
 	if index == -1 {
 		c.JSON(http.StatusNotFound, APIResponse{
 			Success:   false,
-			Error:     "Article Not found",
+			Error:     "Article not found",
 			RequestID: c.GetString("request_id"),
 		})
 		return
@@ -512,7 +498,6 @@ func updateArticle(c *gin.Context) {
 
 // deleteArticle handles DELETE /articles/:id - delete article (protected)
 func deleteArticle(c *gin.Context) {
-	// TODO: Get article ID from URL parameter
 	articlesID, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -523,8 +508,6 @@ func deleteArticle(c *gin.Context) {
 		})
 		return
 	}
-
-	// TODO: Find and remove article
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -542,10 +525,8 @@ func deleteArticle(c *gin.Context) {
 
 	articles = append(articles[:index], articles[index+1:]...)
 
-	// TODO: Return success message
 	c.JSON(http.StatusOK, APIResponse{
 		Success:   true,
-		Data:      articles,
 		RequestID: c.GetString("request_id"),
 	})
 
@@ -553,13 +534,12 @@ func deleteArticle(c *gin.Context) {
 
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
 func getStats(c *gin.Context) {
-	// TODO: Check if user role is "admin"
 	userRole := c.GetString("Auth")
 
 	if userRole != "admin" {
 		c.JSON(http.StatusForbidden, APIResponse{
 			Success:   false,
-			Error:     "Permission Deny",
+			Error:     "Access Deny",
 			RequestID: c.GetString("request_id"),
 		})
 		return
@@ -567,7 +547,6 @@ func getStats(c *gin.Context) {
 
 	mu.RLock()
 
-	// TODO: Return mock statistics
 	stats := map[string]interface{}{
 		"total_articles": len(articles),
 		"total_requests": 0, // Could track this in middleware
