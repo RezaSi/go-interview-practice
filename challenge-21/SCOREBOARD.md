@@ -1,6 +1,7 @@
 # Scoreboard for challenge-21
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xtrooper | 35 | 35 |
 | 4m4x | 35 | 35 |
 | Ali-Fartoot | 35 | 35 |
 | Be1chenok | 35 | 35 |
