@@ -100,7 +100,7 @@ func main() {
 	}
 
 	// Start server on port 8080
-	router.Run(":8081")
+	router.Run(":8080")
 }
 
 // TODO: Implement middleware functions
