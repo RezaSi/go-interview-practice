@@ -75,15 +75,12 @@ func main() {
 	// Public: GET /ping, GET /articles, GET /articles/:id
 	// Protected: POST /articles, PUT /articles/:id, DELETE /articles/:id, GET /admin/stats
 	//
-	publicEndpoint.Use()
+	publicEndpoint.GET("ping", ping)
+	articles := publicEndpoint.Group("articles")
+	articles.Use()
 	{
-		publicEndpoint.GET("ping", ping)
-		articles := publicEndpoint.Group("articles")
-		articles.Use()
-		{
-			articles.GET("/", getArticles)
-			articles.GET("/:id", getArticle)
-		}
+		articles.GET("/", getArticles)
+		articles.GET("/:id", getArticle)
 	}
 
 	protectedEndpoint.Use(AuthMiddleware())
@@ -177,8 +174,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		} else {
 			// Return 401 if invalid or missing
 			c.JSON(http.StatusUnauthorized, APIResponse{
-				Success: false,
-				Error:   "Invalid Key",
+				Success:   false,
+				Error:     "Invalid Key",
+				RequestID: c.GetString("request_id"),
 			})
 			c.Abort()
 			return
@@ -284,8 +282,9 @@ func RateLimitMiddleware() gin.HandlerFunc {
 
 		if !allowed {
 			c.JSON(http.StatusTooManyRequests, APIResponse{
-				Success: false,
-				Error:   "Too Many Requests",
+				Success:   false,
+				Error:     "Too Many Requests",
+				RequestID: c.GetString("request_id"),
 			})
 
 			c.Abort()
@@ -308,8 +307,9 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 			contentType := c.GetHeader("Content-Type")
 			if !strings.HasPrefix(contentType, "application/json") {
 				c.JSON(http.StatusUnsupportedMediaType, APIResponse{
-					Success: false,
-					Error:   "Unsupported MediaType",
+					Success:   false,
+					Error:     "Unsupported MediaType",
+					RequestID: c.GetString("request_id"),
 				})
 				c.Abort()
 				return
@@ -464,8 +464,9 @@ func updateArticle(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Error:   err.Error(),
+			Success:   false,
+			Error:     err.Error(),
+			RequestID: c.GetString("request_id"),
 		})
 		return
 	}
@@ -557,8 +558,9 @@ func getStats(c *gin.Context) {
 
 	if userRole != "admin" {
 		c.JSON(http.StatusForbidden, APIResponse{
-			Success: false,
-			Error:   "Permission Deny",
+			Success:   false,
+			Error:     "Permission Deny",
+			RequestID: c.GetString("request_id"),
 		})
 		return
 	}
