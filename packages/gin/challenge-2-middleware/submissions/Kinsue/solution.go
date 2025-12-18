@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 )
@@ -200,7 +202,7 @@ func CORSMiddleware() gin.HandlerFunc {
 
 		AllowOrigins := map[string]bool{
 			"http://localhost:3000": true,
-			"http://myblog.com":     true,
+			"https://myblog.com":    true,
 		}
 
 		if AllowOrigins[origin] {
@@ -235,22 +237,49 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		fillInterval = time.Minute / 100
 	)
 
-	var rateLimiters = make(map[string]*rate.Limiter)
+	type rateLimiterEntry struct {
+		limiter    *rate.Limiter
+		lastAccess time.Time
+	}
+
+	var rateLimiters = make(map[string]*rateLimiterEntry)
 	var mu sync.Mutex
+
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+
+		for range ticker.C {
+			mu.Lock()
+			now := time.Now()
+			for ip, entry := range rateLimiters {
+				if now.Sub(entry.lastAccess) > 10*time.Minute {
+					delete(rateLimiters, ip)
+				}
+
+			}
+			mu.Unlock()
+		}
+	}()
 
 	return func(c *gin.Context) {
 
 		clientIP := c.ClientIP()
 
 		mu.Lock()
-		limiter, exists := rateLimiters[clientIP]
+		entry, exists := rateLimiters[clientIP]
 		if !exists {
-			limiter = rate.NewLimiter(rate.Every(fillInterval), burstLimit)
-			rateLimiters[clientIP] = limiter
+			entry = &rateLimiterEntry{
+				limiter: rate.NewLimiter(rate.Every(fillInterval), burstLimit),
+			}
+			rateLimiters[clientIP] = entry
 		}
+		entry.lastAccess = time.Now()
+
 		mu.Unlock()
 
+		limiter := entry.limiter
 		allowed := limiter.Allow()
+
 		c.Header("X-RateLimit-Limit", strconv.Itoa(100))
 		c.Header("X-RateLimit-Remaining", strconv.Itoa(int(limiter.Tokens())))
 		c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(fillInterval).Unix(), 10))
@@ -269,8 +298,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	}
 }
 
-// ContentTypeMiddleware validates content type for POST/PUT reques:wq
-// ts
+// ContentTypeMiddleware validates content type for POST/PUT requests
 func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check content type for POST/PUT requests
@@ -303,16 +331,6 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		log.Printf("Panic: %v", recovered)
 
 		requestID := c.GetString("request_id")
-
-		if requestID == "" {
-
-			c.JSON(http.StatusBadGateway, APIResponse{
-				Success: false,
-				Error:   "RequestID Not Exists",
-			})
-			c.Abort()
-			return
-		}
 
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Success:   false,
@@ -410,21 +428,12 @@ func createArticle(c *gin.Context) {
 		return
 	}
 
-	// Add article to storage
-	if err := validateArticle(articleContent); err != nil {
-		c.JSON(http.StatusBadRequest, APIResponse{
-			Success: false,
-			Error:   err.Error(),
-		})
-		return
-	}
+	mu.Lock()
+	defer mu.Unlock()
 
 	articleContent.ID = nextID
 	articleContent.CreatedAt = time.Now()
 	articleContent.UpdatedAt = time.Now()
-
-	mu.Lock()
-	defer mu.Unlock()
 
 	articles = append(articles, articleContent)
 	nextID++
@@ -488,7 +497,7 @@ func updateArticle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, APIResponse{
 		Success:   true,
-		Data:      articleUpdate,
+		Data:      articles[index],
 		RequestID: c.GetString("request_id"),
 	})
 
@@ -548,12 +557,15 @@ func getStats(c *gin.Context) {
 		return
 	}
 
+	mu.RLock()
+
 	// TODO: Return mock statistics
 	stats := map[string]interface{}{
 		"total_articles": len(articles),
 		"total_requests": 0, // Could track this in middleware
 		"uptime":         "24h",
 	}
+	mu.RUnlock()
 
 	// Return stats in standard format
 
