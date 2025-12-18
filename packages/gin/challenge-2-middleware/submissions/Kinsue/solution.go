@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 )
@@ -463,6 +461,14 @@ func updateArticle(c *gin.Context) {
 
 	var articleUpdate Article
 	err = c.ShouldBindJSON(&articleUpdate)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, APIResponse{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
 
 	if err := validateArticle(articleUpdate); err != nil {
 		c.JSON(http.StatusBadRequest, APIResponse{
