@@ -27,7 +27,7 @@ func ConnectDB() (*gorm.DB, error) {
 	}
 
 	err = db.AutoMigrate(&User{})
-	return db, nil
+	return db, err
 }
 
 // CreateUser creates a new user in the database
