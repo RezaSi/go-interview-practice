@@ -64,24 +64,27 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 // UpdateUser updates an existing user's information
 func UpdateUser(db *gorm.DB, user *User) error {
 	// TODO: Implement user update
-	_, err := GetUserByID(db, user.ID)
-	if err != nil {
-		return err
+	result := db.Model(&User{}).Where("id = ?", user.ID).Updates(user)
+
+	if result.Error != nil {
+		return result.Error
 	}
 
-	result := db.Save(user)
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
 
-	return result.Error
+	return nil
 }
 
 // DeleteUser removes a user from the database
 func DeleteUser(db *gorm.DB, id uint) error {
 	// TODO: Implement user deletion
 
-	_, err := GetUserByID(db, id)
-	if err != nil {
-		return err
-	}
 	result := db.Delete(&User{}, id)
-	return result.Error
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
