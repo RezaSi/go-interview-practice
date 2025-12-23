@@ -44,7 +44,7 @@ func MinCoins(amount int, denominations []int) int {
 	  amount %= denominations[i]
 	}
 	
-	if cnt == 0 {
+	if amount != 0 {
 	    return -1
 	}
 	
@@ -65,6 +65,10 @@ func CoinCombination(amount int, denominations []int) map[int]int {
 	  res := amount/denominations[i]
 	  mp[denominations[i]] = res
 	  amount %= denominations[i]
+	}
+
+	if amount != 0 {
+	    return make(map[int]int)
 	}
 
 	return mp
