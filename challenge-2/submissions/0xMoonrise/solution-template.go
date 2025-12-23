@@ -24,9 +24,9 @@ func main() {
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
 	var builder strings.Builder
-	length := len(s)
-	for i := range length {
-	    builder.WriteString(string(s[length - i -1]))
+	runes := []rune(s)
+	for i := range len(runes) {
+	    builder.WriteRune(runes[len(runes) - i - 1])
 	}
 	return builder.String()
 }
