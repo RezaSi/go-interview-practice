@@ -18,16 +18,21 @@ import (
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
+
+var nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 func CountWordFrequency(text string) map[string]int {
 	mp := make(map[string]int)
 	
-	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	text = strings.ReplaceAll(text, "-", " ")
 	words := strings.Fields(text)
 	for _, w := range words {
-	    sanitized := re.ReplaceAllString(w, "")
+	    sanitized := nonAlphanumericRegex.ReplaceAllString(w, "")
 	    word := strings.ToLower(sanitized)
-	    
+
+		if word == "" {
+	        continue
+	    }
+		
 	    mp[word]++
 	}
 	return mp
