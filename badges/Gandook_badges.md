@@ -14,9 +14,9 @@
 [![Go Interview Practice](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/Gandook.json&style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 📊 Static Badges Collection
-[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-17%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Achievement Level](https://img.shields.io/badge/Level-🎯_Expert-blue?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Completion Rate](https://img.shields.io/badge/Completion-56.7%25-blue?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-22%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Achievement Level](https://img.shields.io/badge/Level-🏆_Master-gold?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Completion Rate](https://img.shields.io/badge/Completion-73.3%25-gold?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 
 ### 🔗 Repository Link Badge
@@ -27,6 +27,6 @@
 ### 📈 Your Achievement Summary
 
 **👤 Username:** @Gandook  
-**🏅 Achievement Level:** 🎯 **Expert Developer**  
-**📊 Classic Challenges:** 17/30 (56.7% complete)  
+**🏅 Achievement Level:** 🏆 **Master Developer**  
+**📊 Classic Challenges:** 22/30 (73.3% complete)  
 **🔗 Repository:** [Go Interview Practice](https://github.com/RezaSi/go-interview-practice)  
