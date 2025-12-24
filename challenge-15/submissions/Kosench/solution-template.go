@@ -195,6 +195,7 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.Error(w, "unsupported_response_type", http.StatusBadRequest)
+		return
 	}
 
 	clientID := query.Get("client_id")
@@ -274,7 +275,11 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	s.authCodes[code] = authCode
 	s.mu.Unlock()
 
-	redirectURL, _ := url.Parse(redirectURI)
+	redirectURL, err := url.Parse(redirectURI)
+	if err != nil {
+		http.Error(w, "invalid redirect_uri", http.StatusInternalServerError)
+		return
+	}
 	q := redirectURL.Query()
 	q.Set("code", code)
 	if state != "" {
@@ -305,7 +310,11 @@ func (s *OAuth2Server) isScopeAllowed(client *OAuth2ClientInfo, scope string) bo
 
 func (s *OAuth2Server) redirectWithError(w http.ResponseWriter, r *http.Request,
 	redirectURI, errorCode, errorDescription, state string) {
-	redirectURL, _ := url.Parse(redirectURI)
+	redirectURL, err := url.Parse(redirectURI)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	q := redirectURL.Query()
 	q.Set("error", errorCode)
 	if errorDescription != "" {
@@ -485,7 +494,10 @@ func (s *OAuth2Server) handleAuthorizationCodeGrant(w http.ResponseWriter, r *ht
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store") // Tokens should not be cached!
 	w.Header().Set("Pragma", "no-cache")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		// Log error - response headers already sent, cannot change status
+		fmt.Printf("failed to encode token response: %v\n", err)
+	}
 }
 
 // handleRefreshTokenGrant handles access token refresh
@@ -936,9 +948,13 @@ func (c *OAuth2Client) MakeAuthenticatedRequest(urlStr string, method string) (*
 			return nil, fmt.Errorf("token refresh after 401 failed: %w", err)
 		}
 
-		// Repeat the request with the new token
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AccessToken))
-		resp, err = client.Do(req)
+		// Create a new request with the new token
+		retryReq, err := http.NewRequest(method, urlStr, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create retry request: %w", err)
+		}
+		retryReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AccessToken))
+		resp, err = client.Do(retryReq)
 		if err != nil {
 			return nil, fmt.Errorf("retry request failed: %w", err)
 		}
@@ -958,18 +974,16 @@ func main() {
 		RedirectURIs:  []string{"http://localhost:8080/callback"},
 		AllowedScopes: []string{"read", "write"},
 	}
-	server.RegisterClient(client)
+	if err := server.RegisterClient(client); err != nil {
+		fmt.Printf("Failed to register client: %v\n", err)
+		return
+	}
 
-	// Start the server in a goroutine
-	go func() {
-		err := server.StartServer(9000)
-		if err != nil {
-			fmt.Printf("Error starting server: %v\n", err)
-		}
-	}()
-
-	fmt.Println("OAuth2 server is running on port 9000")
-
+	// Start the server (blocks)
+	fmt.Println("Starting OAuth2 server on port 9000")
+	if err := server.StartServer(9000); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+	}
 	// Example of using the client (this wouldn't actually work in main, just for demonstration)
 	/*
 		client := NewOAuth2Client(OAuth2Config{
