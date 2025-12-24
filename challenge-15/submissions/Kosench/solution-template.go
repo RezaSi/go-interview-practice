@@ -608,7 +608,10 @@ func (s *OAuth2Server) handleRefreshTokenGrant(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Pragma", "no-cache")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		// Log error - response headers already sent, cannot change status
+		fmt.Printf("failed to encode token response: %v\n", err)
+	}
 }
 
 func (s *OAuth2Server) tokenError(w http.ResponseWriter, errorCode, description string, statusCode int) {
