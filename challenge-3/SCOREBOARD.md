@@ -1,6 +1,7 @@
 # Scoreboard for challenge-3
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xtrooper | 5 | 5 |
 | 4m4x | 5 | 5 |
 | ADEMOLA200 | 5 | 5 |
 | AkifhanIlgaz | 5 | 5 |
@@ -23,10 +24,12 @@
 | KaiserKun | 5 | 5 |
 | KhaledMosaad | 5 | 5 |
 | Kosench | 5 | 5 |
+| LouisChen-TW | 5 | 5 |
 | MYK12397 | 5 | 5 |
 | MiladJlz | 5 | 5 |
 | MuraliMohan-2000 | 5 | 5 |
 | PolinaSvet | 5 | 5 |
+| PsGov | 5 | 5 |
 | RezaSi | 5 | 5 |
 | Sahillather002 | 5 | 5 |
 | Sairaviteja27 | 5 | 5 |
@@ -43,6 +46,7 @@
 | aseifi880 | 5 | 5 |
 | ashwinipatankar | 5 | 5 |
 | awsl1110 | 5 | 5 |
+| azs0309 | 5 | 5 |
 | baindraraj | 5 | 5 |
 | berkaykrc | 5 | 5 |
 | berkkaradalan | 5 | 5 |
@@ -78,6 +82,7 @@
 | lanmanul | 5 | 5 |
 | lyb88999 | 5 | 5 |
 | macborowy | 5 | 5 |
+| maikreyes | 5 | 5 |
 | manish-npx | 5 | 5 |
 | mayconvm | 5 | 5 |
 | mczajk | 5 | 5 |
