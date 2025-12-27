@@ -72,8 +72,8 @@ func getUserByID(c *gin.Context) {
     return
   }
 
-  user, id := findUserByID(id)
-  if id == -1 {
+  user, index := findUserByID(id)
+  if index == -1 {
     c.JSON(http.StatusNotFound, Response{
       Success: false,
       Code:    http.StatusNotFound,
