@@ -169,7 +169,14 @@ func updateUser(c *gin.Context) {
   }
 
   newUser := User{}
-  json.Unmarshal(jsonData, &newUser)
+  if err = json.Unmarshal(jsonData, &newUser); err != nil {
+    c.JSON(http.StatusBadRequest, Response{
+      Success: false,
+      Error:   "Invalid JSON format",
+      Code:    http.StatusBadRequest,
+    })
+    return
+  }
   err = validateUser(newUser)
 
   if err != nil {
