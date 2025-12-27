@@ -84,7 +84,7 @@ func getUserByID(c *gin.Context) {
 
   c.JSON(http.StatusOK, Response{
     Success: true,
-    Message: "User retrive successfully",
+    Message: "User retrieved successfully",
     Data:    user,
     Code:    http.StatusOK,
   })
