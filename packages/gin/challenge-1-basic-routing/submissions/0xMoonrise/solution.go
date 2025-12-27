@@ -146,9 +146,16 @@ func updateUser(c *gin.Context) {
     return
   }
 
-  user, id := findUserByID(id)
+  user, index := findUserByID(id)
 
-  if id == -1 {
+  if index == -1 {
+    c.JSON(http.StatusNotFound, Response{
+      Success: false,
+      Code:    http.StatusNotFound,
+      Error:   "User id not found.",
+    })
+    return
+  }
     c.JSON(http.StatusNotFound, Response{
       Success: false,
       Code:    http.StatusNotFound,
