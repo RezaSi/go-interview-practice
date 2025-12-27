@@ -41,11 +41,11 @@ func main() {
   r := gin.Default()
 
   r.GET("/users", getAllUsers)
+  r.GET("/users/search", searchUsers)
   r.GET("/users/:id", getUserByID)
   r.POST("/users", createUser)
   r.PUT("/users/:id", updateUser)
   r.DELETE("/users/:id", deleteUser)
-  r.GET("/users/search", searchUsers)
 
   r.Run(":8080")
 }
