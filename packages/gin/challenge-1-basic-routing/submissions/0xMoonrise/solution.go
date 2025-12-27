@@ -175,7 +175,7 @@ func updateUser(c *gin.Context) {
   if err != nil {
     c.JSON(http.StatusBadRequest, Response{
       Success: false,
-      Error:   "Cannot update de user",
+      Error:   "Cannot update the user",
       Code:    http.StatusBadRequest,
     })
     return
