@@ -6,6 +6,8 @@ import (
 	"regexp"
 )
 
+var re = regexp.MustCompile(`[^a-z0-9]+`)
+
 // CountWordFrequency takes a string containing multiple words and returns
 // a map where each key is a word and the value is the number of times that
 // word appears in the string. The comparison is case-insensitive.
@@ -18,30 +20,26 @@ import (
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
-	e := strings.ToLower(text)
-	f := strings.ReplaceAll(e, "-", " ")
-	g := strings.ReplaceAll(f, "'", "")
-	
-	var re = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+    e := strings.ToLower(text)
+    f := strings.ReplaceAll(e, "-", " ")
+    g := strings.ReplaceAll(f, "'", "")
 
     fields := strings.Fields(g)
     for i:=0; i<len(fields); i++ {
         fields[i] = re.ReplaceAllString(fields[i], "")
     }	
-	
-	
-	countwordsmap := make(map[string]int)
-	
-	for _, h := range fields{
-            count, ok := countwordsmap[h]
-            if ok {
-                count = count + 1
-                countwordsmap[h] = count
-            }else {
-                countwordsmap[h] = 1
-                
-            }
-	}
 
-	return countwordsmap
+    countwordsmap := make(map[string]int)
+	for _, h := range fields{
+        count, ok := countwordsmap[h]
+        if ok {
+            count = count + 1
+            countwordsmap[h] = count
+        }else {
+            countwordsmap[h] = 1
+                
+        }
+    }
+
+    return countwordsmap
 } 
