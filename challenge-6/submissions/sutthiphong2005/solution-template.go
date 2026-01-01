@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-var re = regexp.MustCompile(`[^a-z0-9]+`)
+var re = regexp.MustCompile(`[^a-z0-9 ]+`)
 
 // CountWordFrequency takes a string containing multiple words and returns
 // a map where each key is a word and the value is the number of times that
@@ -23,11 +23,9 @@ func CountWordFrequency(text string) map[string]int {
     e := strings.ToLower(text)
     f := strings.ReplaceAll(e, "-", " ")
     g := strings.ReplaceAll(f, "'", "")
+    h := re.ReplaceAllString(g, " ")
 
-    fields := strings.Fields(g)
-    for i:=0; i<len(fields); i++ {
-        fields[i] = re.ReplaceAllString(fields[i], "")
-    }	
+    fields := strings.Fields(h)
 
     countwordsmap := make(map[string]int)
 	for _, h := range fields{
