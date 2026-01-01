@@ -2,8 +2,8 @@
 package challenge6
 
 import (
-	"strings"
 	"regexp"
+	"strings"
 )
 
 var re = regexp.MustCompile(`[^a-z0-9 ]+`)
@@ -20,24 +20,17 @@ var re = regexp.MustCompile(`[^a-z0-9 ]+`)
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
-    e := strings.ToLower(text)
-    f := strings.ReplaceAll(e, "-", " ")
-    g := strings.ReplaceAll(f, "'", "")
-    h := re.ReplaceAllString(g, " ")
+	lowercased := strings.ToLower(text)
+	dashesReplaced := strings.ReplaceAll(lowercased, "-", " ")
+	apostrophesRemoved := strings.ReplaceAll(dashesReplaced, "'", "")
+	cleaned := re.ReplaceAllString(apostrophesRemoved, " ")
 
-    fields := strings.Fields(h)
+	fields := strings.Fields(cleaned)
 
-    countwordsmap := make(map[string]int)
-	for _, h := range fields{
-        count, ok := countwordsmap[h]
-        if ok {
-            count = count + 1
-            countwordsmap[h] = count
-        }else {
-            countwordsmap[h] = 1
-                
-        }
-    }
+	countwordsmap := make(map[string]int)
+	for _, word := range fields {
+		countwordsmap[word]++
+	}
 
-    return countwordsmap
-} 
+	return countwordsmap
+}
