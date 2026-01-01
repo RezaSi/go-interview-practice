@@ -26,6 +26,7 @@ func (m *Manager) RemoveEmployee(id int) {
 	for i, v := range m.Employees {
 	    if v.ID == id {
 	        m.Employees = slices.Delete(m.Employees, i, i+1) 
+	        return
 	    }
 	    
 	}
