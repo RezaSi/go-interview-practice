@@ -36,7 +36,7 @@ func (m *Manager) RemoveEmployee(id int) {
 func (m *Manager) GetAverageSalary() float64 {
 	var sum float64
 	for _, v := range m.Employees {
-	    sum = sum + v.Salary
+	    sum += v.Salary
 	}
 	
 	if len(m.Employees) > 0 {
