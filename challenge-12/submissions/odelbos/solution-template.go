@@ -2,10 +2,10 @@ package challenge12
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"encoding/json"
 )
 
 type Reader interface {
@@ -101,22 +101,19 @@ func (p *Pipeline) Process(ctx context.Context) error {
 			return err
 		}
 
-		for _, v := range(p.Validators) {
+		for _, v := range p.Validators {
 			if err = v.Validate(data); err != nil {
 				return err
 			}
 		}
 
-		for _, t := range(p.Transformers) {
+		for _, t := range p.Transformers {
 			if data, err = t.Transform(data); err != nil {
 				return err
 			}
-			if data == nil {
-				return ErrTransformationFailed
-			}
 		}
 
-		if err = p.Writer.Write(ctx, nil); err != nil {
+		if err = p.Writer.Write(ctx, data); err != nil {
 			return err
 		}
 		return nil
@@ -170,9 +167,9 @@ func (jv *JSONValidator) Validate(data []byte) error {
 	var tmp map[string]any
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return &ValidationError{
-			Field: "",
+			Field:   "",
 			Message: err.Error(),
-			Err: ErrInvalidFormat,
+			Err:     ErrInvalidFormat,
 		}
 	}
 	return nil
@@ -190,9 +187,9 @@ func (sv *SchemaValidator) Validate(data []byte) error {
 	var tmp map[string]any
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return &ValidationError{
-			Field: "",
+			Field:   "",
 			Message: err.Error(),
-			Err: ErrInvalidFormat,
+			Err:     ErrInvalidFormat,
 		}
 	}
 	return nil
@@ -263,4 +260,4 @@ func (fw *FileWriter) Write(ctx context.Context, data []byte) error {
 		}
 		return nil
 	}
-} 
+}
