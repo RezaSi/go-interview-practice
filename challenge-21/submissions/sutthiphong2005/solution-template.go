@@ -30,7 +30,7 @@ func BinarySearch(arr []int, target int) int {
     right := len(arr) - 1
     
     for left <= right {
-        mid := left + (right - left ) / 2
+        mid := left + (right - left) / 2
         
         if arr[mid] == target {
             return mid
@@ -49,7 +49,7 @@ func BinarySearch(arr []int, target int) int {
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 	if left <= right {
-	    mid := left + (right - left ) / 2
+	    mid := left + (right - left) / 2
 	    
         if arr[mid] == target {
             return mid
