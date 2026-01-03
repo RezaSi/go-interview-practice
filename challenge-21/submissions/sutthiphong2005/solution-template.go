@@ -29,14 +29,14 @@ func BinarySearch(arr []int, target int) int {
     left := 0
     right := len(arr) - 1
     
-    mid := (left + right ) /2
+    mid := left + (right - left ) / 2
     
     for left <= right {
         if arr[mid] == target {
             return mid
-        }else if arr[mid] < target {
+        } else if arr[mid] < target {
             left = mid + 1
-        }else if arr[mid] > target {
+        } else if arr[mid] > target {
             right = mid - 1
         }
         
@@ -51,13 +51,13 @@ func BinarySearch(arr []int, target int) int {
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 	if left <= right {
-	    mid := (left + right ) /2
+	    mid := left + (right - left ) / 2
 	    
         if arr[mid] == target {
             return mid
-        }else if arr[mid] < target {
+        } else if arr[mid] < target {
             left = mid + 1
-        }else if arr[mid] > target {
+        } else if arr[mid] > target {
             right = mid - 1
         }	 
         
@@ -71,23 +71,29 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 // FindInsertPosition returns the index where the target should be inserted
 // to maintain the sorted order of the array.
 func FindInsertPosition(arr []int, target int) int {
-    result := 0
+  
+    if len(arr) == 0 {
+        return 0
+    }
     
-    if len(arr) != 0 {
+    left := 0
+    right := len(arr) - 1
     
-        for i:=0; i<len(arr); i++ {
-            if target > arr[i] {
-                result = i+1
-            }
-            if target == arr[i] {
-                result = i
-                break
-            }
-                
-        }      
+    for left<=right {
         
+        mid := left + (right - left) /2
+        
+        if arr[mid] == target {
+            return mid
+        } else if arr[mid] < target {
+            left = mid + 1
+        } else if arr[mid] > target {
+            right = mid - 1
+        } 
         
     }
     
-    return result
+    return left
+    
+
 }
