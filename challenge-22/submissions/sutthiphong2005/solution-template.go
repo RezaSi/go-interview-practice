@@ -34,19 +34,24 @@ func MinCoins(amount int, denominations []int) int {
         return 0
     }
 
-    totalcoins := 0
+    totalCoins := 0
     
-    for i:=len(denominations)-1; i>=0; i-- {
-        numcoins := amount / denominations[i]
-        amount = amount - numcoins * denominations[i]
-        totalcoins += numcoins
+    for i := len(denominations) - 1; i >= 0; i-- {
+        numCoins := amount / denominations[i]
+        amount = amount - numCoins * denominations[i]
+        totalCoins += numCoins
     }  
     
-    if totalcoins == 0 {
+    coinCombo := CoinCombination(amount, denominations)
+	for _, count := range coinCombo {
+		totalCoins += count
+	}
+	
+    if totalCoins == 0 {
         return -1
     }
     
-	return totalcoins
+	return totalCoins
 }
 // CoinCombination returns a map with the specific combination of coins that gives
 // the minimum number. The keys are coin denominations and values are the number of
@@ -54,17 +59,17 @@ func MinCoins(amount int, denominations []int) int {
 // If the amount cannot be made with the given denominations, return an empty map.
 func CoinCombination(amount int, denominations []int) map[int]int {
     
-    coinmaps := make(map[int]int)
+    coinMaps := make(map[int]int)
 	
     for i:=len(denominations)-1; i>=0; i-- {
-        numcoins := amount / denominations[i]
-        amount = amount - numcoins * denominations[i]
+        numCoins := amount / denominations[i]
+        amount = amount - numCoins * denominations[i]
         
-        if numcoins > 0 {
-            coinmaps[denominations[i]] = numcoins
+        if numCoins > 0 {
+            coinMaps[denominations[i]] = numCoins
         }
     }  	
 	
 	
-	return coinmaps
+	return coinMaps
 }
