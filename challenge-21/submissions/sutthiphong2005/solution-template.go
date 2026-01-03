@@ -29,18 +29,16 @@ func BinarySearch(arr []int, target int) int {
     left := 0
     right := len(arr) - 1
     
-    mid := left + (right - left ) / 2
-    
     for left <= right {
+        mid := left + (right - left ) / 2
+        
         if arr[mid] == target {
             return mid
         } else if arr[mid] < target {
             left = mid + 1
-        } else if arr[mid] > target {
+        } else {
             right = mid - 1
         }
-        
-        mid = (left + right ) /2
     }
 
     
@@ -57,13 +55,13 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
             return mid
         } else if arr[mid] < target {
             left = mid + 1
-        } else if arr[mid] > target {
+        } else {
             right = mid - 1
         }	 
         
         return BinarySearchRecursive(arr, target, left, right)
         
-	}else{
+	} else {
 	    return -1
 	}
 }
@@ -79,15 +77,15 @@ func FindInsertPosition(arr []int, target int) int {
     left := 0
     right := len(arr) - 1
     
-    for left<=right {
+    for left <= right {
         
-        mid := left + (right - left) /2
+        mid := left + (right - left) / 2
         
         if arr[mid] == target {
             return mid
         } else if arr[mid] < target {
             left = mid + 1
-        } else if arr[mid] > target {
+        } else {
             right = mid - 1
         } 
         
