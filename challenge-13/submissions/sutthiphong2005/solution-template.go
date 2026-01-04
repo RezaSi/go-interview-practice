@@ -35,12 +35,14 @@ func InitDB(dbPath string) (*sql.DB, error) {
     
     // Test the connection
     if err = db.Ping(); err != nil {
+        db.Close()
         return nil, err
     }
     
 
     _, err = db.Exec("CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, category TEXT)")
     if err != nil {
+        db.Close()
         return nil, err
     }
 
@@ -49,7 +51,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 
 // CreateProduct adds a new product to the database
 func (ps *ProductStore) CreateProduct(product *Product) error {
-    result, err := ps.db.Exec("INSERT INTO products (name, price, quantity, category) VALUES (?, ?, ?, ?)",product.Name, product.Price, product.Quantity, product.Category)
+    result, err := ps.db.Exec("INSERT INTO products (name, price, quantity, category) VALUES (?, ?, ?, ?)", product.Name, product.Price, product.Quantity, product.Category)
     if err != nil {
         return err
     }
@@ -89,10 +91,19 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
     }
     defer stmt.Close()
     
-    _, err = stmt.Exec(product.Name, product.Price, product.Quantity, product.Category, product.ID)
+    result, err := stmt.Exec(product.Name, product.Price, product.Quantity, product.Category, product.ID)
     if err != nil {
         return err
     }
+    
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+    
+    if rowsAffected == 0 {
+        return fmt.Errorf("product with ID %d not found", product.ID)
+    }    
 	
 	return nil
 }
@@ -105,10 +116,18 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
     }
     defer stmt.Close()
     
-    _, err = stmt.Exec(id)
+    result, err := stmt.Exec(id)
     if err != nil {
         return err
     }
+    
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }    
+    if rowsAffected == 0 {
+        return fmt.Errorf("product with ID %d not found", id)
+    }   
     
     return nil
 
@@ -116,10 +135,14 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
 
 // ListProducts returns all products with optional filtering by category
 func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
-    rows, err := ps.db.Query("SELECT id, name, price, quantity, category FROM products")
+    
+    var rows *sql.Rows
+    var err error
     
     if len(category) != 0 {
         rows, err = ps.db.Query("SELECT id, name, price, quantity, category FROM products WHERE category = ?", category)
+    }else{
+        rows, err = ps.db.Query("SELECT id, name, price, quantity, category FROM products")
     }
     
     if err != nil {
