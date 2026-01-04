@@ -3,23 +3,26 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 )
 
-const validToken = "secret"
+var validToken = getValidToken()
+
+func getValidToken() string {
+	token := os.Getenv("AUTH_TOKEN")
+	if token == "" {
+		return "secret" // fallback for local testing
+	}
+	return token
+}
 
 // AuthMiddleware checks the "X-Auth-Token" header.
 // If it's "secret", call the next handler.
 // Otherwise, respond with 401 Unauthorized.
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Implement the logic:
-		//  1) Grab the "X-Auth-Token" header
-		//  2) Compare against validToken
-		//  3) If mismatch or missing, respond with 401
-		//  4) Otherwise pass to next handler
-        // Get token from header
         authHeader := r.Header.Get("X-Auth-Token")
-        if authHeader == "" ||  authHeader != validToken {
+        if authHeader != validToken {
             http.Error(w, "", http.StatusUnauthorized)
             return
         }	
