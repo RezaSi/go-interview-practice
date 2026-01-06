@@ -23,6 +23,7 @@ func (m *Manager) RemoveEmployee(id int) {
 	for i, x := range(m.Employees){
 	    if x.ID == id {
 	         m.Employees = append(m.Employees[:i], m.Employees[i+1:] ...)
+			break
 	    }
 	}
 }
