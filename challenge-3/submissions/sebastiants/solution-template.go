@@ -23,29 +23,29 @@ func (m *Manager) RemoveEmployee(id int) {
 	for i, x := range(m.Employees){
 	    if x.ID == id {
 	         m.Employees = append(m.Employees[:i], m.Employees[i+1:] ...)
+	         return
 	    }
 	}
+	return
 }
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
 	sum := 0.0
-	if len(m.Employees) == 0 {
-	    return 0.0
-	} else {
-	for _, cur := range (m.Employees){
-	    sum += cur.Salary
-	}
-	return sum / float64(len(m.Employees))
-
-	}
+	if len(m.Employees) != 0 {
+	    for _, cur := range (m.Employees){
+	        sum += cur.Salary
+	    } 
+	    return sum / float64(len(m.Employees))
+	    } 
+	return 0.0
 	}
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for _, cur := range(m.Employees){
+	for i, cur := range(m.Employees){
 	    if cur.ID == id {
-	        return &cur
+	        return &m.Employees[i]
 	    }
 	}
 	return nil
