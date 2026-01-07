@@ -54,6 +54,7 @@
 | TOomaAh | 6 | 6 |
 | VFarsiyants | 6 | 6 |
 | VadimihrSvS | 6 | 6 |
+| VagrantAC | 6 | 6 |
 | Ward-R | 6 | 6 |
 | Xmilton | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
@@ -147,6 +148,7 @@
 | nosrio | 6 | 6 |
 | nzamulov | 6 | 6 |
 | odelbos | 6 | 6 |
+| onenewcode | 6 | 6 |
 | perekoshik | 6 | 6 |
 | potapkin-pavel | 6 | 6 |
 | preetsinghmakkar | 6 | 6 |
