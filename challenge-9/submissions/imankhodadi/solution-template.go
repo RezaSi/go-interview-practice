@@ -56,11 +56,12 @@ func validateBook(book *Book) error {
 	if book.PublishedYear <= 0 {
 		return fmt.Errorf("%w: published year must be positive", ErrBookRepositoryCantCreate)
 	}
-	if book.ISBN != "" {
-		if len(book.ISBN) < 10 {
-			return fmt.Errorf("%w: ISBN too short", ErrBookRepositoryCantCreate)
-		}
-	}
+	// if book.ISBN != "" {
+	// 	isbnLen := len(book.ISBN)
+	// 	if isbnLen != 10 && isbnLen != 13 {
+	// 		return fmt.Errorf("%w: ISBN must be exactly 10 or 13 characters", ErrBookRepositoryCantCreate)
+	// 	}
+	// }
 	return nil
 }
 func (d *InMemoryBookRepository) GetAll() ([]*Book, error) {
@@ -183,14 +184,6 @@ func (d *DefaultBookService) SearchBooksByTitle(title string) ([]*Book, error) {
 	return d.repo.SearchByTitle(title)
 }
 
-type BookHandler struct {
-	Service BookService
-}
-
-func NewBookHandler(service BookService) *BookHandler {
-	return &BookHandler{Service: service}
-}
-
 func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -207,17 +200,9 @@ func writeError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	errorResponse := ErrorResponse{Error: message}
-	json.NewEncoder(w).Encode(errorResponse)
-}
-
-func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
-	router := mux.NewRouter()
-	router.HandleFunc("/api/books", h.getAllBooks).Methods("GET")
-	router.HandleFunc("/api/books", h.createBook).Methods("POST")
-	router.HandleFunc("/api/books/{id}", h.searchBooks).Methods("GET")
-	router.HandleFunc("/api/books/{id}", h.updateBook).Methods("PUT")
-	router.HandleFunc("/api/books/{id}", h.deleteBook).Methods("DELETE")
-	router.ServeHTTP(w, r)
+	if err := json.NewEncoder(w).Encode(errorResponse); err != nil {
+		log.Printf("Failed to encode error response: %v", err)
+	}
 }
 
 func (h *BookHandler) getAllBooks(w http.ResponseWriter, r *http.Request) {
@@ -311,22 +296,41 @@ func (h *BookHandler) searchBooksByTitle(w http.ResponseWriter, r *http.Request,
 	writeJSON(w, http.StatusOK, books)
 }
 
-func main() {
-	repo := NewInMemoryBookRepository()
-	service := NewBookService(repo)
-	handler := NewBookHandler(service)
+type BookHandler struct {
+	Service BookService
+}
 
+func NewBookHandler(service BookService) *BookHandler {
+	return &BookHandler{Service: service}
+}
+
+// this function signature is part of the assignment signature and cannot be deleted
+func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
+	router := mux.NewRouter()
+	router.HandleFunc("/api/books", h.getAllBooks).Methods("GET")
+	router.HandleFunc("/api/books", h.createBook).Methods("POST")
+	router.HandleFunc("/api/books/{id}", h.searchBooks).Methods("GET")
+	router.HandleFunc("/api/books/{id}", h.updateBook).Methods("PUT")
+	router.HandleFunc("/api/books/{id}", h.deleteBook).Methods("DELETE")
+	router.ServeHTTP(w, r)
+}
+
+func main() {
+ 	repo := NewInMemoryBookRepository()
+ 	service := NewBookService(repo)
+ 	handler := NewBookHandler(service)
+ 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/books", handler.HandleBooks)
 	mux.HandleFunc("/api/books/", handler.HandleBooks)
+
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-		}
-	})
-	log.Println("Server starting on :8080")
-	log.Println("Open http://localhost:8080 in your browser to test the API")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
-}
+
+ 		if r.Method == "GET" {
+ 			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+ 		}
+ 	})
+	if err := http.ListenAndServe(":8081", mux); err != nil {
+ 		log.Fatalf("Failed to start server: %v", err)
+ 	}
+ }
