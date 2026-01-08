@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	
 )
 
 type Book struct {
@@ -53,6 +53,9 @@ func validateBook(book *Book) error {
 	if book.Author == "" {
 		return fmt.Errorf("%w: author is empty", ErrBookRepositoryCantCreate)
 	}
+	if book.PublishedYear > time.Now().Year()+1 {
+		return fmt.Errorf("%w: published year cannot be too far in the future", ErrBookRepositoryCantCreate)
+	}
 	if book.PublishedYear <= 0 {
 		return fmt.Errorf("%w: published year must be positive", ErrBookRepositoryCantCreate)
 	}
@@ -69,7 +72,8 @@ func (d *InMemoryBookRepository) GetAll() ([]*Book, error) {
 	defer d.mu.RUnlock()
 	books := make([]*Book, 0, len(d.books))
 	for _, v := range d.books {
-		books = append(books, v)
+		copy := *v
+		books = append(books, &copy)
 	}
 	return books, nil
 }
@@ -90,8 +94,10 @@ func (d *InMemoryBookRepository) Create(book *Book) error {
 	if err := validateBook(book); err != nil {
 		return err
 	}
-	book.ID = uuid.New().String()
-	d.books[book.ID] = book
+	id := uuid.New().String()
+	book.ID = id
+	storedBook := *book
+	d.books[id] = &storedBook
 	return nil
 }
 
@@ -106,7 +112,8 @@ func (d *InMemoryBookRepository) Update(id string, book *Book) error {
 		return ErrBookRepositoryIdNotFound
 	}
 	book.ID = id
-	d.books[id] = book
+	storedBook := *book
+	d.books[id] = &storedBook
 	return nil
 }
 
@@ -128,7 +135,8 @@ func (d *InMemoryBookRepository) SearchBy(predicate func(*Book) bool) ([]*Book, 
 	books := make([]*Book, 0)
 	for _, book := range d.books {
 		if predicate(book) {
-			books = append(books, book)
+			copy := *book
+			books = append(books, &copy)
 		}
 	}
 	return books, nil
@@ -193,7 +201,9 @@ func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	w.Write(encoded)
+	if _, err := w.Write(encoded); err != nil {
+		log.Printf("Failed to write response: %v", err)
+	}
 }
 
 type ErrorResponse struct {
@@ -239,6 +249,7 @@ func (h *BookHandler) updateBook(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
 		return
 	}
+	book.ID = id // Explicitly set ID before update
 	if err := h.Service.UpdateBook(id, &book); err != nil {
 		if errors.Is(err, ErrBookRepositoryIdNotFound) {
 			writeError(w, http.StatusNotFound, err.Error())
@@ -329,17 +340,17 @@ func main() {
 	repo := NewInMemoryBookRepository()
 	service := NewBookService(repo)
 	handler := NewBookHandler(service)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/books", handler.HandleBooks)
-	mux.HandleFunc("/api/books/", handler.HandleBooks)
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+	httpmux := http.NewServeMux()
+	httpmux.HandleFunc("/api/books", handler.HandleBooks)
+	httpmux.HandleFunc("/api/books/", handler.HandleBooks)
+	httpmux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-	if err := http.ListenAndServe(":8083", mux); err != nil {
+	if err := http.ListenAndServe(":8083", httpmux); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
