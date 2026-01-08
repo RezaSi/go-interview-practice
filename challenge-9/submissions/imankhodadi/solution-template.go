@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	
 )
 
 type Book struct {
@@ -42,7 +43,7 @@ func NewInMemoryBookRepository() *InMemoryBookRepository {
 var (
 	ErrBookRepositoryIdNotFound = errors.New("no book with this ID was found")
 	ErrBookRepositoryCantCreate = errors.New("book is invalid, cannot create book")
-	ErrInvalidJSON              = errors.New("Invalid JSON")
+	ErrInvalidJSON              = errors.New("invalid JSON")
 )
 
 func validateBook(book *Book) error {
@@ -66,7 +67,7 @@ func validateBook(book *Book) error {
 func (d *InMemoryBookRepository) GetAll() ([]*Book, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	var books []*Book
+	books := make([]*Book, 0, len(d.books))
 	for _, v := range d.books {
 		books = append(books, v)
 	}
@@ -295,8 +296,12 @@ func (h *BookHandler) searchBooksByAuthor(w http.ResponseWriter, r *http.Request
 
 func (h *BookHandler) searchBooksByTitle(w http.ResponseWriter, r *http.Request, title string) {
 	books, err := h.Service.SearchBooksByTitle(title)
+	if len(books) == 0 {
+		writeJSON(w, http.StatusOK, books)
+		return
+	}
 	if err != nil {
-		writeError(w, http.StatusNotFound, err.Error())
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, books)
@@ -333,6 +338,8 @@ func main() {
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 	if err := http.ListenAndServe(":8083", mux); err != nil {
