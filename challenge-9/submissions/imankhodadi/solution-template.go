@@ -78,7 +78,8 @@ func (d *InMemoryBookRepository) GetByID(id string) (*Book, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if book, exists := d.books[id]; exists {
-		return book, nil
+		copy := *book
+		return &copy, nil
 	}
 	return nil, ErrBookRepositoryIdNotFound
 }
@@ -296,10 +297,6 @@ func (h *BookHandler) searchBooksByAuthor(w http.ResponseWriter, r *http.Request
 
 func (h *BookHandler) searchBooksByTitle(w http.ResponseWriter, r *http.Request, title string) {
 	books, err := h.Service.SearchBooksByTitle(title)
-	if len(books) == 0 {
-		writeJSON(w, http.StatusOK, books)
-		return
-	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
