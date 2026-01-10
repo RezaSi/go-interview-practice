@@ -46,17 +46,12 @@ func FindMax(numbers []int) int {
 // RemoveDuplicates returns a new slice with duplicate values removed,
 // preserving the original order of elements.
 func RemoveDuplicates(numbers []int) []int {
-	result := []int{}
+	seen := make(map[int]bool)
+	result := make([]int, 0, len(numbers))
+	
 	for _, vSource := range numbers {
-	    var isFound bool = false
-        for _, vResult := range result {
-	        if vResult == vSource {
-	            isFound = true
-	            break
-	        }
-	    
-        }
-        if !isFound {
+        if !seen[vSource] {
+            seen[vSource] = true
             result = append(result, vSource)
         } 
 	}
@@ -66,7 +61,8 @@ func RemoveDuplicates(numbers []int) []int {
 
 // ReverseSlice returns a new slice with elements in reverse order.
 func ReverseSlice(slice []int) []int {
-	result := []int{}
+	result := make([]int, 0, len(slice))
+	
 	for i:=len(slice)-1; i>=0; i-- {
 	    result = append(result, slice[i])
 	    
@@ -77,7 +73,8 @@ func ReverseSlice(slice []int) []int {
 // FilterEven returns a new slice containing only the even numbers
 // from the original slice.
 func FilterEven(numbers []int) []int {
-	result := []int{}
+	result := make([]int, 0, len(numbers))
+	
 	for _, vSource := range numbers {
 	    if vSource%2 == 0 {
 	        result = append(result, vSource)
