@@ -30,5 +30,4 @@ func ReverseString(s string) string {
 		b.WriteByte(s[i])
 	}
 	return b.String()
-	return ""
 }
