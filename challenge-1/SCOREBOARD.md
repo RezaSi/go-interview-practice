@@ -54,6 +54,7 @@
 | TOomaAh | 6 | 6 |
 | VFarsiyants | 6 | 6 |
 | VadimihrSvS | 6 | 6 |
+| VagrantAC | 6 | 6 |
 | Ward-R | 6 | 6 |
 | Xmilton | 6 | 6 |
 | YounesBouchbouk | 6 | 6 |
@@ -62,6 +63,7 @@
 | ZakirAvrora | 6 | 6 |
 | abhishek622 | 6 | 6 |
 | adi041518 | 6 | 6 |
+| affandisy | 6 | 6 |
 | agusu | 6 | 6 |
 | anotnow | 6 | 6 |
 | ansmonjol | 6 | 6 |
@@ -113,6 +115,7 @@
 | joaovitoralvares | 6 | 6 |
 | john-otienoh | 6 | 6 |
 | jordanhimawan | 6 | 6 |
+| jrab66 | 6 | 6 |
 | jvllmr | 6 | 6 |
 | k4sper1love | 6 | 6 |
 | kiramux | 6 | 6 |
@@ -147,6 +150,8 @@
 | nosrio | 6 | 6 |
 | nzamulov | 6 | 6 |
 | odelbos | 6 | 6 |
+| onenewcode | 6 | 6 |
+| pannawit2541 | 6 | 6 |
 | perekoshik | 6 | 6 |
 | potapkin-pavel | 6 | 6 |
 | preetsinghmakkar | 6 | 6 |
