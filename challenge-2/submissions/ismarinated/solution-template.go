@@ -27,7 +27,7 @@ func ReverseString(s string) string {
 	result := make([]rune, length)
 
 	for idx := range input {
-		result[idx] = input[length-idx]
+		result[idx] = input[length-idx-1]
 	}
 
 	return string(result)
