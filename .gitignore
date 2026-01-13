@@ -7,3 +7,5 @@ web-ui/.env
 *.env.production
 */.DS_Store
 .cursor/
+.vscode/settings.json
+.gitignore
