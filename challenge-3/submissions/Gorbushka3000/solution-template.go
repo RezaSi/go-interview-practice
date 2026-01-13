@@ -33,6 +33,9 @@ func (m *Manager) RemoveEmployee(id int) {
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
+    if len(m.Employees) == 0 {
+		return 0
+	}
 	var aveSal float64
 	for i := 0; i < len(m.Employees); i++ {
 		aveSal += m.Employees[i].Salary
