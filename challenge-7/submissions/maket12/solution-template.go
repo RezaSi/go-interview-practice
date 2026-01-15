@@ -144,6 +144,9 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	    }
 	}
 
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	
 	if a.Balance - amount < a.MinBalance {
 	    return &InsufficientFundsError{
 	        Amount: amount,
@@ -151,9 +154,6 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	        MinBalance: a.MinBalance,
 	    }
 	}
-	
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	
 	a.Balance -= amount
 	
