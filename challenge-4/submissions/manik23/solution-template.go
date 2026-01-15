@@ -2,18 +2,28 @@ package main
 
 import (
 	"container/list"
-	"math"
 	"sync"
 )
 
 
-func travel(graph map[int][]int, startNode int, result *sync.Map) {
+type reachableNode struct {
+	node  int
+	neigh []int
+}
 
-	nodeCount := len(graph)
+func process(graph map[int][]int, jobs <-chan int, resultBFS chan reachableNode) {
+	for startNode := range jobs {
+		reachableNode := travel(graph, startNode)
+		resultBFS <- reachableNode
+	}
+}
 
-	visited := make([]bool, nodeCount, nodeCount)
+func travel(graph map[int][]int, startNode int) reachableNode {
+
+	visited := make(map[int]bool)
 
 	list := list.New()
+	var order []int
 
 	list.PushBack(startNode)
 	visited[startNode] = true
@@ -22,13 +32,7 @@ func travel(graph map[int][]int, startNode int, result *sync.Map) {
 
 		node := list.Front().Value.(int)
 		list.Remove(list.Front())
-
-		l, ok := result.Load(startNode)
-		if !ok {
-			result.Store(startNode, []int{node})
-		} else {
-			result.Store(startNode, append(l.([]int), node))
-		}
+		order = append(order, node)
 
 		for _, neigh := range graph[node] {
 
@@ -38,6 +42,11 @@ func travel(graph map[int][]int, startNode int, result *sync.Map) {
 
 			}
 		}
+	}
+
+	return reachableNode{
+		node:  startNode,
+		neigh: order,
 	}
 }
 
@@ -63,41 +72,41 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 		return finalResult
 	}
 
-	var result sync.Map
+	jobs := make(chan int, len(queries))
+
+	resultBFS := make(chan reachableNode, len(queries))
+	defer close(resultBFS)
 
 	var wg sync.WaitGroup
 
-	for i := 1; i <= numWorkers; i++ {
-
-		factor := int(math.Ceil(float64(len(queries)) / float64(numWorkers)))
-		start := (i - 1) * factor
-		end := min((i)*factor, len(queries))
+	for range numWorkers {
 
 		wg.Add(1)
-		go func(start, end int) {
+		go func() {
 			defer wg.Done()
+			process(graph, jobs, resultBFS)
+		}()
 
-			for qIndex := start; qIndex < end; qIndex++ {
-
-				travel(graph, queries[qIndex], &result)
-
-			}
-
-		}(start, end)
 	}
+
+	go func() {
+		for _, startNode := range queries {
+			jobs <- startNode
+		}
+		close(jobs)
+	}()
 
 	wg.Wait()
 
-	finalResult := make(map[int][]int)
-
-	for _, startNode := range queries {
-		l, _ := result.Load(startNode)
-		neigh, _ := l.([]int)
-		finalResult[startNode] = neigh
+	resultMap := make(map[int][]int)
+	for range queries {
+		result := <-resultBFS
+		resultMap[result.node] = result.neigh
 	}
 
-	return finalResult
+	return resultMap
 }
+
 func main() {
 	// You can insert optional local tests here if desired.
 }
