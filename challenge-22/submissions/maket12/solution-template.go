@@ -26,7 +26,7 @@ func main() {
 	}
 }
 
-// MinCoins returns the minimum number of coins needed to make the given amount.
+// MinCoins returns the minimum number of coins needed to make the given amount (only works correctly for canonical/US denominations).
 // If the amount cannot be made with the given denominations, return -1.
 func MinCoins(amount int, denominations []int) int {
     if amount == 0 {
