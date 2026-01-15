@@ -6,10 +6,6 @@ import (
 	"sync"
 )
 
-type reachableNode struct {
-	key  int
-	Node int
-}
 
 func travel(graph map[int][]int, startNode int, result *sync.Map) {
 
