@@ -27,26 +27,26 @@ func main() {
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearch(arr []int, target int) int {
 	if arr == nil || len(arr) == 0 {
-	    return -1
+		return -1
 	}
 	if arr[0] == target {
-	    return 0
+		return 0
 	}
-	
+
 	var left, right int = 0, len(arr) - 1
 	var middle int
 	for left <= right {
-	    middle = left + (right - left) / 2
-	    switch {
-	        case arr[middle] == target:
-	            return middle
-	        case arr[middle] < target:
-	            left = middle + 1
-	        case arr[middle] > target:
-	            right = middle - 1
-	    }
+		middle = left + (right-left)/2
+		switch {
+		case arr[middle] == target:
+			return middle
+		case arr[middle] < target:
+			left = middle + 1
+		case arr[middle] > target:
+			right = middle - 1
+		}
 	}
-	
+
 	return -1
 }
 
@@ -54,32 +54,28 @@ func BinarySearch(arr []int, target int) int {
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 	if arr == nil || len(arr) == 0 {
-	    return -1
+		return -1
 	}
- func BinarySearchRecursive(arr []int, target int, left int, right int) int {
- 	if arr == nil || len(arr) == 0 {
- 	    return -1
- 	}
- 	if left > right {
- 	    return -1
- 	}
-	
+	if arr[0] == target {
+		return 0
+	}
+
 	if left > right {
-	    return -1
+		return -1
 	}
-	
-	var middle int = left + (right - left) / 2
-	
+
+	var middle int = left + (right-left)/2
+
 	if arr[middle] == target {
-	    return middle
+		return middle
 	}
 	if arr[middle] < target {
-	    return BinarySearchRecursive(arr, target, middle + 1, right)
+		return BinarySearchRecursive(arr, target, middle+1, right)
 	}
 	if arr[middle] > target {
-	    return BinarySearchRecursive(arr, target, left, middle - 1)
+		return BinarySearchRecursive(arr, target, left, middle-1)
 	}
-	
+
 	return -1
 }
 
@@ -87,11 +83,11 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 // to maintain the sorted order of the array.
 func FindInsertPosition(arr []int, target int) int {
 	if arr == nil {
-	    return 0
+		return 0
 	}
-	
+
 	left, right := 0, len(arr)-1
-	
+
 	for left <= right {
 		middle := left + (right-left)/2
 		if arr[middle] == target {
