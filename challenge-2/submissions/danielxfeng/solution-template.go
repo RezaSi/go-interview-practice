@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -23,14 +22,14 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	length := len(s)
+	res := []rune(s)
+	length := len(res)
 	
-	var sb strings.Builder
-	sb.Grow(length)
-	
-	for i := 0; i < length; i ++ {
-	    sb.WriteByte(s[length - i - 1])
+	for i := 0; i < length / 2; i++ {
+	    temp := res[i]
+	    res[i] = res[length - 1 - i]
+	    res[length - 1 - i] = temp
 	}
 	
-	return sb.String()
+	return string(res)
 }
