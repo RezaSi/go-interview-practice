@@ -47,5 +47,5 @@ func isDigit(c byte) bool {
 }
 
 func isLatin(c byte) bool {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == 27
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
