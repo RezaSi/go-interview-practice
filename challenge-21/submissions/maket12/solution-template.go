@@ -56,9 +56,13 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 	if arr == nil || len(arr) == 0 {
 	    return -1
 	}
-	if arr[0] == target {
-	    return 0
-	}
+ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
+ 	if arr == nil || len(arr) == 0 {
+ 	    return -1
+ 	}
+ 	if left > right {
+ 	    return -1
+ 	}
 	
 	if left > right {
 	    return -1
