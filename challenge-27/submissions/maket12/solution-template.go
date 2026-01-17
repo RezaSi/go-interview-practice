@@ -55,7 +55,6 @@ func (s *Stack[T]) Push(value T) {
 // Pop removes and returns the top element from the stack
 // Returns an error if the stack is empty
 func (s *Stack[T]) Pop() (T, error) {
-	// TODO: Implement this method
 	var zero T
 	if len(s.storage) == 0 {
 	    return zero, ErrEmptyCollection
