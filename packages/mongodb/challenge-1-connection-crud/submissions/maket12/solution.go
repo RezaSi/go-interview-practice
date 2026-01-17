@@ -118,7 +118,6 @@ func (us *UserService) UpdateUser(ctx context.Context, userID string, req Update
 		return Response{Success: false, Error: "Invalid user ID format", Code: 400}
 	}
 
-	// Валидация для теста (даже если это Update)
 	if req.Email != "" && !strings.Contains(req.Email, "@") {
 		return Response{Success: false, Error: "Invalid email format", Code: 400}
 	}
