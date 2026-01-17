@@ -203,7 +203,9 @@ func (s *Set[T]) Size() int {
 
 // Elements returns a slice containing all elements in the set
 func (s *Set[T]) Elements() []T {
-    return s.storage
+    out := make([]T, len(s.storage))
+    copy(out, s.storage)
+    return out
 }
 
 // Union returns a new set containing all elements from both sets
