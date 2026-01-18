@@ -22,9 +22,10 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	r := make([]byte, len(s))
-	for i:=0;i<len(s);i++ {
-	    r[i] = s[len(s) - i -1]
+    t := []rune(s)
+	r := make([]rune, len(t))
+	for i:=0;i<len(t);i++ {
+	    r[i] = t[len(t) - i -1]
 	}
 	return string(r)
 }
