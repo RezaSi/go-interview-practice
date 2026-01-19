@@ -61,5 +61,9 @@ func CoinCombination(amount int, denominations []int) map[int]int {
 	    amount = amount % denominations[i]
 	}
 	
+	if amount != 0{
+	    return map[int]int{}
+	}
+	
 	return results
 }
