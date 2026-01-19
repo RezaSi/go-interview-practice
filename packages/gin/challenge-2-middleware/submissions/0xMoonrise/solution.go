@@ -156,11 +156,11 @@ func AuthMiddleware() gin.HandlerFunc {
         Success: false,
         Error:   "Invalid API key",
       })
+      return
     }
 
     c.Set("role", r)
     c.Next()
-  }
 }
 
 // CORSMiddleware handles cross-origin requests
