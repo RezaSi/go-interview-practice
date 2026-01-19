@@ -287,12 +287,29 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 // ErrorHandlerMiddleware handles panics and errors
 func ErrorHandlerMiddleware() gin.HandlerFunc {
   return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-    requestID, _ := c.Get("request_id")
+    requestID, exists := c.Get("request_id")
+    reqIDStr := ""
+    if exists {
+      if id, ok := requestID.(string); ok {
+        reqIDStr = id
+      }
+    }
+
+    var errMsg string
+    switch v := recovered.(type) {
+    case error:
+      errMsg = v.Error()
+    case string:
+      errMsg = v
+    default:
+      errMsg = fmt.Sprintf("%v", recovered)
+    }
+
     c.AbortWithStatusJSON(http.StatusInternalServerError, APIResponse{
       Success:   false,
       Error:     "Internal server error",
-      Message:   recovered.(error).Error(),
-      RequestID: requestID.(string),
+      Message:   errMsg,
+      RequestID: reqIDStr,
     })
   })
 }
