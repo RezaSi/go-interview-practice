@@ -433,6 +433,9 @@ func updateArticle(c *gin.Context) {
     return
   }
 
+  originalArticle := articles[id-1]
+  updatedArticle.ID = originalArticle.ID
+  updatedArticle.CreatedAt = originalArticle.CreatedAt
   updatedArticle.UpdatedAt = time.Now()
   articles[id-1] = updatedArticle
 
