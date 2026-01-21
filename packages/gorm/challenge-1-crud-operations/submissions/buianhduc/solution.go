@@ -24,8 +24,11 @@ func ConnectDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.Migrator().CreateTable(&User{})
+	if err := db.AutoMigrate(&User{}); err != nil {
+		return nil, err
+	}
 	return db, nil
+}
 }
 
 // CreateUser creates a new user in the database
