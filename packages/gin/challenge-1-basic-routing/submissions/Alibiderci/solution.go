@@ -12,7 +12,7 @@ import (
 
 var (
 	missingID error = errors.New("ID must not be empty")
-	internalError error = errors.New("Internal Error")
+	invalidID error = errors.New("invalid ID")
 )
 
 // User represents a user in our system
@@ -97,7 +97,7 @@ func getUserByID(c *gin.Context) {
 				Code: 400,
 			})	
 			return
-		} else if errors.Is(err, internalError) {
+		} else if errors.Is(err, invalidID) {
 			c.JSON(400, &Response{
 				Success: false,
 				Data: nil,
@@ -146,7 +146,7 @@ func createUser(c *gin.Context) {
 	// TODO: Parse JSON request body
 	var user User
 
-	err := c.Bind(&user)
+	err := c.ShouldBindJSON(&user)
 	if err != nil {
 		c.JSON(400, &Response{
 			Success: false,
@@ -200,7 +200,7 @@ func updateUser(c *gin.Context) {
 				Code: 400,
 			})	
 			return
-		} else if errors.Is(err, internalError) {
+		} else if errors.Is(err, invalidID) {
 			c.JSON(400, &Response{
 				Success: false,
 				Data: nil,
@@ -223,7 +223,7 @@ func updateUser(c *gin.Context) {
 	// Parse JSON request body
 	var newUser User
 
-	err = c.Bind(&newUser)
+	err = c.ShouldBindJSON(&newUser)
 	if err != nil {
 		c.JSON(400, &Response{
 			Success: false,
@@ -234,8 +234,19 @@ func updateUser(c *gin.Context) {
 		})	
 		return
 	}
-
 	newUser.ID = id
+
+	err = validateUser(newUser)
+	if err != nil {
+		c.JSON(400, &Response{
+			Success: false,
+			Data: nil,
+			Message: "invalid user data",
+			Error: "binding the request body",
+			Code: 400,
+		})	
+		return
+	}
 
 	// Find and update user
 	user, idx := findUserByID(id)
@@ -276,7 +287,7 @@ func deleteUser(c *gin.Context) {
 				Code: 400,
 			})	
 			return
-		} else if errors.Is(err, internalError) {
+		} else if errors.Is(err, invalidID) {
 			c.JSON(400, &Response{
 				Success: false,
 				Data: nil,
@@ -365,7 +376,7 @@ func retrieveID(c *gin.Context) (int, error) {
 
 	id, err := strconv.Atoi(stringId)
 	if err != nil {
-		return 0, internalError
+		return 0, invalidID
 	}	
 
 	return id, nil
@@ -391,7 +402,7 @@ func validateUser(user User) error {
 		return errors.New("missing required fields")
 	}
 	// Validate email format (basic check)
-	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-z.-]+\.[a-zA-z]{2,}`)
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-z.-]+\.[a-zA-Z]{2,}$`)
 	valid := re.MatchString(user.Email)
 
 	if !valid {
