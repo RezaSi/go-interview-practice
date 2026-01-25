@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 
 var (
 	missingID error = errors.New("ID must not be empty")
+	internalError error = errors.New("Internal Error")
 )
 
 // User represents a user in our system
@@ -47,6 +47,8 @@ func main() {
 	// TODO: Setup routes
 	// GET /users - Get all users
 	router.GET("/users", getAllUsers)
+	// GET /users/search - Search users by name
+	router.GET("/users/search", searchUsers)
 	// GET /users/:id - Get user by ID
 	router.GET("/users/:id", getUserByID)
 	// POST /users - Create new user
@@ -55,8 +57,6 @@ func main() {
 	router.PUT("/users/:id", updateUser)
 	// DELETE /users/:id - Delete user
 	router.DELETE("/users/:id", deleteUser)
-	// GET /users/search - Search users by name
-	router.GET("/users/search", searchUsers)
 
 	// TODO: Start server on port 8080	
 	err := router.Run("localhost:8080")
@@ -71,15 +71,9 @@ func main() {
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
 	// TODO: Return all users
-	retrievedUsers := make([]User, len(users))		
-
-	for i, user := range users { // is using loop here optimal? IDE tells me to use copy(from, to)
-		retrievedUsers[i] = user
-	}
-
 	response := &Response{
 		Success: true,
-		Data: retrievedUsers,
+		Data: users,
 		Message: "List of all users",
 		Error: "",
 		Code: 200,
@@ -94,6 +88,7 @@ func getUserByID(c *gin.Context) {
 	// Handle invalid ID format
 	id, err := retrieveID(c)
 	if err != nil {	
+		if errors.Is(err, missingID) {
 			c.JSON(400, &Response{
 				Success: false,
 				Data: nil,
@@ -102,16 +97,25 @@ func getUserByID(c *gin.Context) {
 				Code: 400,
 			})	
 			return
-		/*
-		c.JSON(500, &Response{
+		} else if errors.Is(err, internalError) {
+			c.JSON(400, &Response{
+				Success: false,
+				Data: nil,
+				Message: "",
+				Error: "ID string conversion - Internal Server Error",
+				Code: 400,
+			})	
+			return
+		}
+
+		c.JSON(400, &Response{
 			Success: false,
 			Data: nil,
 			Message: "",
-			Error: "ID string conversion - Internal Server Error",
-			Code: 500,
+			Error: err.Error(),
+			Code: 400,
 		})	
 		return
-		*/
 	}
 	// Return 404 if user not found
 	user, _ := findUserByID(id)
@@ -186,7 +190,7 @@ func createUser(c *gin.Context) {
 func updateUser(c *gin.Context) {
 	// TODO: Get user ID from path
 	id, err := retrieveID(c)
-	if err != nil {
+	if err != nil {	
 		if errors.Is(err, missingID) {
 			c.JSON(400, &Response{
 				Success: false,
@@ -196,11 +200,28 @@ func updateUser(c *gin.Context) {
 				Code: 400,
 			})	
 			return
+		} else if errors.Is(err, internalError) {
+			c.JSON(400, &Response{
+				Success: false,
+				Data: nil,
+				Message: "",
+				Error: "ID string conversion - Internal Server Error",
+				Code: 400,
+			})	
+			return
 		}
+
+		c.JSON(400, &Response{
+			Success: false,
+			Data: nil,
+			Message: "",
+			Error: err.Error(),
+			Code: 400,
+		})	
+		return
 	}
 	// Parse JSON request body
 	var newUser User
-	newUser.ID = id
 
 	err = c.Bind(&newUser)
 	if err != nil {
@@ -213,6 +234,9 @@ func updateUser(c *gin.Context) {
 		})	
 		return
 	}
+
+	newUser.ID = id
+
 	// Find and update user
 	user, idx := findUserByID(id)
 	if user == nil {
@@ -242,7 +266,7 @@ func updateUser(c *gin.Context) {
 func deleteUser(c *gin.Context) {
 	// TODO: Get user ID from path
 	id, err := retrieveID(c)
-	if err != nil {
+	if err != nil {	
 		if errors.Is(err, missingID) {
 			c.JSON(400, &Response{
 				Success: false,
@@ -252,7 +276,25 @@ func deleteUser(c *gin.Context) {
 				Code: 400,
 			})	
 			return
+		} else if errors.Is(err, internalError) {
+			c.JSON(400, &Response{
+				Success: false,
+				Data: nil,
+				Message: "",
+				Error: "ID string conversion - Internal Server Error",
+				Code: 400,
+			})	
+			return
 		}
+
+		c.JSON(400, &Response{
+			Success: false,
+			Data: nil,
+			Message: "",
+			Error: err.Error(),
+			Code: 400,
+		})	
+		return
 	}
 	// Find and remove user
 	user, idx := findUserByID(id)
@@ -267,11 +309,7 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	if idx == len(users)-1 {
-		users = users[:idx]
-	} else {
-		users = append(users[:idx], users[idx+1:]...)
-	}
+	users = append(users[:idx], users[idx+1:]...)
 
 
 	// Return success message
@@ -322,12 +360,12 @@ func searchUsers(c *gin.Context) {
 func retrieveID(c *gin.Context) (int, error) {
 	stringId := c.Param("id")
 	if stringId == "" {
-		return 0, errors.New("invalid ID")
+		return 0, missingID
 	}
 
 	id, err := strconv.Atoi(stringId)
 	if err != nil {
-		return 0, fmt.Errorf("string to int conversion: %w", err)
+		return 0, internalError
 	}	
 
 	return id, nil
@@ -353,7 +391,7 @@ func validateUser(user User) error {
 		return errors.New("missing required fields")
 	}
 	// Validate email format (basic check)
-	re := regexp.MustCompile(`^[a-zA-z0-9._%+-]+@[a-zA-z.-]+\.[a-zA-z]{3,}`)
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-z.-]+\.[a-zA-z]{2,}`)
 	valid := re.MatchString(user.Email)
 
 	if !valid {
