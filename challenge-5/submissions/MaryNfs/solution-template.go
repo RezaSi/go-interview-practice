@@ -13,7 +13,7 @@ const validToken = "secret"
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("X-Auth-Token")
-		if token == "secret" {
+		if token == validToken {
 			next.ServeHTTP(w, r)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
