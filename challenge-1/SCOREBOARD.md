@@ -35,6 +35,7 @@
 | Khabbab172 | 6 | 6 |
 | KhaledMosaad | 6 | 6 |
 | KirthiInfra | 6 | 6 |
+| KishanPipariya | 6 | 6 |
 | Kosench | 6 | 6 |
 | Linqi-Qin | 6 | 6 |
 | LouisChen-TW | 6 | 6 |
@@ -98,10 +99,13 @@
 | fzzv | 6 | 6 |
 | gaba-bouliva | 6 | 6 |
 | globallstudent | 6 | 6 |
+| goholic | 6 | 6 |
 | greenfivebird | 6 | 6 |
 | grozdovk | 6 | 6 |
 | himanshum9 | 6 | 6 |
+| hoanglong2311 | 6 | 6 |
 | hodgechung | 6 | 6 |
+| hrabkin | 6 | 6 |
 | hudazaan | 6 | 6 |
 | iamsurajmandal | 6 | 6 |
 | idk2me | 6 | 6 |
@@ -109,7 +113,9 @@
 | ilder | 6 | 6 |
 | ingingX | 6 | 6 |
 | inok94 | 6 | 6 |
+| ismarinated | 6 | 6 |
 | jasonnfeng | 6 | 6 |
+| jeffreyyjp | 6 | 6 |
 | jersonzc | 6 | 6 |
 | jin5335 | 6 | 6 |
 | joaovitoralvares | 6 | 6 |
@@ -134,10 +140,12 @@
 | lyb88999 | 6 | 6 |
 | macborowy | 6 | 6 |
 | maikreyes | 6 | 6 |
+| maket12 | 6 | 6 |
 | malakagl | 6 | 6 |
 | manish-npx | 6 | 6 |
 | mayconvm | 6 | 6 |
 | mczajk | 6 | 6 |
+| mellojp | 6 | 6 |
 | mick4711 | 6 | 6 |
 | mks-nerd | 6 | 6 |
 | mokori4242 | 6 | 6 |
