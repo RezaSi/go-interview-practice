@@ -59,6 +59,7 @@
 | duplabe | 5 | 5 |
 | eksly | 5 | 5 |
 | elecycele | 5 | 5 |
+| goholic | 5 | 5 |
 | greenfivebird | 5 | 5 |
 | grozdovk | 5 | 5 |
 | himanshum9 | 5 | 5 |
@@ -72,6 +73,7 @@
 | inok94 | 5 | 5 |
 | ismarinated | 5 | 5 |
 | jasonnfeng | 5 | 5 |
+| jeffreyyjp | 5 | 5 |
 | jersonzc | 5 | 5 |
 | jin5335 | 5 | 5 |
 | john-otienoh | 5 | 5 |
