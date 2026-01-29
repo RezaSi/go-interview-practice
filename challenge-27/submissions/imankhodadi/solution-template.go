@@ -36,7 +36,7 @@ func (s *Stack[T]) Push(element T) {
 func (s *Stack[T]) Pop() (T, error) {
 	var zero T
 	if len(s.elements) == 0 {
-		return zero, errors.New("stack is empty")
+		return zero, ErrEmptyCollection
 	}
 	lastIndex := len(s.elements) - 1
 	element := s.elements[lastIndex]
@@ -47,7 +47,7 @@ func (s *Stack[T]) Pop() (T, error) {
 func (s *Stack[T]) Peek() (T, error) {
 	var zero T
 	if len(s.elements) == 0 {
-		return zero, errors.New("stack is empty")
+		return zero, ErrEmptyCollection
 	}
 	return s.elements[len(s.elements)-1], nil
 }
@@ -77,6 +77,8 @@ func (q *Queue[T]) Dequeue() (T, error) {
 		return zero, errors.New("queue is empty")
 	}
 	element := q.elements[0]
+	var zeroVal T
+	q.elements[0] = zeroVal // Clear reference to allow GC
 	q.elements = q.elements[1:]
 	return element, nil
 }
@@ -131,8 +133,8 @@ func (s *Set[T]) Elements() []T {
 	return result
 }
 
-func Union[T comparable](s1, s2 *Set[T]) Set[T] {
-	result := *NewSet[T]()
+func Union[T comparable](s1, s2 *Set[T]) *Set[T] {
+	result := NewSet[T]()
 	for element := range s1.elements {
 		result.Add(element)
 	}
@@ -142,8 +144,8 @@ func Union[T comparable](s1, s2 *Set[T]) Set[T] {
 	return result
 }
 
-func Intersection[T comparable](s1, s2 *Set[T]) Set[T] {
-	result := *NewSet[T]()
+func Intersection[T comparable](s1, s2 *Set[T]) *Set[T] {
+	result := NewSet[T]()
 	for element := range s1.elements {
 		if s2.Contains(element) {
 			result.Add(element)
@@ -152,13 +154,13 @@ func Intersection[T comparable](s1, s2 *Set[T]) Set[T] {
 	return result
 }
 func Difference[T comparable](s1, s2 *Set[T]) *Set[T] {
-	result := *NewSet[T]()
+	result := NewSet[T]()
 	for item := range s1.elements {
 		if !s2.Contains(item) {
 			result.Add(item)
 		}
 	}
-	return &result
+	return result
 }
 
 // 5. Generic Utility Functions
@@ -208,7 +210,7 @@ func RemoveDuplicates[T comparable](slice []T) []T {
 	unique := make([]T, 0)
 	seen := make(map[T]bool)
 	for _, x := range slice {
-		if seen[x] == false {
+		if !seen[x] {
 			seen[x] = true
 			unique = append(unique, x)
 		}
