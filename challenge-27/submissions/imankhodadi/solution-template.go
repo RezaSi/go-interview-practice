@@ -61,6 +61,7 @@ func (s *Stack[T]) IsEmpty() bool {
 // 3. Generic Queue
 type Queue[T any] struct {
 	elements []T
+	head     int
 }
 
 func NewQueue[T any]() *Queue[T] {
@@ -73,30 +74,33 @@ func (q *Queue[T]) Enqueue(value T) {
 
 func (q *Queue[T]) Dequeue() (T, error) {
 	var zero T
-	if len(q.elements) == 0 {
-		return zero, errors.New("queue is empty")
+	if q.head >= len(q.elements) {
+		return zero, ErrEmptyCollection
 	}
-	element := q.elements[0]
+	element := q.elements[q.head]
 	var zeroVal T
-	q.elements[0] = zeroVal // Clear reference to allow GC
-	q.elements = q.elements[1:]
+	q.elements[q.head] = zeroVal
+	q.head++
+	if q.head > len(q.elements)/2 {
+		q.elements = append([]T(nil), q.elements[q.head:]...)
+		q.head = 0
+	}
 	return element, nil
 }
-
 func (q *Queue[T]) Front() (T, error) {
 	var zero T
-	if len(q.elements) == 0 {
-		return zero, errors.New("queue is empty")
+	if q.head >= len(q.elements) {
+		return zero, ErrEmptyCollection
 	}
-	return q.elements[0], nil
+	return q.elements[q.head], nil
 }
 
 func (q *Queue[T]) Size() int {
-	return len(q.elements)
+	return len(q.elements) - q.head
 }
 
 func (q *Queue[T]) IsEmpty() bool {
-	return len(q.elements) == 0
+	return q.Size() == 0
 }
 
 // 4. Generic Set
@@ -109,6 +113,9 @@ func NewSet[T comparable]() *Set[T] {
 }
 
 func (s *Set[T]) Add(element T) {
+	if s.elements == nil {
+		s.elements = make(map[T]struct{})
+	}
 	s.elements[element] = struct{}{}
 }
 
