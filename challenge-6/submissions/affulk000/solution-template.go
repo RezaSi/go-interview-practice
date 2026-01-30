@@ -28,7 +28,9 @@ import (
     	    } else {
     	        if builder.Len() > 0 {
     	            word := strings.ReplaceAll(builder.String(), "'", "")
-    	            freq[word]++
+    	            if word != "" {
+    	                freq[word]++
+    	            }
     	            builder.Reset()
     	        }
     	    }
@@ -36,7 +38,9 @@ import (
     	
     	if builder.Len() > 0 {
     	    word := strings.ReplaceAll(builder.String(), "'", "")
-    	    freq[word]++
+    	    if word != "" {
+    	        freq[word]++
+    	    }
     	}
     	return freq
     } 
