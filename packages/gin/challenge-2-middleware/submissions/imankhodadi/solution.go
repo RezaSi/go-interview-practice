@@ -35,8 +35,9 @@ var articles = []Article{
 	{ID: 1, Title: "Getting Started with Go", Content: "Go is a programming language", Author: "John Doe", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	{ID: 2, Title: "Web Development with Gin", Content: "Gin is a web framework", Author: "Jane Smith", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 }
-var nextID = 3
 var (
+	nextID         = 3
+	articlesMutex  sync.RWMutex
 	rateLimiters   = make(map[string]*rate.Limiter)
 	rateLimitMutex sync.Mutex
 )
@@ -66,8 +67,9 @@ func main() {
 		private.DELETE("/articles/:id", deleteArticle)
 		private.GET("/admin/stats", getStats)
 	}
-
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 
 }
 func RequestIDMiddleware() gin.HandlerFunc {
@@ -118,16 +120,16 @@ func AuthMiddleware() gin.HandlerFunc {
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
 			c.JSON(401, APIResponse{Success: false, Error: "API key required"})
-			c.Abort() 
+			c.Abort()
 			return
 		}
-		is_valid, user_role := getUserRole(apiKey)
-		if !is_valid {
+		isValid, userRole := getUserRole(apiKey)
+		if !isValid {
 			c.JSON(401, APIResponse{Success: false, Error: "Invalid API key"})
 			c.Abort()
 			return
 		}
-		c.Set("user_role", user_role)
+		c.Set("user_role", userRole)
 		c.Next()
 	}
 }
@@ -135,7 +137,6 @@ func AuthMiddleware() gin.HandlerFunc {
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		// TODO these are origins  beside myself???
 		allowedOrigins := map[string]bool{
 			"http://localhost:3000": true,
 			"https://myapp.com":     true,
@@ -147,8 +148,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Headers", "Content-Type, X-API-Key, X-Request-ID")
 		c.Header("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
-			c.JSON(204, APIResponse{Success: false, Error: "Forbidden"})
-			c.Abort()
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 		c.Next()
@@ -165,17 +165,14 @@ func RateLimitMiddleware() gin.HandlerFunc {
 			rateLimiters[ip] = limiter
 		}
 		rateLimitMutex.Unlock()
-
 		c.Writer.Header().Set("X-RateLimit-Limit", "100")
 		c.Writer.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(time.Minute).Unix()))
-
 		if !limiter.Allow() {
 			c.Writer.Header().Set("X-RateLimit-Remaining", "0")
-			errResponse(c, http.StatusTooManyRequests, "Rate limit exceeded")
+			c.JSON(http.StatusTooManyRequests, APIResponse{Success: false, Error: "rate limit exceeded"})
 			c.Abort()
 			return
 		}
-
 		remaining := int(limiter.Tokens())
 		c.Writer.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
 		c.Next()
@@ -195,10 +192,10 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-
+// the assignment required to return error message, remove Message in production and use Internal Error instead
 func ErrorHandlerMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		log.Printf("Panic recovered: %v", recovered)
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Success:   false,
 			Error:     "Internal server error",
@@ -215,6 +212,10 @@ func ping(c *gin.Context) {
 }
 
 func getArticles(c *gin.Context) {
+	articlesMutex.RLock()
+	articlesTemp := make([]Article, len(articles))
+	copy(articlesTemp, articles)
+	articlesMutex.RUnlock()
 	c.JSON(200, APIResponse{
 		Success:   true,
 		Data:      articles,
@@ -229,7 +230,9 @@ func getArticle(c *gin.Context) {
 		c.JSON(400, APIResponse{Success: false, Error: "Invalid ID", RequestID: c.GetString("request_id")})
 		return
 	}
+	articlesMutex.RLock()
 	article, ind := findArticleByID(articleID)
+	articlesMutex.RUnlock()
 	if ind != -1 {
 		c.JSON(200, APIResponse{
 			Success:   true,
@@ -254,13 +257,18 @@ func createArticle(c *gin.Context) {
 		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-	nextID++
-	newArticle.ID = nextID
+
 	if err := validateArticle(newArticle); err != nil {
 		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
 		return
 	}
+	articlesMutex.Lock()
+	nextID++
+	newArticle.ID = nextID
+	newArticle.CreatedAt = time.Now()
+	newArticle.UpdatedAt = time.Now()
 	articles = append(articles, newArticle)
+	articlesMutex.Unlock()
 	c.JSON(201, APIResponse{Success: true, Data: newArticle, Message: "Article created"})
 
 }
@@ -282,23 +290,24 @@ func updateArticle(c *gin.Context) {
 		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
 		return
 	}
-
+	articlesMutex.Lock()
 	article, ind := findArticleByID(articleID)
 	if ind != -1 {
-		article.ID = newArticle.ID
 		article.Author = newArticle.Author
 		article.Content = newArticle.Content
 		article.Title = newArticle.Title
 		article.UpdatedAt = time.Now()
+		articles[ind] = *article // Persist back to slice
+		articlesMutex.Unlock()
 		c.JSON(200, APIResponse{
 			Success: true,
 			Data:    article,
-			Message: "Users updated successfully"})
+			Message: "Article updated successfully"})
 	} else {
+		articlesMutex.Unlock()
 		c.JSON(404, APIResponse{Success: false, Error: "article not found"})
 	}
 }
-
 func deleteArticle(c *gin.Context) {
 	id := c.Param("id")
 	articleID, err := strconv.Atoi(id)
@@ -306,12 +315,15 @@ func deleteArticle(c *gin.Context) {
 		c.JSON(400, APIResponse{Success: false, Error: "Invalid ID"})
 		return
 	}
+	articlesMutex.Lock()
 	_, ind := findArticleByID(articleID)
 	if ind != -1 {
 		articles[ind] = articles[len(articles)-1]
 		articles = articles[:len(articles)-1]
+		articlesMutex.Unlock()
 		c.JSON(200, APIResponse{Success: true, Message: "article deleted successfully"})
 	} else {
+		articlesMutex.Unlock()
 		c.JSON(404, APIResponse{Success: false, Error: "article not found"})
 	}
 }
@@ -331,9 +343,10 @@ func getStats(c *gin.Context) {
 }
 
 func findArticleByID(id int) (*Article, int) {
-	for ind, article := range articles {
-		if article.ID == id {
-			return &article, ind
+	for ind := range articles {
+		if articles[ind].ID == id {
+			copyArticle := articles[ind]
+			return &copyArticle, ind
 		}
 	}
 	return nil, -1
@@ -341,23 +354,7 @@ func findArticleByID(id int) (*Article, int) {
 
 func validateArticle(article Article) error {
 	if article.Title == "" || article.Content == "" || article.Author == "" {
-		return errors.New("name is required")
+		return errors.New("title, content, and author are required")
 	}
 	return nil
-}
-
-func okResponse(c *gin.Context, status int, message string, data interface{}) {
-	c.JSON(status, APIResponse{
-		Success:   true,
-		Data:      data,
-		Message:   message,
-		RequestID: c.GetString("request_id"),
-	})
-}
-func errResponse(c *gin.Context, status int, msg string) {
-	c.JSON(status, APIResponse{
-		Success:   false,
-		Error:     msg,
-		RequestID: c.GetString("request_id"),
-	})
 }
