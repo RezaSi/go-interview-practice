@@ -156,6 +156,7 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+// with no eviction mechanism. In a production scenario or under attack, this would consume unbounded memory.
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
@@ -293,6 +294,7 @@ func updateArticle(c *gin.Context) {
 		return
 	}
 	articlesMutex.Lock()
+	defer articlesMutex.Unlock()
 	article, ind := findArticleByID(articleID)
 	if ind != -1 {
 		article.Author = newArticle.Author
@@ -300,13 +302,11 @@ func updateArticle(c *gin.Context) {
 		article.Title = newArticle.Title
 		article.UpdatedAt = time.Now()
 		articles[ind] = *article // Persist back to slice
-		articlesMutex.Unlock()
 		c.JSON(200, APIResponse{
 			Success: true,
 			Data:    article,
 			Message: "Article updated successfully"})
 	} else {
-		articlesMutex.Unlock()
 		c.JSON(404, APIResponse{Success: false, Error: "article not found"})
 	}
 }
@@ -318,14 +318,13 @@ func deleteArticle(c *gin.Context) {
 		return
 	}
 	articlesMutex.Lock()
+	defer articlesMutex.Unlock()
 	_, ind := findArticleByID(articleID)
 	if ind != -1 {
 		articles[ind] = articles[len(articles)-1]
 		articles = articles[:len(articles)-1]
-		articlesMutex.Unlock()
 		c.JSON(200, APIResponse{Success: true, Message: "article deleted successfully"})
 	} else {
-		articlesMutex.Unlock()
 		c.JSON(404, APIResponse{Success: false, Error: "article not found"})
 	}
 }
@@ -333,7 +332,7 @@ func deleteArticle(c *gin.Context) {
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
 func getStats(c *gin.Context) {
 	if c.GetString("user_role") != "admin" {
-		c.JSON(403, APIResponse{Success: false, Error: "Unauthorized"})
+		c.JSON(403, APIResponse{Success: false, Error: "Forbidden: admin access required"})
 		return
 	}
 	articlesMutex.RLock()
