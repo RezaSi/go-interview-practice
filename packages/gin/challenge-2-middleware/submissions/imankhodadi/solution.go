@@ -129,11 +129,11 @@ func LoggingMiddleware() gin.HandlerFunc {
 func getUserRole(apiKey string) (bool, string) {
 	adminKey := os.Getenv("ADMIN_API_KEY")
 	if adminKey == "" {
-		adminKey = "admin-key-123"
+		adminKey = "admin-key-123" // this value is part of assignment unit test
 	}
 	userKey := os.Getenv("USER_API_KEY")
 	if userKey == "" {
-		userKey = "user-key-456"
+		userKey = "user-key-456" // this value is part of assignment unit test
 	}
 	roles := map[string]string{
 		adminKey: "admin",
@@ -230,14 +230,17 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 	}
 }
 
-// the assignment required to return error message, remove Message in production and use Internal Error instead
 func ErrorHandlerMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		log.Printf("Panic recovered: %v", recovered)
+		message := ""
+		if gin.Mode() != gin.ReleaseMode {
+			message = fmt.Sprintf("%v", recovered)
+		}
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Success:   false,
 			Error:     "Internal server error",
-			Message:   fmt.Sprintf("%v", recovered),
+			Message:   message,
 			RequestID: c.GetString("request_id"),
 		})
 		c.Abort()
@@ -315,17 +318,17 @@ func updateArticle(c *gin.Context) {
 	id := c.Param("id")
 	articleID, err := strconv.Atoi(id)
 	if err != nil {
-		c.JSON(400, APIResponse{Success: false, Error: "Invalid ID"})
+		c.JSON(400, APIResponse{Success: false, Error: "Invalid ID", RequestID: c.GetString("request_id")})
 		return
 	}
 	var newArticle Article
 	if err := c.ShouldBindJSON(&newArticle); err != nil {
-		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
+		c.JSON(400, APIResponse{Success: false, Error: err.Error(), RequestID: c.GetString("request_id")})
 		return
 	}
 
 	if err := validateArticle(newArticle); err != nil {
-		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
+		c.JSON(400, APIResponse{Success: false, Error: err.Error(), RequestID: c.GetString("request_id")})
 		return
 	}
 	articlesMutex.Lock()
@@ -338,11 +341,12 @@ func updateArticle(c *gin.Context) {
 		article.UpdatedAt = time.Now()
 		articles[ind] = *article // Persist back to slice
 		c.JSON(200, APIResponse{
-			Success: true,
-			Data:    article,
-			Message: "Article updated successfully"})
+			Success:   true,
+			Data:      article,
+			Message:   "Article updated successfully",
+			RequestID: c.GetString("request_id")})
 	} else {
-		c.JSON(404, APIResponse{Success: false, Error: "article not found"})
+		c.JSON(404, APIResponse{Success: false, Error: "article not found", RequestID: c.GetString("request_id")})
 	}
 }
 func deleteArticle(c *gin.Context) {
