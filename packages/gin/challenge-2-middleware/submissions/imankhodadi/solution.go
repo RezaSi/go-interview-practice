@@ -106,6 +106,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 }
 
 func getUserRole(apiKey string) (bool, string) {
+	// these keys are default for this assignment, for production use os.Getenv("ADMIN_API_KEY")
 	roles := map[string]string{
 		"admin-key-123": "admin",
 		"user-key-456":  "user"}
@@ -192,6 +193,7 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
 // the assignment required to return error message, remove Message in production and use Internal Error instead
 func ErrorHandlerMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
@@ -218,7 +220,7 @@ func getArticles(c *gin.Context) {
 	articlesMutex.RUnlock()
 	c.JSON(200, APIResponse{
 		Success:   true,
-		Data:      articles,
+		Data:      articlesTemp,
 		Message:   "all articles",
 		RequestID: c.GetString("request_id")})
 }
@@ -263,8 +265,8 @@ func createArticle(c *gin.Context) {
 		return
 	}
 	articlesMutex.Lock()
-	nextID++
 	newArticle.ID = nextID
+	nextID++
 	newArticle.CreatedAt = time.Now()
 	newArticle.UpdatedAt = time.Now()
 	articles = append(articles, newArticle)
@@ -334,8 +336,11 @@ func getStats(c *gin.Context) {
 		c.JSON(403, APIResponse{Success: false, Error: "Unauthorized"})
 		return
 	}
+	articlesMutex.RLock()
+	totalArticles := len(articles)
+	articlesMutex.RUnlock()
 	stats := map[string]interface{}{
-		"total_articles": len(articles),
+		"total_articles": totalArticles,
 		"total_requests": 10,
 		"uptime":         "24h",
 	}
