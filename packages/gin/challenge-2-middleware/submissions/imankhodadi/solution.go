@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -50,21 +51,28 @@ var (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	router := gin.New()
-	go func() {
+	go func(ctx context.Context) {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		for range ticker.C {
-			cutoff := time.Now().Add(-10 * time.Minute)
-			rateLimitMutex.Lock()
-			for ip, entry := range rateLimiters {
-				if entry.lastSeen.Before(cutoff) {
-					delete(rateLimiters, ip)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				cutoff := time.Now().Add(-10 * time.Minute)
+				rateLimitMutex.Lock()
+				for ip, entry := range rateLimiters {
+					if entry.lastSeen.Before(cutoff) {
+						delete(rateLimiters, ip)
+					}
 				}
+				rateLimitMutex.Unlock()
 			}
-			rateLimitMutex.Unlock()
 		}
-	}()
+	}(ctx)
 	router.Use(
 		RequestIDMiddleware(),
 		ErrorHandlerMiddleware(),
@@ -372,7 +380,7 @@ func deleteArticle(c *gin.Context) {
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
 func getStats(c *gin.Context) {
 	if c.GetString("user_role") != "admin" {
-		c.JSON(403, APIResponse{Success: false, Error: "Forbidden: admin access required"})
+		c.JSON(403, APIResponse{Success: false, Error: "Forbidden: admin access required", RequestID: c.GetString("request_id")})
 		return
 	}
 	articlesMutex.RLock()
@@ -383,7 +391,7 @@ func getStats(c *gin.Context) {
 		"total_requests": 10,
 		"uptime":         "24h",
 	}
-	c.JSON(200, APIResponse{Success: true, Data: stats, Message: "stats"})
+	c.JSON(200, APIResponse{Success: true, Data: stats, Message: "stats", RequestID: c.GetString("request_id")})
 }
 
 func findArticleByID(id int) (*Article, int) {
