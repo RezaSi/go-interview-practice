@@ -78,7 +78,7 @@ func FindInsertPosition(arr []int, target int) int {
 
 	left, right := 0, len(arr)-1
 
-	for left < right {
+	for left <= right {
 		mid := left + (right-left)/2
 		if arr[mid] == target {
 		    return mid
