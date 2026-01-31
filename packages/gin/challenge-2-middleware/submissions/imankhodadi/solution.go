@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,15 +36,35 @@ var articles = []Article{
 	{ID: 1, Title: "Getting Started with Go", Content: "Go is a programming language", Author: "John Doe", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	{ID: 2, Title: "Web Development with Gin", Content: "Gin is a web framework", Author: "Jane Smith", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 }
+
+type clientLimiter struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 var (
 	nextID         = 3
 	articlesMutex  sync.RWMutex
-	rateLimiters   = make(map[string]*rate.Limiter)
+	rateLimiters   = make(map[string]*clientLimiter)
 	rateLimitMutex sync.Mutex
 )
 
 func main() {
 	router := gin.New()
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			cutoff := time.Now().Add(-10 * time.Minute)
+			rateLimitMutex.Lock()
+			for ip, entry := range rateLimiters {
+				if entry.lastSeen.Before(cutoff) {
+					delete(rateLimiters, ip)
+				}
+			}
+			rateLimitMutex.Unlock()
+		}
+	}()
 	router.Use(
 		RequestIDMiddleware(),
 		ErrorHandlerMiddleware(),
@@ -106,10 +127,18 @@ func LoggingMiddleware() gin.HandlerFunc {
 }
 
 func getUserRole(apiKey string) (bool, string) {
-	// these keys are default for this assignment, for production use os.Getenv("ADMIN_API_KEY")
+	adminKey := os.Getenv("ADMIN_API_KEY")
+	if adminKey == "" {
+		adminKey = "admin-key-123"
+	}
+	userKey := os.Getenv("USER_API_KEY")
+	if userKey == "" {
+		userKey = "user-key-456"
+	}
 	roles := map[string]string{
-		"admin-key-123": "admin",
-		"user-key-456":  "user"}
+		adminKey: "admin",
+		userKey:  "user",
+	}
 	val, prs := roles[apiKey]
 	if prs {
 		return true, val
@@ -120,13 +149,13 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
-			c.JSON(401, APIResponse{Success: false, Error: "API key required"})
+			c.JSON(401, APIResponse{Success: false, Error: "API key required", RequestID: c.GetString("request_id")})
 			c.Abort()
 			return
 		}
 		isValid, userRole := getUserRole(apiKey)
 		if !isValid {
-			c.JSON(401, APIResponse{Success: false, Error: "Invalid API key"})
+			c.JSON(401, APIResponse{Success: false, Error: "Invalid API key", RequestID: c.GetString("request_id")})
 			c.Abort()
 			return
 		}
@@ -156,16 +185,22 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-// with no eviction mechanism. In a production scenario or under attack, this would consume unbounded memory.
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
+		now := time.Now()
 		rateLimitMutex.Lock()
-		limiter, ok := rateLimiters[ip]
+		entry, ok := rateLimiters[ip]
 		if !ok {
-			limiter = rate.NewLimiter(rate.Every(time.Minute/100), 100)
-			rateLimiters[ip] = limiter
+			entry = &clientLimiter{
+				limiter:  rate.NewLimiter(rate.Every(time.Minute/100), 100),
+				lastSeen: now,
+			}
+			rateLimiters[ip] = entry
+		} else {
+			entry.lastSeen = now
 		}
+		limiter := entry.limiter
 		rateLimitMutex.Unlock()
 		c.Writer.Header().Set("X-RateLimit-Limit", "100")
 		c.Writer.Header().Set("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(time.Minute).Unix()))
@@ -257,12 +292,12 @@ func getArticle(c *gin.Context) {
 func createArticle(c *gin.Context) {
 	var newArticle Article
 	if err := c.ShouldBindJSON(&newArticle); err != nil {
-		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
+		c.JSON(400, APIResponse{Success: false, Error: err.Error(), RequestID: c.GetString("request_id")})
 		return
 	}
 
 	if err := validateArticle(newArticle); err != nil {
-		c.JSON(400, APIResponse{Success: false, Error: err.Error()})
+		c.JSON(400, APIResponse{Success: false, Error: err.Error(), RequestID: c.GetString("request_id")})
 		return
 	}
 	articlesMutex.Lock()
@@ -272,7 +307,7 @@ func createArticle(c *gin.Context) {
 	newArticle.UpdatedAt = time.Now()
 	articles = append(articles, newArticle)
 	articlesMutex.Unlock()
-	c.JSON(201, APIResponse{Success: true, Data: newArticle, Message: "Article created"})
+	c.JSON(201, APIResponse{Success: true, Data: newArticle, Message: "Article created", RequestID: c.GetString("request_id")})
 
 }
 
