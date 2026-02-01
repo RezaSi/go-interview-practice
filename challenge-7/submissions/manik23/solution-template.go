@@ -75,7 +75,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		return nil, &AccountError{data: "id"}
 	}
 	if owner == "" {
-		return nil, &AccountError{data: "string"}
+		return nil, &AccountError{data: "owner"}
 	}
 	if initialBalance < 0 {
 		return nil, &NegativeAmountError{amount: initialBalance}
