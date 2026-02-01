@@ -147,6 +147,9 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	// Implement transfer functionality with proper error handling
+	if target == nil {
+		return &AccountError{data: "target account"}
+	}
 
 	if amount < 0 {
 		return &NegativeAmountError{amount: amount}
