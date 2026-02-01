@@ -21,9 +21,7 @@ const (
 	MaxTransactionAmount = 10000.0 // Example limit for deposits/withdrawals
 )
 
-var (
-	gLock = sync.Mutex{}
-)
+var gLock = sync.Mutex{}
 
 // Custom error types
 
@@ -98,7 +96,6 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		MinBalance: minBalance,
 		mu:         sync.Mutex{},
 	}, nil
-
 }
 
 // Deposit adds the specified amount to the account balance.
@@ -143,7 +140,6 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	a.Balance -= amount
 
 	return nil
-
 }
 
 // Transfer moves the specified amount from this account to the target account.
