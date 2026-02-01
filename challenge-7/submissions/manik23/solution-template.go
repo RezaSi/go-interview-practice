@@ -108,7 +108,7 @@ func (a *BankAccount) Deposit(amount float64) error {
 		return &NegativeAmountError{amount: amount}
 	}
 
-	if a.Balance+amount > MaxTransactionAmount {
+	if amount > MaxTransactionAmount {
 		return &ExceedsLimitError{amount: a.Balance + amount}
 	}
 
