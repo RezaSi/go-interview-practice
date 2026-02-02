@@ -151,7 +151,7 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	// TODO: Query the database for products
 	// TODO: If category is not empty, filter by category
 	// TODO: Return a slice of Product pointers
-	query := `SELECT id, name, price, quantity, category FROM products WHERE (? = '' OR category = ?)`
+	query := `SELECT id, name, price, quantity, COALESCE(category, '') FROM products WHERE (? = '' OR category = ?)`
 
 	rows, err := ps.db.Query(query, category, category)
 	if err != nil {
