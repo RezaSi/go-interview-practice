@@ -82,7 +82,7 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 	// TODO: Query the database for a product with the given ID
 	// TODO: Return a Product struct populated with the data or an error if not found
 
-	query := `SELECT id, name, price, quantity, category FROM products WHERE id = ?`
+	query := `SELECT id, name, price, quantity, COALESCE(category, '') FROM products WHERE id = ?`
 
 	p := &Product{}
 
