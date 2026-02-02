@@ -154,8 +154,8 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	query := `SELECT id, name, price, quantity, category FROM products WHERE (? = '' OR category = ?)`
 
 	rows, err := ps.db.Query(query, category, category)
-	defer rows.Close()
 	if err != nil {
+		defer rows.Close()
 		return nil, err
 	}
 
