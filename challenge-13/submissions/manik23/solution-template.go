@@ -38,7 +38,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if db.Ping() != nil {
+	if err := db.Ping(); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("error connecting database %s: %w", dbPath, err)
 	}
