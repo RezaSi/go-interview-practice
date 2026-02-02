@@ -39,18 +39,20 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	}
 
 	if db.Ping() != nil {
-		return nil, fmt.Errorf("error connection database %s", dbPath)
+		_ = db.Close()
+		return nil, fmt.Errorf("error connecting database %s: %w", dbPath, err)
 	}
 
 	initTable := `create TABLE IF NOT EXISTS products (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
-		price READ NOT NULL,
+		price REAL NOT NULL,
 		quantity INTEGER NOT NULL DEFAULT 0,
 		category TEXT
 	)`
 
 	if _, err := db.Exec(initTable); err != nil {
+		_ = db.Close()
 		return nil, err
 	}
 
@@ -152,6 +154,7 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	query := `SELECT id, name, price, quantity, category FROM products WHERE (? = '' OR category = ?)`
 
 	rows, err := ps.db.Query(query, category, category)
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
