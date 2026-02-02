@@ -155,9 +155,9 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 
 	rows, err := ps.db.Query(query, category, category)
 	if err != nil {
-		defer rows.Close()
 		return nil, err
 	}
+	defer rows.Close()
 
 	var products []*Product
 	for rows.Next() {
