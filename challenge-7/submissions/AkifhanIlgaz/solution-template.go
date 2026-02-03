@@ -2,6 +2,7 @@
 package challenge7
 
 import (
+	"fmt"
 	"sync"
 	// Add any other necessary imports
 )
@@ -20,62 +21,59 @@ const (
 	MaxTransactionAmount = 10000.0 // Example limit for deposits/withdrawals
 )
 
-// Custom error types
-
 // AccountError is a general error type for bank account operations.
 type AccountError struct {
-	// Implement this error type
+	message string
 }
 
 func (e *AccountError) Error() string {
-	// Implement error message
-	return ""
+	return fmt.Sprintf("AccountError: %s", e.message)
 }
 
 // InsufficientFundsError occurs when a withdrawal or transfer would bring the balance below minimum.
 type InsufficientFundsError struct {
-	// Implement this error type
+	amount float64
 }
 
 func (e *InsufficientFundsError) Error() string {
-	// Implement error message
-	return ""
+	return fmt.Sprintf("InsufficientFundsError: %f", e.amount)
 }
 
 // NegativeAmountError occurs when an amount for deposit, withdrawal, or transfer is negative.
 type NegativeAmountError struct {
-	// Implement this error type
+	amount float64
 }
 
 func (e *NegativeAmountError) Error() string {
-	// Implement error message
-	return ""
+	return fmt.Sprintf("NegativeAmountError: %f", e.amount)
 }
 
 // ExceedsLimitError occurs when a deposit or withdrawal amount exceeds the defined limit.
 type ExceedsLimitError struct {
-	// Implement this error type
+	amount float64
 }
 
 func (e *ExceedsLimitError) Error() string {
-	// Implement error message
-	return ""
+	return fmt.Sprintf("ExceedsLimitError: %.2f", e.amount)
 }
 
 // NewBankAccount creates a new bank account with the given parameters.
 // It returns an error if any of the parameters are invalid.
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
-	// Implement account creation with validation
 	if id == "" || owner == "" {
-		return nil, &AccountError{}
+		return nil, &AccountError{"Invalid ID or owner"}
 	}
 
-	if initialBalance < 0 || minBalance < 0 {
-		return nil, &NegativeAmountError{}
+	if initialBalance < 0 {
+		return nil, &NegativeAmountError{amount: initialBalance}
+	}
+
+	if minBalance < 0 {
+		return nil, &NegativeAmountError{amount: minBalance}
 	}
 
 	if initialBalance < minBalance {
-		return nil, &InsufficientFundsError{}
+		return nil, &InsufficientFundsError{amount: minBalance}
 	}
 
 	return &BankAccount{
@@ -90,16 +88,16 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 // Deposit adds the specified amount to the account balance.
 // It returns an error if the amount is invalid or exceeds the transaction limit.
 func (a *BankAccount) Deposit(amount float64) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
 	if amount < 0 {
-		return &NegativeAmountError{}
+		return &NegativeAmountError{amount: amount}
 	}
 
 	if amount > MaxTransactionAmount {
-		return &ExceedsLimitError{}
+		return &ExceedsLimitError{amount: amount}
 	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
 	a.Balance += amount
 
@@ -110,24 +108,24 @@ func (a *BankAccount) Deposit(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Withdraw(amount float64) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
 
 	if amount < 0 {
-		return &NegativeAmountError{}
+		return &NegativeAmountError{amount: amount}
 	}
 
 	if amount > MaxTransactionAmount {
-		return &ExceedsLimitError{}
+		return &ExceedsLimitError{amount: amount}
 	}
 
 	if a.Balance-amount < a.MinBalance {
-		return &InsufficientFundsError{}
+		return &InsufficientFundsError{amount: amount}
 	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
 	a.Balance -= amount
 
-	// Implement withdrawal functionality with proper error handling
 	return nil
 }
 
@@ -144,7 +142,6 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	if err != nil {
 		return err
 	}
-	
-	// Implement transfer functionality with proper error handling
+
 	return nil
 }
