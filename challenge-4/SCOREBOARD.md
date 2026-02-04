@@ -1,6 +1,7 @@
 # Scoreboard for challenge-4
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 110Aakif | 22 | 22 |
 | ADEMOLA200 | 22 | 22 |
 | Ali-Fartoot | 22 | 22 |
 | AliNazariii | 22 | 22 |

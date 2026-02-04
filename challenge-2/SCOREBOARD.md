@@ -86,6 +86,7 @@
 | evvellex | 7 | 7 |
 | forever-free1 | 7 | 7 |
 | fzzv | 7 | 7 |
+| goholic | 7 | 7 |
 | grozdovk | 7 | 7 |
 | himanshum9 | 7 | 7 |
 | hodgechung | 7 | 7 |
@@ -98,6 +99,7 @@
 | inok94 | 7 | 7 |
 | ismarinated | 7 | 7 |
 | jasonnfeng | 7 | 7 |
+| jeffreyyjp | 7 | 7 |
 | jersonzc | 7 | 7 |
 | jin5335 | 7 | 7 |
 | jnandezp | 7 | 7 |
