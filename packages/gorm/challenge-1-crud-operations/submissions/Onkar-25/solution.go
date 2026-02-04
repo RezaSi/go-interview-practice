@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/driver/sqlite"
+	"errors"
 )
 
 // User represents a user in the system
@@ -74,6 +75,9 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 // UpdateUser updates an existing user's information
 func UpdateUser(db *gorm.DB, user *User) error {
 	// TODO: Implement user update
+	if user == nil {
+		return errors.New("user is nil")
+	}
     result := db.Model(&User{}).
 		Where("id = ?", user.ID).
 		Updates(user)
