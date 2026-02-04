@@ -30,6 +30,7 @@ func (m *Manager) RemoveEmployee(id int) {
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
+
 	total := 0.0
 	employeeCount := len(m.Employees)
 

@@ -254,6 +254,43 @@
     border-radius: 50px;
     font-weight: 500;
 }
+
+.sponsor-badge-line {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(255, 107, 107, 0.3);
+    display: inline-block;
+    margin: 2px 0;
+    animation: sponsorGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes sponsorGlow {
+    0% { box-shadow: 0 1px 3px rgba(255, 107, 107, 0.3); }
+    100% { box-shadow: 0 2px 6px rgba(255, 107, 107, 0.5); }
+}
+
+.sponsor-heart-podium {
+    font-size: 1.1em;
+    margin-right: 4px;
+    filter: drop-shadow(0 0 4px rgba(255, 107, 107, 0.6));
+    animation: sponsorPulse 2s ease-in-out infinite;
+}
+
+@keyframes sponsorPulse {
+    0%, 100% { 
+        transform: scale(1);
+        filter: drop-shadow(0 0 3px rgba(255, 107, 107, 0.5));
+    }
+    50% { 
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.8));
+    }
+}
 </style>
 {{end}}
 
@@ -277,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (data.success && data.leaderboard.length > 0) {
-                renderLeaderboard(data.leaderboard);
+                // Pass totalChallenges for dynamic rendering
+                renderLeaderboard(data.leaderboard, data.totalChallenges || 0);
                 loadingState.style.display = 'none';
                 leaderboardContent.style.display = 'block';
                 legendSection.style.display = 'block';
@@ -290,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function renderLeaderboard(leaderboard) {
+    function renderLeaderboard(leaderboard, totalChallenges) {
         // Show podium for top 3
         if (leaderboard.length >= 3) {
             renderPodium(leaderboard.slice(0, 3));
@@ -300,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Render full table
         leaderboardTbody.innerHTML = '';
         leaderboard.forEach(user => {
-            const row = createLeaderboardRow(user);
+            const row = createLeaderboardRow(user, totalChallenges);
             leaderboardTbody.appendChild(row);
         });
     }
@@ -327,7 +365,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <img src="https://github.com/${user.username}.png" 
                          class="rounded-circle mx-auto mb-3" 
                          style="width: 80px; height: 80px; border: 3px solid white;">
-                    <h5 class="mb-2">${user.username}</h5>
+                    <h5 class="mb-2">
+                        ${user.isSponsor ? '<span class="sponsor-heart-podium">❤️</span> ' : ''}${user.username}
+                    </h5>
                     <p class="mb-2"><strong>${user.completedCount}</strong> challenges solved</p>
                     <p class="mb-0 small">${user.completionRate.toFixed(1)}% completion rate</p>
                     <div class="mt-2">
@@ -339,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function createLeaderboardRow(user) {
+    function createLeaderboardRow(user, totalChallenges) {
         const row = document.createElement('tr');
         
         // Rank badge styling
@@ -348,9 +388,10 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (user.rank <= 3) rankBadgeClass = 'top-3';
         else if (user.rank <= 10) rankBadgeClass = 'top-10';
 
-        // Generate challenge indicators (assuming challenges 1-28 exist)
+        // Generate challenge indicators dynamically based on totalChallenges
+        const count = Number.isInteger(totalChallenges) && totalChallenges > 0 ? totalChallenges : Object.keys(user.completedChallenges || {}).length;
         let challengeIndicators = '';
-        for (let i = 1; i <= 28; i++) {
+        for (let i = 1; i <= count; i++) {
             const isCompleted = user.completedChallenges[i] === true;
             const indicatorClass = isCompleted ? 'completed' : 'not-completed';
             const content = isCompleted ? '✓' : '•';
@@ -367,10 +408,13 @@ document.addEventListener('DOMContentLoaded', function() {
                          class="avatar-small me-3" alt="${user.username}">
                     <div>
                         <div class="fw-bold">${user.username}</div>
-                        <a href="https://github.com/${user.username}" target="_blank" 
-                           class="small text-muted text-decoration-none">
-                            <i class="bi bi-github"></i> View Profile
-                        </a>
+                        ${user.isSponsor ? '<div class="sponsor-badge-line">❤️ Sponsor</div>' : '<div style="height: 0;"></div>'}
+                        <div>
+                            <a href="https://github.com/${user.username}" target="_blank" 
+                               class="small text-muted text-decoration-none">
+                                <i class="bi bi-github"></i> View Profile
+                            </a>
+                        </div>
                     </div>
                 </div>
             </td>

@@ -296,7 +296,7 @@ func TestBulkProductCreation(t *testing.T) {
 
 	products := []map[string]interface{}{
 		{
-			"sku":      "ABC-123-XYZ",
+			"sku":      "ABC-123-HIJ",
 			"name":     "Valid Product 1",
 			"price":    29.99,
 			"currency": "USD",
@@ -417,7 +417,10 @@ func TestValidateSKUEndpoint(t *testing.T) {
 		expectedStatus int
 		expectedValid  bool
 	}{
-		{"Valid SKU", "ABC-123-XYZ", 200, true},
+		{"Valid SKU", "ABC-123-RST", 200, true},
+		// Because preceding TestCreateProductSuccess test already created
+		// a product with this SKU. Uniqueness of SKU.
+		{"Already exists SKU", "ABC-123-XYZ", 200, false},
 		{"Invalid SKU", "invalid-sku", 200, false}, // Endpoint returns 200 but validation fails
 	}
 
@@ -445,7 +448,7 @@ func TestValidateProductEndpoint(t *testing.T) {
 	router := setupRouter()
 
 	validProduct := map[string]interface{}{
-		"sku":      "ABC-123-XYZ",
+		"sku":      "ABC-123-EFG",
 		"name":     "Test Product",
 		"price":    29.99,
 		"currency": "USD",
@@ -509,7 +512,7 @@ func TestProductValidation(t *testing.T) {
 		{
 			name: "Valid product",
 			product: Product{
-				SKU:      "ABC-123-XYZ",
+				SKU:      "ABC-123-KLM",
 				Name:     "Test Product",
 				Price:    29.99,
 				Currency: "USD",
@@ -549,7 +552,7 @@ func TestProductValidation(t *testing.T) {
 		{
 			name: "Reserved exceeds quantity",
 			product: Product{
-				SKU:      "ABC-123-XYZ",
+				SKU:      "ABC-123-TUV",
 				Name:     "Test Product",
 				Price:    29.99,
 				Currency: "USD",

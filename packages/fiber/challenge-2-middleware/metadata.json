@@ -1,0 +1,33 @@
+{
+  "title": "Middleware & Request/Response Handling",
+  "description": "Learn Fiber middleware patterns by building a blog API with custom logging, authentication, CORS, rate limiting, and error handling middleware.",
+  "short_description": "Build middleware for logging, auth, CORS, rate limiting, and error handling",
+  "difficulty": "Intermediate",
+  "estimated_time": "45-60 min",
+  "learning_objectives": [
+    "Understand Fiber middleware patterns and execution order",
+    "Implement custom middleware for logging and authentication",
+    "Handle cross-origin requests with CORS middleware",
+    "Implement rate limiting to protect API endpoints",
+    "Create centralized error handling middleware"
+  ],
+  "prerequisites": ["fiber_basics", "http_concepts"],
+  "tags": ["middleware", "authentication", "cors", "rate-limiting", "logging"],
+  "real_world_connection": "Middleware patterns are essential for production APIs: authentication, logging, rate limiting, and error handling are used in every serious web application.",
+  "requirements": [
+    "Implement request ID generation and propagation",
+    "Create custom logging middleware with timing information",
+    "Add CORS support for cross-origin requests",
+    "Implement rate limiting (100 requests per minute per IP)",
+    "Protect routes with API key authentication",
+    "Handle errors consistently across all endpoints"
+  ],
+  "bonus_points": [
+    "Add request/response size tracking",
+    "Implement JWT token authentication",
+    "Add request validation middleware",
+    "Create health check with system metrics"
+  ],
+  "icon": "bi-layers",
+  "order": 2
+}

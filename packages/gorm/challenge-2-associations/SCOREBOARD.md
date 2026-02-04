@@ -1,5 +1,7 @@
-# Scoreboard
+# Scoreboard for gorm challenge-2-associations
 
-| Rank | User | Score | Date |
-|------|------|-------|------|
-| - | - | - | - | 
+| Username   | Passed Tests | Total Tests |
+|------------|--------------|-------------|
+| aswinsreeraj | 8 | 8 |
+| grozdovk | 8 | 8 |
+| odelbos | 8 | 8 |
