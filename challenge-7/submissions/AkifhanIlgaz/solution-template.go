@@ -140,6 +140,10 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 
 	err = target.Deposit(amount)
 	if err != nil {
+		// Rollback: re-deposit to source account
+		a.mu.Lock()
+		a.Balance += amount
+		a.mu.Unlock()
 		return err
 	}
 
