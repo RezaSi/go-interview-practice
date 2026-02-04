@@ -53,7 +53,7 @@ func CreateUser(db *gorm.DB, user *User) error {
 func GetUserByID(db *gorm.DB, id uint) (*User, error) {
 	// TODO: Implement user retrieval by ID
 	var user User
-    result := db.First(&user, 1) // Find by primary key
+    result := db.First(&user, id) // Find by primary key
     if result.Error != nil {
         return nil,result.Error
     }
