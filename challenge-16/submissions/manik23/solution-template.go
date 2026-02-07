@@ -27,7 +27,7 @@ func SlowSort(data []int) []int {
 
 // partition partially sorts the array.
 // items smaller than pivot are moved to left side of pivot.
-// items greater than pivot are moved to riht side of pivot.
+// items greater than pivot are moved to right side of pivot.
 func partition(data []int, i, j int) int {
 	pivot := data[i]
 	x := i
