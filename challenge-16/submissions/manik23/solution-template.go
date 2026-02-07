@@ -228,7 +228,7 @@ func OptimizedSearch(text, substr string) map[int]string {
 	for i := 0; i <= limit; i++ {
 		// Use EqualFold for a highly optimized, allocation-free
 		// case-insensitive comparison of the current segment.
-		if strings.EqualFold(text[i:i+substrLen], lowerSubstr) {
+		if strings.ToLower(text[i:i+substrLen]) == lowerSubstr {
 			result[i] = text[i : i+substrLen]
 			// Optional: Skip ahead to avoid overlapping matches
 			// i += substrLen - 1
