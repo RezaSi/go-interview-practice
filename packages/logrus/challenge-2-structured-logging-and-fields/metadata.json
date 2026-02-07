@@ -1,0 +1,47 @@
+    {
+    "title": "Structured Logging & Fields",
+    "description": "Build an HTTP server with a logging middleware to learn advanced structured logging in Go. This challenge focuses on creating context-aware loggers, tracing requests with correlation IDs, and passing request-scoped data using Go's context package and Logrus.",
+    "short_description": "Implement context-aware logging in a Go web server using middleware and Logrus",
+    "difficulty": "Intermediate",
+    "estimated_time": "30-45 min",
+    "learning_objectives": [
+    "Implement the HTTP middleware pattern in Go",
+    "Use logrus.WithFields to create a context-aware logger (logrus.Entry)",
+    "Add correlation IDs for robust request tracing",
+    "Use context.Context to pass request-scoped data between middleware and handlers",
+    "Understand how contextual fields improve debugging and observability in web services"
+    ],
+    "prerequisites": [
+    "Basic Go syntax",
+    "Familiarity with the command line",
+    "Understanding of net/http (HTTP servers) in Go",
+    "Prior exposure to basic logging concepts (e.g., Challenge 1: Basic Logging & Levels)"
+    ],
+    "tags": [
+    "logging",
+    "logrus",
+    "middleware",
+    "http",
+    "context",
+    "structured-logging",
+    "correlation-id"
+    ],
+    "real_world_connection": "This logging middleware pattern is fundamental for building observable, debuggable, and production-ready microservices and web applications in Go. Correlation IDs and structured fields enable powerful tracing, aggregation, and incident investigation workflows.",
+    "requirements": [
+    "Create a logging middleware for an HTTP server",
+    "Generate a unique request_id (correlation ID) for each incoming request",
+    "Populate a logrus.Entry with fields: request_id, http_method, uri, user_agent",
+    "Attach the enriched logger to the request's context and pass it downstream",
+    "Retrieve and use the context-aware logger in the final handler, adding handler-specific fields",
+    "Ensure all log entries for a single request share the same request_id",
+    "Support both JSON and human-friendly text formatters (configurable)"
+    ],
+    "bonus_points": [
+    "Log the final HTTP status code and total response time in the middleware",
+    "If an X-Request-ID header is present, use its value; otherwise generate a new one",
+    "Expose formatter selection via an environment variable or CLI flag (e.g., LOG_FORMAT=text)",
+    "Create a small integration test that validates correlation across middleware and handler logs"
+    ],
+    "icon": "bi-braces-asterisk",
+    "order": 2
+}
