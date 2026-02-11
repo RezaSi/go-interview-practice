@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,7 @@ type Product struct {
 	SKU         string                 `json:"sku" binding:"required"`
 	Name        string                 `json:"name" binding:"required,min=3,max=100"`
 	Description string                 `json:"description" binding:"max=1000"`
-	Price       float64                `json:"price" binding:"required,min=0.01"`
+	Price       float64                `json:"price" binding:"required,min=0.01"` // use integer cents or a decimal library in production
 	Currency    string                 `json:"currency" binding:"required"`
 	Category    Category               `json:"category" binding:"required"`
 	Tags        []string               `json:"tags"`
@@ -39,8 +40,8 @@ type Category struct {
 type Image struct {
 	URL       string `json:"url" binding:"required,url"`
 	Alt       string `json:"alt" binding:"required,min=5,max=200"`
-	Width     int    `json:"width" binding:"min=100"`
-	Height    int    `json:"height" binding:"min=100"`
+	Width     int    `json:"width" binding:"required,min=100"`
+	Height    int    `json:"height" binding:"required,min=100"`
 	Size      int64  `json:"size"`
 	IsPrimary bool   `json:"is_primary"`
 }
@@ -82,7 +83,7 @@ var (
 		{ID: 3, Name: "Books", Slug: "books"},
 		{ID: 4, Name: "Home & Garden", Slug: "home-garden"},
 	}
-	categoriesMutex sync.RWMutex
+	categoriesMutex sync.RWMutex // avoid acquires categoriesMutex then productsMutex, it will be deadlock.
 )
 var validCurrencies = map[string]bool{
 	"USD": true,
@@ -139,13 +140,13 @@ func isValidWarehouseCode(code string) bool {
 // validateProduct validates a product's fields. Caller must hold productsMutex (at least RLock).
 func validateProduct(product *Product) []ValidationError {
 	var errors []ValidationError
-	if len(product.Name) < 3 || len(product.Name) > 100 {
+	if utf8.RuneCountInString(product.Name) < 3 || utf8.RuneCountInString(product.Name) > 100 {
 		errors = append(errors, ValidationError{
 			Field:   "name",
 			Message: "Name must be between 3 and 100 characters after sanitization",
 		})
 	}
-	if len(product.Description) > 1000 {
+	if utf8.RuneCountInString(product.Description) > 1000 {
 		errors = append(errors, ValidationError{
 			Field:   "description",
 			Message: "Description must not exceed 1000 characters after sanitization",
@@ -267,6 +268,7 @@ const maxBulkSize = 100
 
 // POST /products/bulk - Create multiple products, non-atomic — partial inserts on mixed success/failure
 func createProductsBulk(c *gin.Context) {
+	// for production to lower lock duration, batch-validate first, then lock only for the insert phase
 	var inputProducts []Product
 
 	if err := c.ShouldBindJSON(&inputProducts); err != nil {
@@ -349,6 +351,8 @@ func createCategory(c *gin.Context) {
 		})
 		return
 	}
+	category.Name = sanitizeString(category.Name)
+	category.Slug = sanitizeString(category.Slug)
 	categoriesMutex.Lock()
 	defer categoriesMutex.Unlock()
 	safeParent := true
@@ -437,8 +441,8 @@ func validateProductEndpoint(c *gin.Context) {
 	}
 	sanitizeProduct(&product)
 	productsMutex.RLock()
+	defer productsMutex.RUnlock()
 	validationErrors := validateProduct(&product)
-	productsMutex.RUnlock()
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
 			Success: false,
