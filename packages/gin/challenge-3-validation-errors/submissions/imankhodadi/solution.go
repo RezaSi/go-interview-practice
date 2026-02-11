@@ -141,8 +141,6 @@ func validateProduct(product *Product) []ValidationError {
 		})
 	}
 
-	productsMutex.RLock()
-	defer productsMutex.RUnlock()
 	for _, prod := range products {
 		if product.SKU == prod.SKU {
 			errors = append(errors, ValidationError{
@@ -181,6 +179,14 @@ func validateProduct(product *Product) []ValidationError {
 			Message: "Reserved inventory cannot exceed total quantity",
 		})
 	}
+	if !isValidWarehouseCode(product.Inventory.Location) {
+		errors = append(errors, ValidationError{
+			Field:   "inventory.location",
+			Value:   product.Inventory.Location,
+			Tag:     "warehouse",
+			Message: "Must be a valid warehouse code (e.g., WH001)",
+		})
+	}
 	return errors
 }
 
@@ -190,10 +196,10 @@ func sanitizeString(input string) string {
 }
 
 func sanitizeProduct(product *Product) {
-	product.Name = strings.TrimSpace(sanitizeString(product.Name))
-	product.SKU = strings.TrimSpace(sanitizeString(product.SKU))
-	product.Description = strings.TrimSpace(sanitizeString(product.Description))
-	product.Currency = strings.TrimSpace(sanitizeString(product.Currency))
+	product.Name = sanitizeString(product.Name)
+	product.SKU = sanitizeString(product.SKU)
+	product.Description = sanitizeString(product.Description)
+	product.Currency = sanitizeString(product.Currency)
 
 	product.Currency = strings.ToUpper(product.Currency)
 	product.Category.Slug = strings.ToLower(product.Category.Slug)
@@ -218,6 +224,8 @@ func createProduct(c *gin.Context) {
 		return
 	}
 	sanitizeProduct(&product)
+	productsMutex.Lock()
+	defer productsMutex.Unlock()
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
@@ -227,12 +235,9 @@ func createProduct(c *gin.Context) {
 		})
 		return
 	}
-
-	productsMutex.Lock()
 	product.ID = nextProductID
 	nextProductID++
 	products = append(products, product)
-	productsMutex.Unlock()
 
 	c.JSON(201, APIResponse{
 		Success: true,
@@ -243,7 +248,7 @@ func createProduct(c *gin.Context) {
 
 const maxBulkSize = 100
 
-// POST /products/bulk - Create multiple products
+// POST /products/bulk - Create multiple products, non-atomic — partial inserts on mixed success/failure
 func createProductsBulk(c *gin.Context) {
 	var inputProducts []Product
 
@@ -270,7 +275,8 @@ func createProductsBulk(c *gin.Context) {
 
 	var results []BulkResult
 	var successCount int
-
+	productsMutex.Lock()
+	defer productsMutex.Unlock()
 	for i, product := range inputProducts {
 		sanitizeProduct(&product)
 		errors := validateProduct(&product)
@@ -282,13 +288,9 @@ func createProductsBulk(c *gin.Context) {
 				Errors:  errors,
 			})
 		} else {
-
-			productsMutex.Lock()
 			product.ID = nextProductID
 			nextProductID++
 			products = append(products, product)
-			productsMutex.Unlock()
-
 			results = append(results, BulkResult{
 				Index:   i,
 				Success: true,
@@ -329,7 +331,7 @@ func createCategory(c *gin.Context) {
 		})
 		return
 	}
-	categoriesMutex.Lock() //avoid TOCTOU
+	categoriesMutex.Lock()
 	defer categoriesMutex.Unlock()
 	safeParent := true
 	if category.ParentID != nil {
@@ -415,7 +417,7 @@ func validateProductEndpoint(c *gin.Context) {
 		})
 		return
 	}
-
+	sanitizeProduct(&product)
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
@@ -479,5 +481,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 	router := setupRouter()
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		panic(err)
+	}
 }
