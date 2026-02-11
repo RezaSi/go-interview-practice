@@ -10,9 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var productsMutex sync.RWMutex
-var categoriesMutex sync.RWMutex
-
 // Product represents a product in the catalog
 type Product struct {
 	ID          int                    `json:"id"`
@@ -50,7 +47,7 @@ type Image struct {
 
 // Inventory represents product inventory information
 type Inventory struct {
-	Quantity    int       `json:"quantity" binding:"required,min=0"`
+	Quantity    int       `json:"quantity" binding:"min=0"` //Removed required to distinguish "not provided" from "zero"
 	Reserved    int       `json:"reserved" binding:"min=0"`
 	Available   int       `json:"available"` // Calculated field
 	Location    string    `json:"location" binding:"required"`
@@ -72,13 +69,21 @@ type APIResponse struct {
 	RequestID string            `json:"request_id,omitempty"`
 }
 
-var products = []Product{}
-var categories = []Category{
-	{ID: 1, Name: "Electronics", Slug: "electronics"},
-	{ID: 2, Name: "Clothing", Slug: "clothing"},
-	{ID: 3, Name: "Books", Slug: "books"},
-	{ID: 4, Name: "Home & Garden", Slug: "home-garden"},
-}
+var (
+	products      = []Product{}
+	productsMutex sync.RWMutex
+	nextProductID = 1
+)
+
+var (
+	categories = []Category{
+		{ID: 1, Name: "Electronics", Slug: "electronics"},
+		{ID: 2, Name: "Clothing", Slug: "clothing"},
+		{ID: 3, Name: "Books", Slug: "books"},
+		{ID: 4, Name: "Home & Garden", Slug: "home-garden"},
+	}
+	categoriesMutex sync.RWMutex
+)
 var validCurrencies = map[string]bool{
 	"USD": true,
 	"EUR": true,
@@ -87,7 +92,6 @@ var validCurrencies = map[string]bool{
 }
 
 var validWarehouses = []string{"WH001", "WH002", "WH003", "WH004", "WH005"}
-var nextProductID = 1
 
 var (
 	skuRegex       = regexp.MustCompile(`^[A-Z]{3}-\d{3}-[A-Z]{3}$`) // SKU format: ABC-123-XYZ (3 letters, 3 numbers, 3 letters)
@@ -132,6 +136,7 @@ func isValidWarehouseCode(code string) bool {
 	return false
 }
 
+// validateProduct validates a product's fields. Caller must hold productsMutex (at least RLock).
 func validateProduct(product *Product) []ValidationError {
 	var errors []ValidationError
 	if !isValidSKU(product.SKU) {
@@ -277,7 +282,8 @@ func createProductsBulk(c *gin.Context) {
 	var successCount int
 	productsMutex.Lock()
 	defer productsMutex.Unlock()
-	for i, product := range inputProducts {
+	for i, prod := range inputProducts {
+		product := prod // avoid poinint to the last item by pointer
 		sanitizeProduct(&product)
 		errors := validateProduct(&product)
 
@@ -351,10 +357,10 @@ func createCategory(c *gin.Context) {
 		return
 	}
 	for _, ctg := range categories {
-		if category.Name == ctg.Name {
+		if category.Name == ctg.Name || category.ID == ctg.ID {
 			c.JSON(400, APIResponse{
 				Success: false,
-				Message: "category name should be unique",
+				Message: "category name and id should be unique",
 			})
 			return
 		}
@@ -418,7 +424,9 @@ func validateProductEndpoint(c *gin.Context) {
 		return
 	}
 	sanitizeProduct(&product)
+	productsMutex.RLock()
 	validationErrors := validateProduct(&product)
+	productsMutex.RUnlock()
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
 			Success: false,
