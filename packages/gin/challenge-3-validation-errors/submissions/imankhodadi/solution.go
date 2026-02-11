@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var productsMutex sync.Mutex
-var categoriesMutex sync.Mutex
+var productsMutex sync.RWMutex
+var categoriesMutex sync.RWMutex
 
 // Product represents a product in the catalog
 type Product struct {
@@ -93,6 +93,7 @@ var (
 	skuRegex       = regexp.MustCompile(`^[A-Z]{3}-\d{3}-[A-Z]{3}$`) // SKU format: ABC-123-XYZ (3 letters, 3 numbers, 3 letters)
 	slugRegex      = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 	warehouseRegex = regexp.MustCompile(`^WH\d{3}$`)
+	htmlTagRegex   = regexp.MustCompile(`<[^>]*>`)
 )
 
 func isValidSKU(sku string) bool {
@@ -104,6 +105,8 @@ func isValidCurrency(currency string) bool {
 }
 
 func isValidCategory(categoryName string) bool {
+	categoriesMutex.RLock()
+	defer categoriesMutex.RUnlock()
 	for _, category := range categories {
 		if categoryName == category.Name {
 			return true
@@ -129,41 +132,27 @@ func isValidWarehouseCode(code string) bool {
 	return false
 }
 
-// func validateProductByCategory(product *Product) []ValidationError {
-// 	var errors []ValidationError
-
-// 	switch product.Category.Name {
-// 	case "Electronics":
-// 		// Electronics need warranty info
-// 		if len(product.Images) == 0 {
-// 			errors = append(errors, ValidationError{
-// 				Field:   "images",
-// 				Message: "Electronics must have product images",
-// 			})
-// 		}
-// 	case "Clothing":
-// 		// Clothing needs size information
-// 		if _, hasSize := product.Attributes["size"]; !hasSize {
-// 			errors = append(errors, ValidationError{
-// 				Field:   "attributes.size",
-// 				Message: "Clothing must specify size",
-// 			})
-// 		}
-// 	}
-
-// 	return errors
-// }
-
 func validateProduct(product *Product) []ValidationError {
 	var errors []ValidationError
-	// categoryErrors := validateProductByCategory(product)
-	// errors = append(errors, categoryErrors...)
 	if !isValidSKU(product.SKU) {
 		errors = append(errors, ValidationError{
 			Field:   "sku",
 			Message: "SKU must follow ABC-123-XYZ format",
 		})
 	}
+
+	productsMutex.RLock()
+	defer productsMutex.RUnlock()
+	for _, prod := range products {
+		if product.SKU == prod.SKU {
+			errors = append(errors, ValidationError{
+				Field:   "sku",
+				Message: "SKU already exists",
+			})
+			break
+		}
+	}
+
 	if !isValidCurrency(product.Currency) {
 		errors = append(errors, ValidationError{
 			Field:   "currency",
@@ -196,15 +185,7 @@ func validateProduct(product *Product) []ValidationError {
 }
 
 func sanitizeString(input string) string {
-	// Remove HTML tags
-	input = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(input, "")
-
-	// Remove SQL injection attempts
-	dangerous := []string{"'", "\"", ";", "--", "/*", "*/"}
-	for _, char := range dangerous {
-		input = strings.ReplaceAll(input, char, "")
-	}
-
+	input = htmlTagRegex.ReplaceAllString(input, "")
 	return strings.TrimSpace(input)
 }
 
@@ -236,6 +217,7 @@ func createProduct(c *gin.Context) {
 		})
 		return
 	}
+	sanitizeProduct(&product)
 	validationErrors := validateProduct(&product)
 	if len(validationErrors) > 0 {
 		c.JSON(400, APIResponse{
@@ -245,7 +227,6 @@ func createProduct(c *gin.Context) {
 		})
 		return
 	}
-	sanitizeProduct(&product)
 
 	productsMutex.Lock()
 	product.ID = nextProductID
@@ -273,7 +254,7 @@ func createProductsBulk(c *gin.Context) {
 		})
 		return
 	}
-	if len(products) > maxBulkSize {
+	if len(inputProducts) > maxBulkSize {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Message: fmt.Sprintf("Bulk size cannot exceed %d items", maxBulkSize),
@@ -291,6 +272,7 @@ func createProductsBulk(c *gin.Context) {
 	var successCount int
 
 	for i, product := range inputProducts {
+		sanitizeProduct(&product)
 		errors := validateProduct(&product)
 
 		if len(errors) > 0 {
@@ -300,7 +282,6 @@ func createProductsBulk(c *gin.Context) {
 				Errors:  errors,
 			})
 		} else {
-			sanitizeProduct(&product)
 
 			productsMutex.Lock()
 			product.ID = nextProductID
@@ -348,6 +329,8 @@ func createCategory(c *gin.Context) {
 		})
 		return
 	}
+	categoriesMutex.Lock() //avoid TOCTOU
+	defer categoriesMutex.Unlock()
 	safeParent := true
 	if category.ParentID != nil {
 		safeParent = false
@@ -375,9 +358,8 @@ func createCategory(c *gin.Context) {
 		}
 	}
 
-	categoriesMutex.Lock()
 	categories = append(categories, category)
-	categoriesMutex.Unlock()
+
 	c.JSON(201, APIResponse{
 		Success: true,
 		Data:    category,
@@ -405,7 +387,8 @@ func validateSKUEndpoint(c *gin.Context) {
 		})
 		return
 	}
-
+	productsMutex.RLock()
+	defer productsMutex.RUnlock()
 	for _, product := range products {
 		if product.SKU == request.SKU {
 			c.JSON(200, APIResponse{
