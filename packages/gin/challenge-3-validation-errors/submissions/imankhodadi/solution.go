@@ -343,7 +343,8 @@ func createCategory(c *gin.Context) {
 		})
 		return
 	}
-
+	category.Name = sanitizeString(category.Name)
+	category.Slug = sanitizeString(category.Slug)
 	if !isValidSlug(category.Slug) {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -351,8 +352,6 @@ func createCategory(c *gin.Context) {
 		})
 		return
 	}
-	category.Name = sanitizeString(category.Name)
-	category.Slug = sanitizeString(category.Slug)
 	categoriesMutex.Lock()
 	defer categoriesMutex.Unlock()
 	safeParent := true
