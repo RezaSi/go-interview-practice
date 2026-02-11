@@ -139,6 +139,19 @@ func isValidWarehouseCode(code string) bool {
 // validateProduct validates a product's fields. Caller must hold productsMutex (at least RLock).
 func validateProduct(product *Product) []ValidationError {
 	var errors []ValidationError
+	if len(product.Name) < 3 || len(product.Name) > 100 {
+		errors = append(errors, ValidationError{
+			Field:   "name",
+			Message: "Name must be between 3 and 100 characters after sanitization",
+		})
+	}
+	if len(product.Description) > 1000 {
+		errors = append(errors, ValidationError{
+			Field:   "description",
+			Message: "Description must not exceed 1000 characters after sanitization",
+		})
+	}
+
 	if !isValidSKU(product.SKU) {
 		errors = append(errors, ValidationError{
 			Field:   "sku",
@@ -208,9 +221,7 @@ func sanitizeProduct(product *Product) {
 
 	product.Currency = strings.ToUpper(product.Currency)
 	product.Category.Slug = strings.ToLower(product.Category.Slug)
-
-	product.Inventory.Available = product.Inventory.Quantity - product.Inventory.Reserved
-
+	product.Inventory.Available = product.Inventory.Quantity - product.Inventory.Reserved // required to be calculated in this function for this assignment
 	if product.ID == 0 {
 		product.CreatedAt = time.Now()
 	}
@@ -242,6 +253,7 @@ func createProduct(c *gin.Context) {
 	}
 	product.ID = nextProductID
 	nextProductID++
+
 	products = append(products, product)
 
 	c.JSON(201, APIResponse{
@@ -283,7 +295,7 @@ func createProductsBulk(c *gin.Context) {
 	productsMutex.Lock()
 	defer productsMutex.Unlock()
 	for i, prod := range inputProducts {
-		product := prod // avoid poinint to the last item by pointer
+		product := prod // avoid pointing to the last item by pointer
 		sanitizeProduct(&product)
 		errors := validateProduct(&product)
 
@@ -357,10 +369,10 @@ func createCategory(c *gin.Context) {
 		return
 	}
 	for _, ctg := range categories {
-		if category.Name == ctg.Name || category.ID == ctg.ID {
+		if category.Name == ctg.Name || category.ID == ctg.ID || category.Slug == ctg.Slug {
 			c.JSON(400, APIResponse{
 				Success: false,
-				Message: "category name and id should be unique",
+				Message: "category name, id, and slug should be unique",
 			})
 			return
 		}
