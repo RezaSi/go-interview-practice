@@ -185,6 +185,23 @@ func validateProduct(product *Product) []ValidationError {
 			Field:   "category",
 			Message: "Category ID, name, and slug must match an existing category",
 		})
+	} else {
+		// Cross-validate that ID, Name, and Slug all refer to the same category
+		categoriesMutex.RLock()
+		matched := false
+		for _, c := range categories {
+			if c.Name == product.Category.Name && c.ID == product.Category.ID && c.Slug == product.Category.Slug {
+				matched = true
+				break
+			}
+		}
+		categoriesMutex.RUnlock()
+		if !matched {
+			errors = append(errors, ValidationError{
+				Field:   "category",
+				Message: "Category ID, name, and slug must match an existing category",
+			})
+		}
 	}
 
 	if product.Inventory.Reserved > product.Inventory.Quantity {
@@ -206,6 +223,8 @@ func validateProduct(product *Product) []ValidationError {
 	return errors
 }
 
+// in a production setting, fields like Name and Description that could be rendered in a UI should be sanitized against HTML/script injection
+// (e.g., using html.EscapeString or a dedicated library like bluemonday)
 func sanitizeString(input string) string {
 	return strings.TrimSpace(input)
 }
@@ -476,7 +495,7 @@ func validateProductEndpoint(c *gin.Context) {
 // GET /validation/rules - Get validation rules
 func getValidationRules(c *gin.Context) {
 	rules := map[string]any{
-		"sku": map[string]interface{}{
+		"sku": map[string]any{
 			"format":   "ABC-123-XYZ",
 			"required": true,
 			"unique":   true,
