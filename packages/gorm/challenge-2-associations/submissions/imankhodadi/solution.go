@@ -34,7 +34,8 @@ type Tag struct {
 }
 
 func ConnectDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	dbName := "test.db" // fixed for this assignment
+	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -56,17 +57,21 @@ func GetUserWithPosts(db *gorm.DB, userID uint) (*User, error) {
 }
 
 func CreatePostWithTags(db *gorm.DB, post *Post, tagNames []string) error {
-	// Create the post first
-	if err := db.Create(post).Error; err != nil {
-		return err
-	}
-	// Find or create tags and associate them
-	for _, name := range tagNames {
-		var tag Tag
-		db.FirstOrCreate(&tag, Tag{Name: name})
-		db.Model(post).Association("Tags").Append(&tag)
-	}
-	return nil
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(post).Error; err != nil {
+			return err
+		}
+		for _, name := range tagNames {
+			var tag Tag
+			if err := tx.FirstOrCreate(&tag, Tag{Name: name}).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(post).Association("Tags").Append(&tag); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // GetPostsByTag retrieves all posts that have a specific tag
@@ -81,16 +86,22 @@ func GetPostsByTag(db *gorm.DB, tagName string) ([]Post, error) {
 
 // AddTagsToPost adds tags to an existing post
 func AddTagsToPost(db *gorm.DB, postID uint, tagNames []string) error {
-	var post Post
-	if err := db.First(&post, postID).Error; err != nil {
-		return err
-	}
-	for _, name := range tagNames {
-		var tag Tag
-		db.FirstOrCreate(&tag, Tag{Name: name})
-		db.Model(&post).Association("Tags").Append(&tag)
-	}
-	return nil
+	return db.Transaction(func(tx *gorm.DB) error {
+		var post Post
+		if err := tx.First(&post, postID).Error; err != nil {
+			return err
+		}
+		for _, name := range tagNames {
+			var tag Tag
+			if err := tx.FirstOrCreate(&tag, Tag{Name: name}).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&post).Association("Tags").Append(&tag); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // GetPostWithUserAndTags retrieves a post with user and tags preloaded
