@@ -180,30 +180,46 @@ func validateProduct(product *Product) []ValidationError {
 			Message: "Must be a valid ISO 4217 currency code",
 		})
 	}
-	if !isValidCategory(product.Category.Name) {
+	// if !isValidCategory(product.Category.Name) {
+	// 	errors = append(errors, ValidationError{
+	// 		Field:   "category",
+	// 		Message: "Category ID, name, and slug must match an existing category",
+	// 	})
+	// } else {
+	// 	// Cross-validate that ID, Name, and Slug all refer to the same category
+	// 	categoriesMutex.RLock()
+	// 	matched := false
+	// 	for _, c := range categories {
+	// 		if c.Name == product.Category.Name && c.ID == product.Category.ID && c.Slug == product.Category.Slug {
+	// 			matched = true
+	// 			break
+	// 		}
+	// 	}
+	// 	categoriesMutex.RUnlock()
+	// 	if !matched {
+	// 		errors = append(errors, ValidationError{
+	// 			Field:   "category",
+	// 			Message: "Category ID, name, and slug must match an existing category",
+	// 		})
+	// 	}
+	// }
+	//
+	categoriesMutex.RLock()
+	matched := false
+	for _, c := range categories {
+		if c.Name == product.Category.Name && c.ID == product.Category.ID && c.Slug == product.Category.Slug {
+			matched = true
+			break
+		}
+	}
+	categoriesMutex.RUnlock()
+	if !matched {
 		errors = append(errors, ValidationError{
 			Field:   "category",
 			Message: "Category ID, name, and slug must match an existing category",
 		})
-	} else {
-		// Cross-validate that ID, Name, and Slug all refer to the same category
-		categoriesMutex.RLock()
-		matched := false
-		for _, c := range categories {
-			if c.Name == product.Category.Name && c.ID == product.Category.ID && c.Slug == product.Category.Slug {
-				matched = true
-				break
-			}
-		}
-		categoriesMutex.RUnlock()
-		if !matched {
-			errors = append(errors, ValidationError{
-				Field:   "category",
-				Message: "Category ID, name, and slug must match an existing category",
-			})
-		}
 	}
-
+	//
 	if product.Inventory.Reserved > product.Inventory.Quantity {
 		errors = append(errors, ValidationError{
 			Field:   "inventory.reserved",
@@ -237,6 +253,21 @@ func sanitizeProduct(product *Product) {
 
 	product.Currency = strings.ToUpper(product.Currency)
 	product.Category.Slug = strings.ToLower(product.Category.Slug)
+	seen := make(map[string]struct{}, len(product.Tags))
+
+	sanitizedTags := make([]string, 0, len(product.Tags))
+	for _, tag := range product.Tags {
+		t := strings.TrimSpace(tag)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; !ok {
+			seen[t] = struct{}{}
+			sanitizedTags = append(sanitizedTags, t)
+		}
+	}
+	product.Tags = sanitizedTags
+
 	product.Inventory.Available = product.Inventory.Quantity - product.Inventory.Reserved // required to be calculated in this function for this assignment
 	if product.ID == 0 {
 		product.CreatedAt = time.Now()
@@ -341,16 +372,42 @@ func createProductsBulk(c *gin.Context) {
 		}
 	}
 
-	c.JSON(200, APIResponse{
-		Success: successCount == len(inputProducts),
-		Data: map[string]interface{}{
-			"results":    results,
-			"total":      len(inputProducts),
-			"successful": successCount,
-			"failed":     len(inputProducts) - successCount,
-		},
-		Message: "Bulk operation completed",
-	})
+	if len(inputProducts) == successCount {
+		c.JSON(200, APIResponse{
+			Success: successCount == len(inputProducts),
+			Data: map[string]any{
+				"results":    results,
+				"total":      len(inputProducts),
+				"successful": successCount,
+				"failed":     0,
+			},
+			Message: "all products successfully created",
+		})
+	} else if successCount == 0 {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Data: map[string]any{
+				"results":    results,
+				"total":      len(inputProducts),
+				"successful": 0,
+				"failed":     len(inputProducts),
+			},
+			Message: "all product creations failed",
+		})
+	} else {
+		// assignment requies 200, use 207 for production
+		c.JSON(200, APIResponse{
+			Success: false,
+			Data: map[string]any{
+				"results":    results,
+				"total":      len(inputProducts),
+				"successful": successCount,
+				"failed":     len(inputProducts) - successCount,
+			},
+			Message: "partial products creation",
+		})
+	}
+
 }
 
 // POST /categories - Create category
@@ -366,6 +423,13 @@ func createCategory(c *gin.Context) {
 	}
 	category.Name = sanitizeString(category.Name)
 	category.Slug = sanitizeString(category.Slug)
+	if category.Name == "" || category.Slug == "" {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Message: "Category name and slug must not be empty",
+		})
+		return
+	}
 	if !isValidSlug(category.Slug) {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -438,7 +502,8 @@ func validateSKUEndpoint(c *gin.Context) {
 		})
 		return
 	}
-	if !isValidSKU(request.SKU) {
+	sku := strings.TrimSpace(request.SKU)
+	if !isValidSKU(sku) {
 		c.JSON(200, APIResponse{
 			Success: false,
 			Message: "Invalid SKU",
