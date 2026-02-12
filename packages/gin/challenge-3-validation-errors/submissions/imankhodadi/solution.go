@@ -163,7 +163,7 @@ func validateProduct(product *Product) []ValidationError {
 			Message: "SKU must follow ABC-123-XYZ format",
 		})
 	}
-
+	// use database index for production
 	for _, prod := range products {
 		if product.SKU == prod.SKU {
 			errors = append(errors, ValidationError{
@@ -180,30 +180,7 @@ func validateProduct(product *Product) []ValidationError {
 			Message: "Must be a valid ISO 4217 currency code",
 		})
 	}
-	// if !isValidCategory(product.Category.Name) {
-	// 	errors = append(errors, ValidationError{
-	// 		Field:   "category",
-	// 		Message: "Category ID, name, and slug must match an existing category",
-	// 	})
-	// } else {
-	// 	// Cross-validate that ID, Name, and Slug all refer to the same category
-	// 	categoriesMutex.RLock()
-	// 	matched := false
-	// 	for _, c := range categories {
-	// 		if c.Name == product.Category.Name && c.ID == product.Category.ID && c.Slug == product.Category.Slug {
-	// 			matched = true
-	// 			break
-	// 		}
-	// 	}
-	// 	categoriesMutex.RUnlock()
-	// 	if !matched {
-	// 		errors = append(errors, ValidationError{
-	// 			Field:   "category",
-	// 			Message: "Category ID, name, and slug must match an existing category",
-	// 		})
-	// 	}
-	// }
-	//
+
 	categoriesMutex.RLock()
 	matched := false
 	for _, c := range categories {
@@ -287,6 +264,8 @@ func createProduct(c *gin.Context) {
 		return
 	}
 	sanitizeProduct(&product)
+
+	// for production, moving the lock acquisition to just before the uniqueness check and insert to reduce contention
 	productsMutex.Lock()
 	defer productsMutex.Unlock()
 	validationErrors := validateProduct(&product)
@@ -395,7 +374,7 @@ func createProductsBulk(c *gin.Context) {
 			Message: "all product creations failed",
 		})
 	} else {
-		// assignment requies 200, use 207 for production
+		// assignment requires 200, use 207 for production
 		c.JSON(200, APIResponse{
 			Success: false,
 			Data: map[string]any{
@@ -410,6 +389,7 @@ func createProductsBulk(c *gin.Context) {
 
 }
 
+// for production use auto increment database id
 // POST /categories - Create category
 func createCategory(c *gin.Context) {
 	var category Category
@@ -513,7 +493,7 @@ func validateSKUEndpoint(c *gin.Context) {
 	productsMutex.RLock()
 	defer productsMutex.RUnlock()
 	for _, product := range products {
-		if product.SKU == request.SKU {
+		if product.SKU == sku {
 			c.JSON(200, APIResponse{
 				Success: false,
 				Message: "Already exists SKU",
