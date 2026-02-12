@@ -83,7 +83,7 @@ var (
 		{ID: 3, Name: "Books", Slug: "books"},
 		{ID: 4, Name: "Home & Garden", Slug: "home-garden"},
 	}
-	categoriesMutex sync.RWMutex // avoid acquires categoriesMutex then productsMutex, it will be deadlock.
+	categoriesMutex sync.RWMutex
 )
 var validCurrencies = map[string]bool{
 	"USD": true,
@@ -98,7 +98,6 @@ var (
 	skuRegex       = regexp.MustCompile(`^[A-Z]{3}-\d{3}-[A-Z]{3}$`) // SKU format: ABC-123-XYZ (3 letters, 3 numbers, 3 letters)
 	slugRegex      = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 	warehouseRegex = regexp.MustCompile(`^WH\d{3}$`)
-	htmlTagRegex   = regexp.MustCompile(`<[^>]*>`)
 )
 
 func isValidSKU(sku string) bool {
@@ -107,17 +106,6 @@ func isValidSKU(sku string) bool {
 
 func isValidCurrency(currency string) bool {
 	return validCurrencies[currency]
-}
-
-func isValidCategory(categoryName string) bool {
-	categoriesMutex.RLock()
-	defer categoriesMutex.RUnlock()
-	for _, category := range categories {
-		if categoryName == category.Name {
-			return true
-		}
-	}
-	return false
 }
 
 func isValidSlug(slug string) bool {
@@ -131,6 +119,15 @@ func isValidWarehouseCode(code string) bool {
 	}
 	for _, valid := range validWarehouses {
 		if code == valid {
+			return true
+		}
+	}
+	return false
+}
+
+func isValidCategory(cat string) bool {
+	for _, c := range categories {
+		if c.Name == cat {
 			return true
 		}
 	}
@@ -176,17 +173,10 @@ func validateProduct(product *Product) []ValidationError {
 			Message: "Must be a valid ISO 4217 currency code",
 		})
 	}
-
 	if !isValidCategory(product.Category.Name) {
 		errors = append(errors, ValidationError{
-			Field:   "product category name",
-			Message: "invalid category name",
-		})
-	}
-	if !isValidSlug(product.Category.Slug) {
-		errors = append(errors, ValidationError{
-			Field:   "product category slug",
-			Message: "invalid category slug",
+			Field:   "category",
+			Message: "Category ID, name, and slug must match an existing category",
 		})
 	}
 
@@ -210,7 +200,6 @@ func validateProduct(product *Product) []ValidationError {
 }
 
 func sanitizeString(input string) string {
-	input = htmlTagRegex.ReplaceAllString(input, "")
 	return strings.TrimSpace(input)
 }
 
@@ -285,13 +274,19 @@ func createProductsBulk(c *gin.Context) {
 		})
 		return
 	}
+	if len(inputProducts) == 0 {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Message: "At least one product is required",
+		})
+		return
+	}
 	type BulkResult struct {
 		Index   int               `json:"index"`
 		Success bool              `json:"success"`
 		Product *Product          `json:"product,omitempty"`
 		Errors  []ValidationError `json:"errors,omitempty"`
 	}
-
 	var results []BulkResult
 	var successCount int
 	productsMutex.Lock()
@@ -372,10 +367,24 @@ func createCategory(c *gin.Context) {
 		return
 	}
 	for _, ctg := range categories {
-		if category.Name == ctg.Name || category.ID == ctg.ID || category.Slug == ctg.Slug {
+		if category.Name == ctg.Name {
 			c.JSON(400, APIResponse{
 				Success: false,
-				Message: "category name, id, and slug should be unique",
+				Message: "category name should be unique",
+			})
+			return
+		}
+		if category.ID == ctg.ID {
+			c.JSON(400, APIResponse{
+				Success: false,
+				Message: "category id should be unique",
+			})
+			return
+		}
+		if category.Slug == ctg.Slug {
+			c.JSON(400, APIResponse{
+				Success: false,
+				Message: "category slug should be unique",
 			})
 			return
 		}
@@ -459,22 +468,22 @@ func validateProductEndpoint(c *gin.Context) {
 
 // GET /validation/rules - Get validation rules
 func getValidationRules(c *gin.Context) {
-	rules := map[string]interface{}{
+	rules := map[string]any{
 		"sku": map[string]interface{}{
 			"format":   "ABC-123-XYZ",
 			"required": true,
 			"unique":   true,
 		},
-		"name": map[string]interface{}{
+		"name": map[string]any{
 			"required": true,
 			"min":      3,
 			"max":      100,
 		},
-		"currency": map[string]interface{}{
+		"currency": map[string]any{
 			"required": true,
 			"valid":    validCurrencies,
 		},
-		"warehouse": map[string]interface{}{
+		"warehouse": map[string]any{
 			"format": "WH###",
 			"valid":  validWarehouses,
 		},
