@@ -1,0 +1,61 @@
+{
+  "name": "Go Interview Practice Platform",
+  "description": "🚀 Interactive Go programming challenges with 30+ coding problems, package-specific challenges (Echo, Gin, Fiber, Cobra, GORM), AI-powered interview simulation, and real-time leaderboards. Perfect for Go developers preparing for technical interviews!",
+  "services": [
+    {
+      "name": "web-ui",
+      "source": {
+        "type": "github",
+        "repo": "RezaSi/go-interview-practice"
+      },
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "web-ui/Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "./web-ui",
+        "healthcheckPath": "/health",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      },
+      "variables": {
+        "PORT": "8080",
+        "GO_ENV": "production",
+        "AI_PROVIDER": "${{AI_PROVIDER}}",
+        "GEMINI_API_KEY": "${{GEMINI_API_KEY}}",
+        "OPENAI_API_KEY": "${{OPENAI_API_KEY}}",
+        "CLAUDE_API_KEY": "${{CLAUDE_API_KEY}}"
+      },
+      "domains": [
+        {
+          "name": "${{RAILWAY_STATIC_URL}}"
+        }
+      ],
+      "networking": {
+        "serviceDomains": [
+          {
+            "domain": "${{RAILWAY_STATIC_URL}}"
+          }
+        ]
+      }
+    }
+  ],
+  "variables": {
+    "AI_PROVIDER": {
+      "description": "AI provider for interview simulation (gemini, openai, or claude)",
+      "default": "gemini"
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key for AI features (get free key at https://makersuite.google.com/app/apikey)",
+      "default": ""
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for AI features (optional, only if using OpenAI)",
+      "default": ""
+    },
+    "CLAUDE_API_KEY": {
+      "description": "Anthropic Claude API key for AI features (optional, only if using Claude)",
+      "default": ""
+    }
+  }
+}

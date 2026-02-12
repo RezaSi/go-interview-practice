@@ -1,5 +1,6 @@
-# Scoreboard
+# Scoreboard for gorm challenge-4-advanced-queries
 
-| Rank | User | Score | Date |
-|------|------|-------|------|
-| - | - | - | - | 
+| Username   | Passed Tests | Total Tests |
+|------------|--------------|-------------|
+| aswinsreeraj | 9 | 9 |
+| odelbos | 9 | 9 |

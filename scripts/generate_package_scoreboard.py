@@ -6,8 +6,42 @@ Script to generate the package scoreboard for README.md by aggregating data from
 import os
 import re
 import sys
+import requests
 from collections import defaultdict
 from pathlib import Path
+
+
+def load_sponsors():
+    """Load sponsor list by scraping the public GitHub sponsors page."""
+    sponsors = set()
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; PythonSponsorScraper/1.0)'
+        }
+        
+        response = requests.get(
+            'https://github.com/sponsors/RezaSi',
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            html = response.text
+            
+            # Extract usernames from alt="@username" attributes
+            avatar_pattern = r'alt="@([a-zA-Z0-9][a-zA-Z0-9\-]*)"'
+            matches = re.findall(avatar_pattern, html)
+            
+            for username in matches:
+                # Filter out the repository owner from sponsors list
+                if username != "RezaSi":
+                    sponsors.add(username)
+    
+    except Exception as e:
+        pass  # Silently handle sponsor loading errors
+    
+    return sponsors
 
 
 def parse_package_scoreboard_file(filepath):
@@ -99,6 +133,9 @@ def get_package_challenge_title(challenge_dir):
 def generate_package_scoreboard():
     """Generate the package scoreboard by aggregating all package challenge scoreboards."""
     
+    # Load sponsors
+    sponsors = load_sponsors()
+    
     # Dictionary to track user completion counts per package
     package_completions = defaultdict(lambda: defaultdict(lambda: {'count': 0, 'challenges': []}))
     overall_completions = defaultdict(lambda: {'count': 0, 'packages': set()})
@@ -164,7 +201,7 @@ def generate_package_scoreboard():
     
     if sorted_overall:
         # Generate top 10 overall package challenge leaders
-        html_table = generate_package_html_leaderboard(sorted_overall[:10], package_completions)
+        html_table = generate_package_html_leaderboard(sorted_overall[:10], package_completions, sponsors)
         markdown_lines.append(html_table)
     else:
         markdown_lines.extend([
@@ -248,7 +285,7 @@ def generate_progress_bar(completed, total, length=10):
     return f"{bar} {percentage}"
 
 
-def generate_package_html_leaderboard(top_users, package_completions):
+def generate_package_html_leaderboard(top_users, package_completions, sponsors):
     """Generate a beautiful GitHub-compatible package leaderboard table."""
     
     # Start with the table header - simple markdown format
@@ -295,7 +332,8 @@ def generate_package_html_leaderboard(top_users, package_completions):
         breakdown_text = " • ".join(package_breakdown)
         
         # Create profile with GitHub avatar
-        profile_cell = f'<img src="https://github.com/{username}.png" width="24" height="24" style="border-radius: 50%;"><br/>**[{username}](https://github.com/{username})**'
+        sponsor_badge = " ❤️" if username in sponsors else ""
+        profile_cell = f'<img src="https://github.com/{username}.png" width="24" height="24" style="border-radius: 50%;"><br/>**[{username}](https://github.com/{username})**{sponsor_badge}'
         
         # Create solved count
         solved_cell = f"**{total_count}**"

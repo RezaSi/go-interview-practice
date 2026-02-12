@@ -647,6 +647,7 @@ body {
 .gin-gradient { background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%); }
 .cobra-gradient { background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%); }
 .gorm-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.fiber-gradient { background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); }
 
 /* Coming Soon Styles */
 .coming-soon-badge {

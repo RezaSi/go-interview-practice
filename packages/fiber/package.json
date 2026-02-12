@@ -1,0 +1,26 @@
+{
+  "name": "fiber",
+  "display_name": "Fiber Web Framework",
+  "description": "Express inspired web framework written in Go",
+  "version": "v2.52.0",
+  "github_url": "https://github.com/gofiber/fiber",
+  "documentation_url": "https://docs.gofiber.io/",
+  "stars": 33000,
+  "category": "web",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "http_concepts"],
+    "learning_path": [
+    "challenge-1-basic-routing",
+    "challenge-2-middleware", 
+    "challenge-3-validation-errors",
+    "challenge-4-authentication"
+  ],
+  "tags": ["web", "http", "api", "rest", "middleware", "express", "fast"],
+  "estimated_time": "4-6 hours",
+  "real_world_usage": [
+    "High-performance APIs",
+    "Microservices",
+    "Real-time applications",
+    "HTTP backends"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "name": "Go Interview Practice Platform",
+  "description": "🚀 Interactive Go programming challenges with 30+ coding problems, package-specific challenges (Echo, Gin, Fiber, Cobra, GORM), AI-powered interview simulation, and real-time leaderboards. Perfect for Go developers preparing for technical interviews!",
+  "image": "https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/images/challenge.png",
+  "tags": ["go", "golang", "interview", "coding-challenges", "web-framework", "ai", "education"],
+  "category": "Education",
+  "services": [
+    {
+      "name": "go-interview-practice",
+      "source": {
+        "type": "github",
+        "repo": "RezaSi/go-interview-practice"
+      },
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "web-ui/Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "./web-ui",
+        "healthcheckPath": "/health",
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      },
+      "variables": {
+        "PORT": "8080",
+        "GO_ENV": "production",
+        "AI_PROVIDER": "${{AI_PROVIDER}}",
+        "GEMINI_API_KEY": "${{GEMINI_API_KEY}}",
+        "OPENAI_API_KEY": "${{OPENAI_API_KEY}}",
+        "CLAUDE_API_KEY": "${{CLAUDE_API_KEY}}"
+      },
+      "networking": {
+        "serviceDomains": [
+          {
+            "domain": "${{RAILWAY_STATIC_URL}}"
+          }
+        ]
+      }
+    }
+  ],
+  "variables": {
+    "AI_PROVIDER": {
+      "description": "AI provider for interview simulation features",
+      "default": "gemini",
+      "options": ["gemini", "openai", "claude"]
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key (recommended - free tier available at https://makersuite.google.com/app/apikey)",
+      "default": "",
+      "type": "secret"
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key (optional - get at https://platform.openai.com/api-keys)",
+      "default": "",
+      "type": "secret"
+    },
+    "CLAUDE_API_KEY": {
+      "description": "Anthropic Claude API key (optional - get at https://console.anthropic.com/)",
+      "default": "",
+      "type": "secret"
+    }
+  },
+  "readme": "README_RAILWAY_TEMPLATE.md"
+}

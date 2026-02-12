@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"web-ui/internal/models"
 )
@@ -14,6 +15,7 @@ import (
 // UserService handles user-related operations
 type UserService struct {
 	userAttempts models.UserAttemptsMap
+	mutex        sync.RWMutex
 }
 
 // NewUserService creates a new user service
@@ -25,10 +27,13 @@ func NewUserService() *UserService {
 
 // LoadUserAttempts checks the filesystem for submission directories
 func (us *UserService) LoadUserAttempts(username string, challenges models.ChallengeMap) *models.UserAttemptedChallenges {
-	// If we already loaded this user's attempts, return from cache
+	// Check cache with read lock
+	us.mutex.RLock()
 	if attempts, ok := us.userAttempts[username]; ok {
+		us.mutex.RUnlock()
 		return attempts
 	}
+	us.mutex.RUnlock()
 
 	// Create new tracking structure
 	userAttempt := &models.UserAttemptedChallenges{
@@ -47,8 +52,10 @@ func (us *UserService) LoadUserAttempts(username string, challenges models.Chall
 		}
 	}
 
-	// Cache the results
+	// Cache the results with write lock
+	us.mutex.Lock()
 	us.userAttempts[username] = userAttempt
+	us.mutex.Unlock()
 	return userAttempt
 }
 
@@ -100,17 +107,22 @@ func (us *UserService) GetExistingSolution(username string, challengeID int) str
 
 // RefreshUserAttempts clears the cache for a user and reloads their attempts
 func (us *UserService) RefreshUserAttempts(username string, challenges models.ChallengeMap) *models.UserAttemptedChallenges {
-	// Clear cache
+	// Clear cache with write lock
+	us.mutex.Lock()
 	delete(us.userAttempts, username)
+	us.mutex.Unlock()
 	// Reload and return
 	return us.LoadUserAttempts(username, challenges)
 }
 
 // GetUserAttempts returns the cached user attempts or loads them if not cached
 func (us *UserService) GetUserAttempts(username string, challenges models.ChallengeMap) *models.UserAttemptedChallenges {
+	us.mutex.RLock()
 	if attempts, ok := us.userAttempts[username]; ok {
+		us.mutex.RUnlock()
 		return attempts
 	}
+	us.mutex.RUnlock()
 	return us.LoadUserAttempts(username, challenges)
 }
 

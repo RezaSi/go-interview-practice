@@ -77,6 +77,9 @@ func TestFindInsertPosition(t *testing.T) {
 		expected int
 	}{
 		{"Empty array", []int{}, 5, 0},
+		{"Single element small", []int{5}, 3, 0},
+		{"Single element bigger", []int{1}, 5, 1},
+		{"Single element equal ", []int{1}, 1, 0},
 		{"Insert at beginning", []int{2, 4, 6, 8}, 1, 0},
 		{"Insert at end", []int{2, 4, 6, 8}, 10, 4},
 		{"Insert in middle", []int{2, 4, 6, 8}, 5, 2},

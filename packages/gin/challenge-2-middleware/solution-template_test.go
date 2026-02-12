@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -110,26 +111,30 @@ func TestCORSMiddleware(t *testing.T) {
 	assert.Equal(t, 204, w.Code)
 }
 
-// Test Rate Limiting Middleware
-func TestRateLimitMiddleware(t *testing.T) {
+// Test Rate Limiting Middleware - Basic Check
+func TestRateLimitMiddlewareBasic(t *testing.T) {
 	router := setupRouter()
 
-	// Make multiple requests to test rate limiting
-	// Note: This test might need adjustment based on your rate limit implementation
+	// Make a few requests to test basic rate limiting functionality
 	for i := 0; i < 5; i++ {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/ping", nil)
 		router.ServeHTTP(w, req)
 
-		// First few requests should succeed
-		if i < 3 {
-			assert.Equal(t, 200, w.Code)
-		}
-
-		// Check rate limit headers are present
+		// Check rate limit headers are present (if implemented)
 		limit := w.Header().Get("X-RateLimit-Limit")
 		if limit != "" {
 			assert.NotEmpty(t, limit)
+		}
+
+		remaining := w.Header().Get("X-RateLimit-Remaining")
+		if remaining != "" {
+			assert.NotEmpty(t, remaining)
+		}
+
+		reset := w.Header().Get("X-RateLimit-Reset")
+		if reset != "" {
+			assert.NotEmpty(t, reset)
 		}
 	}
 }
@@ -358,6 +363,42 @@ func TestErrorHandling(t *testing.T) {
 	assert.Equal(t, 400, w.Code)
 }
 
+// Test Error Middleware
+func TestErrorMiddleware(t *testing.T) {
+	// Specific router to test the Error middleware.
+	// To simulate an internal server error we will use a divide by zero trick and
+	// check if the Error middleware is doing his job correctly by returning
+	// a code 500 with correct JSON message.
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(RequestIDMiddleware())
+	router.Use(ErrorHandlerMiddleware())
+	router.GET("/div/:a/:b", func(c *gin.Context) {
+		a, _ := strconv.Atoi(c.Param("a"))
+		b, _ := strconv.Atoi(c.Param("b"))
+		val := a / b // No check on 'b' value, we want to allow a div by zero
+		c.JSON(http.StatusOK, APIResponse{Success: true, Data: val})
+	})
+
+	w := httptest.NewRecorder()
+	// a = 5, b = 0     a / b --> booom
+	req, _ := http.NewRequest("GET", "/div/5/0", nil)
+	router.ServeHTTP(w, req)
+
+	requestID := w.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, requestID)
+
+	assert.Equal(t, 500, w.Code)
+
+	var response APIResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, response.Error, "Internal server error")
+	assert.Equal(t, response.Message, "runtime error: integer divide by zero")
+	assert.NotEmpty(t, response.RequestID)
+}
+
 // Test Middleware Integration
 func TestMiddlewareIntegration(t *testing.T) {
 	router := setupRouter()
@@ -379,4 +420,86 @@ func TestMiddlewareIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, response.Success)
 	assert.NotEmpty(t, response.RequestID) // RequestID in response
+}
+
+// -----------------------------------------------------------------
+// Test Rate Limiting Middleware
+//
+// -- IMPORTANT --
+// The following test must be the last one otherwise it will
+// cause rate limit problem to all other tests because it will
+// consume all available tokens and reach the rate limit.
+// -----------------------------------------------------------------
+
+func TestRateLimitMiddleware(t *testing.T) {
+	router := setupRouter()
+
+	// NOTE: Description of the rate limiter to implement
+	// Limit: 100 requests per IP per minute
+	// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+	// Return 429 if rate limit exceeded
+
+	var limit, remain, reset int = 0, 0, 0
+	var err error
+
+	// Do a first request to capture the remaining token value
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/ping", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	limitStr := w.Header().Get("X-RateLimit-Limit")
+	limit, err = strconv.Atoi(limitStr)
+	assert.NoError(t, err)
+	assert.Equal(t, 100, limit)
+
+	remainStr := w.Header().Get("X-RateLimit-Remaining")
+	remain, err = strconv.Atoi(remainStr)
+	assert.NoError(t, err)
+	assert.Greater(t, remain, 0)
+
+	resetStr := w.Header().Get("X-RateLimit-Reset")
+	reset, err = strconv.Atoi(resetStr)
+	assert.NoError(t, err)
+	assert.Greater(t, reset, int(time.Now().Unix()))
+
+	limitIndex := remain
+
+	for i := 1; i < 102; i++ {
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/ping", nil)
+		router.ServeHTTP(w, req)
+
+		limitStr = w.Header().Get("X-RateLimit-Limit")
+		limit, err = strconv.Atoi(limitStr)
+		assert.NoError(t, err)
+		assert.Equal(t, 100, limit)
+
+		remainStr = w.Header().Get("X-RateLimit-Remaining")
+		remain, err = strconv.Atoi(remainStr)
+		assert.NoError(t, err)
+
+		resetStr = w.Header().Get("X-RateLimit-Reset")
+		reset, err = strconv.Atoi(resetStr)
+		assert.NoError(t, err)
+		assert.Greater(t, reset, int(time.Now().Unix()))
+
+		// Allowed requests should succeed (with remain > 0)
+		if i < limitIndex {
+			assert.Equal(t, w.Code, 200)
+			assert.Greater(t, remain, 0)
+		}
+
+		// Last allowed request should succeed (with remain == 0)
+		if i == limitIndex {
+			assert.Equal(t, w.Code, 200)
+			assert.Equal(t, remain, 0)
+		}
+
+		// All Requests over the rate limit should fail
+		if i > limitIndex {
+			assert.Equal(t, w.Code, 429)
+			assert.Equal(t, remain, 0)
+		}
+	}
 }

@@ -1,0 +1,57 @@
+<svg width="350" height="120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Modern gradients -->
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF8C42;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6B1A;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#E55A00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8C42;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadow filter -->
+    <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#00000020"/>
+    </filter>
+  </defs>
+  
+  <!-- Card background with shadow -->
+  <rect width="350" height="120" fill="url(#cardGradient)" rx="12" filter="url(#dropshadow)"/>
+  
+  <!-- Header section -->
+  <rect width="350" height="35" fill="url(#headerGradient)" rx="12"/>
+  <rect width="350" height="25" fill="url(#headerGradient)"/>
+  
+  <!-- Repository info -->
+  <text x="15" y="15" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="600" fill="white" opacity="0.9">GO INTERVIEW PRACTICE</text>
+  <text x="15" y="27" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="8" fill="white" opacity="0.8">github.com/RezaSi/go-interview-practice</text>
+  
+  <!-- Achievement level and emoji -->
+  <text x="320" y="22" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="16" text-anchor="middle" fill="white">⚡</text>
+  
+  <!-- User info section -->
+  <text x="15" y="58" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" font-weight="700" fill="#212529">@lyb88999</text>
+  <text x="15" y="75" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#FF8C42">⚡ Advanced Developer</text>
+  
+  <!-- Classic Challenges Section -->
+  <text x="15" y="95" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500" fill="#6c757d">Classic Challenges</text>
+  
+  <!-- Progress bar background -->
+  <rect x="15" y="100" width="140" height="6" fill="#e9ecef" rx="3"/>
+  <!-- Progress bar fill -->
+  <rect x="15" y="100" width="46" height="6" fill="url(#progressGradient)" rx="3"/>
+  
+  <!-- Progress text -->
+  <text x="160" y="106" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="9" font-weight="600" fill="#495057">10/30 (33.3%)</text>
+  
+  <!-- Package Challenges Section (if any) -->
+  <text x="190" y="65" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="10" font-weight="500" fill="#6c757d">Ready for</text>
+  <text x="190" y="78" font-family="SF Pro Display,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#FF6B1A">Package Challenges!</text>
+</svg>

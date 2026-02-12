@@ -1,0 +1,4 @@
+# Optimize badge file handling for better compression
+badges/*.svg text eol=lf
+badges/*.json text eol=lf  
+badges/*.md text eol=lf

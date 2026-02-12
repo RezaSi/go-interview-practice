@@ -1,0 +1,33 @@
+{
+  "title": "JSON API with Validation & Error Handling",
+  "description": "Build a product catalog API with comprehensive input validation, custom validators, and robust error handling using Fiber and validator packages.",
+  "short_description": "Create API with validation, custom validators, and error handling",
+  "difficulty": "Intermediate",
+  "estimated_time": "60-75 min",
+  "learning_objectives": [
+    "Implement comprehensive input validation using struct tags",
+    "Create custom validators for business-specific rules",
+    "Handle validation errors gracefully with detailed messages",
+    "Build filtering and search functionality for APIs",
+    "Design consistent error response formats"
+  ],
+  "prerequisites": ["fiber_basics", "json_handling", "validation"],
+  "tags": ["validation", "error-handling", "json-api", "filtering"],
+  "real_world_connection": "Input validation and error handling are critical for production APIs. This challenge teaches patterns used in e-commerce, content management, and data processing systems.",
+  "requirements": [
+    "Validate required fields and data types",
+    "Implement string length and numeric range validation",
+    "Create custom SKU format validator",
+    "Handle bulk operations with partial failures",
+    "Provide detailed validation error responses",
+    "Add filtering and search capabilities"
+  ],
+  "bonus_points": [
+    "Add internationalized error messages",
+    "Implement field-level validation hints",
+    "Add request sanitization",
+    "Create validation middleware"
+  ],
+  "icon": "bi-check-circle",
+  "order": 3
+}

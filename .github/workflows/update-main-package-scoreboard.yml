@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
       - name: Create scripts directory if it doesn't exist
         run: mkdir -p scripts
 
