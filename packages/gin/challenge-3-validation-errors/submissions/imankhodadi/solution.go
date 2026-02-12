@@ -229,6 +229,7 @@ func sanitizeProduct(product *Product) {
 	product.Currency = sanitizeString(product.Currency)
 
 	product.Currency = strings.ToUpper(product.Currency)
+	product.Category.Name = sanitizeString(product.Category.Name)
 	product.Category.Slug = strings.ToLower(product.Category.Slug)
 	seen := make(map[string]struct{}, len(product.Tags))
 
@@ -353,7 +354,7 @@ func createProductsBulk(c *gin.Context) {
 
 	if len(inputProducts) == successCount {
 		c.JSON(200, APIResponse{
-			Success: successCount == len(inputProducts),
+			Success: true,
 			Data: map[string]any{
 				"results":    results,
 				"total":      len(inputProducts),
