@@ -1,0 +1,41 @@
+{
+  "title": "Production Logging Patterns",
+  "description": "Build a robust logging pipeline for a background task worker. This advanced challenge covers routing logs to multiple destinations (console, file, and an alert stream) with different formats, and implementing a custom hook for error tracking",
+  "short_description": "Implement a production-grade logging pipeline with multiple destinations",
+  "difficulty": "Advanced",
+  "estimated_time": "90-120 minutes",
+  "learning_objectives": [
+    "Configure a logger to write to multiple outputs simultaneously using `io.MultiWriter`",
+    "Implement a custom `logrus.Hook` for targeted alerting and error tracking",
+    "Apply different formatters to different log streams within the same application",
+    "Understand the architectural principles of centralized logging pipelines (e.g., for an ELK stack)",
+    "Structure logs with consistent, context-rich fields for background services"
+  ],
+  "prerequisites": [
+    "Completion of 'Challenge 3: Advanced Configuration & Hooks'",
+    "Familiarity with Go's `io.Writer` interface and basic file I/O"
+  ],
+  "tags": [
+    "logging",
+    "logrus",
+    "hooks",
+    "production",
+    "pipeline",
+    "monitoring",
+    "alerting"
+  ],
+  "real_world_connection": "This multi-stream logging architecture is a standard pattern for building observable, production-grade services. It separates human-readable logs from the machine-parseable data needed for aggregation in systems like Splunk or the ELK stack, and for triggering automated alerts",
+  "requirements": [
+    "Use `io.MultiWriter` to log to both the console (`stdout`) and a file",
+    "Implement a custom hook that triggers for `Warn` and `Error` levels",
+    "The hook must write JSON-formatted logs to a separate destination (`stderr`)",
+    "The main worker function must log the full lifecycle of tasks with specific structured fields (`task_id`, `duration`, etc)"
+  ],
+  "bonus_points": [
+    "Implement a basic file rotation strategy for the main log file (`app.log`)",
+    "Make the custom hook asynchronous using a goroutine and a channel to avoid blocking",
+    "Add a global field (e.g., `hostname` or `app_version`) to all log entries"
+  ],
+  "icon": "bi-diagram-3",
+  "order": 4
+}

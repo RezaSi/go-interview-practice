@@ -1,0 +1,42 @@
+{
+  "title": "Basic Logging & Levels",
+  "description": "Build a simple logbook application to learn the fundamentals of logging in Go using Logrus. This challenge covers setting up a logger, using different severity levels, and formatting output for modern observability.",
+  "short_description": "Learn fundamental logging concepts with the Logrus library",
+  "difficulty": "Beginner",
+  "estimated_time": "20-30 min",
+  "learning_objectives": [
+    "Understand the importance of structured logging",
+    "Configure the Logrus logger (output, formatter, level)",
+    "Use different log levels (Debug, Info, Warn, Error, Fatal, Panic)",
+    "Differentiate between Error, Fatal, and Panic behaviors",
+    "Produce machine-readable logs in JSON format"
+  ],
+  "prerequisites": [
+    "Basic Go syntax",
+    "Familiarity with the command line",
+    "Understanding of standard input/output"
+  ],
+  "tags": [
+    "logging",
+    "logrus",
+    "structured-logging",
+    "json",
+    "debugging"
+  ],
+  "real_world_connection": "Structured logging is a foundational practice for monitoring, debugging, and maintaining any production-level application, enabling powerful log aggregation and analysis tools.",
+  "requirements": [
+    "Initialize a Logrus logger",
+    "Set the log format to JSON",
+    "Control the log output level via configuration",
+    "Implement log statements for all six standard levels",
+    "Ensure Fatal logs terminate the application",
+    "Ensure Panic logs trigger a panic"
+  ],
+  "bonus_points": [
+    "Add custom fields to log entries using `logrus.WithField`",
+    "Configure the logger to write to a file instead of standard output",
+    "Implement a simple custom hook to modify log entries"
+  ],
+  "icon": "bi-card-text",
+  "order": 1
+}
