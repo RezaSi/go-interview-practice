@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -139,7 +140,7 @@ func NewOAuth2Server() *OAuth2Server {
 
 // RegisterClient registers a new OAuth2 client
 func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
-	// TODO: Implement client registration
+	//  Implement client registration
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -154,8 +155,10 @@ func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
 
 // GenerateRandomString generates a random string of the specified length
 func GenerateRandomString(length int) (string, error) {
-	// TODO: Implement secure random string generation
-
+	//  Implement secure random string generation
+	if length <= 0 {
+		return "", fmt.Errorf("length must be positive")
+	}
 	b := make([]byte, length)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -166,13 +169,11 @@ func GenerateRandomString(length int) (string, error) {
 
 // HandleAuthorize handles the authorization endpoint
 func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement authorization endpoint
+	//  Implement authorization endpoint
 	// 1. Validate request parameters (client_id, redirect_uri, response_type, scope, state)
 	// 2. Authenticate the user (for this challenge, could be a simple login form)
 	// 3. Present a consent screen to the user
 	// 4. Generate an authorization code and redirect to the client with the code
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	clientID := r.URL.Query().Get("client_id")
 	redirectURI := r.URL.Query().Get("redirect_uri")
@@ -213,11 +214,13 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	s.authCodes[code] = &AuthorizationCode{
 		Code:                code,
 		ClientID:            clientID,
-		UserID:              clientID,
+		UserID:              "user1", // TODO: replace with actual user authentication
 		RedirectURI:         redirectURI,
 		Scopes:              reqScopes,
 		ExpiresAt:           time.Now().Add(10 * time.Minute),
@@ -246,13 +249,13 @@ type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
 	ExpiresIn    int    `json:"expires_in"`
-	Refreshtoken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token"`
 	Scope        string `json:"scope"`
 }
 
 // HandleToken handles the token endpoint
 func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement token endpoint
+	//  Implement token endpoint
 	// 1. Validate request parameters (grant_type, code, redirect_uri, client_id, client_secret)
 	// 2. Verify the authorization code
 	// 3. For PKCE, verify the code_verifier
@@ -265,9 +268,11 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	grantType := r.Form.Get("grant_type")
 	clientID := r.Form.Get("client_id")
 	clientSecret := r.Form.Get("client_secret")
-
+	s.mu.RLock()
 	client, ok := s.clients[clientID]
-	if !ok || client.ClientSecret != clientSecret {
+	s.mu.RUnlock()
+	// instead of "client.ClientSecret != clientSecret", Use crypto/subtle.ConstantTimeCompare for secret comparisons
+	if !ok || subtle.ConstantTimeCompare([]byte(client.ClientSecret), []byte(clientSecret)) != 1 {
 		writeJSONError(w, "invalid_client", "invalid client", http.StatusUnauthorized)
 		return
 	}
@@ -287,7 +292,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			AccessToken:  accessToken.AccessToken,
 			TokenType:    tokenType,
 			ExpiresIn:    expiresIn,
-			Refreshtoken: refreshToken.RefreshToken,
+			RefreshToken: refreshToken.RefreshToken,
 			Scope:        scope,
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -297,9 +302,10 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		code := r.Form.Get("code")
 		redirectURI := r.Form.Get("redirect_uri")
 		codeVerifier := r.Form.Get("code_verifier")
-
+		s.mu.Lock()
 		authReq, ok := s.authCodes[code]
 		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI {
+			s.mu.Unlock()
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
@@ -337,6 +343,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		s.tokens[accessToken] = token
 		s.refreshTokens[refreshToken] = rt
+		s.mu.Unlock()
 		tokenType := "Bearer"
 		expiresIn := 3600
 		scope := strings.Join(authReq.Scopes, " ")
@@ -344,7 +351,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			AccessToken:  accessToken,
 			TokenType:    tokenType,
 			ExpiresIn:    expiresIn,
-			Refreshtoken: refreshToken,
+			RefreshToken: refreshToken,
 			Scope:        scope,
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -356,9 +363,9 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 // ValidateToken validates an access token
 func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
-	// TODO: Implement token validation
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	//  Implement token validation
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	tokenInfo, exists := s.tokens[token]
 	if !exists {
@@ -374,7 +381,7 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 
 // RefreshAccessToken refreshes an access token using a refresh token
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
-	// TODO: Implement token refresh
+	//  Implement token refresh
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -418,7 +425,7 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 
 // RevokeToken revokes an access or refresh token
 func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
-	// TODO: Implement token revocation
+	//  Implement token revocation
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -441,7 +448,7 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 
 // VerifyCodeChallenge verifies a PKCE code challenge
 func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
-	// TODO: Implement PKCE verification
+	//  Implement PKCE verification
 	switch method {
 	case "S256":
 		hashedVerifier := sha256.Sum256([]byte(codeVerifier))
@@ -457,12 +464,11 @@ func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
 // StartServer starts the OAuth2 server
 func (s *OAuth2Server) StartServer(port int) error {
 	// Register HTTP handlers
-	http.HandleFunc("/authorize", s.HandleAuthorize)
-	http.HandleFunc("/token", s.HandleToken)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/authorize", s.HandleAuthorize)
+	mux.HandleFunc("/token", s.HandleToken)
 
-	// Start the server
-	fmt.Printf("Starting OAuth2 server on port %d\n", port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 }
 
 // Client code to demonstrate usage////////////////////////////////////////////////////////////////////////
@@ -486,7 +492,7 @@ func NewOAuth2Client(config OAuth2Config) *OAuth2Client {
 
 // GetAuthorizationURL returns the URL to redirect the user for authorization
 func (c *OAuth2Client) GetAuthorizationURL(state string, codeChallenge string, codeChallengeMethod string) (string, error) {
-	// TODO: Implement building the authorization URL
+	//  Implement building the authorization URL
 	authURL, err := url.Parse(c.Config.AuthorizationEndpoint)
 	if err != nil {
 		return "", err
@@ -510,7 +516,7 @@ func (c *OAuth2Client) GetAuthorizationURL(state string, codeChallenge string, c
 
 // ExchangeCodeForToken exchanges an authorization code for tokens
 func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) error {
-	// TODO: Implement token exchange
+	//  Implement token exchange
 	v := url.Values{}
 	v.Set("grant_type", "authorization_code")
 	v.Set("code", code)
@@ -545,7 +551,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	}
 
 	c.AccessToken = tr.AccessToken
-	c.RefreshToken = tr.Refreshtoken
+	c.RefreshToken = tr.RefreshToken
 	if tr.ExpiresIn > 0 {
 		c.TokenExpiry = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	} else {
@@ -557,7 +563,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 
 // RefreshToken refreshes the access token using the refresh token
 func (c *OAuth2Client) DoRefreshToken() error {
-	// TODO: Implement token refresh
+	//  Implement token refresh
 	if c.RefreshToken == "" {
 		return errors.New("no refresh token")
 	}
@@ -592,8 +598,8 @@ func (c *OAuth2Client) DoRefreshToken() error {
 	}
 
 	c.AccessToken = tr.AccessToken
-	if tr.Refreshtoken != "" {
-		c.RefreshToken = tr.Refreshtoken
+	if tr.RefreshToken != "" {
+		c.RefreshToken = tr.RefreshToken
 	}
 	if tr.ExpiresIn > 0 {
 		c.TokenExpiry = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
@@ -606,7 +612,7 @@ func (c *OAuth2Client) DoRefreshToken() error {
 
 // MakeAuthenticatedRequest makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*http.Response, error) {
-	// TODO: Implement authenticated request
+	//  Implement authenticated request
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
@@ -630,13 +636,9 @@ func main() {
 	}
 	server.RegisterClient(client)
 
-	// Start the server in a goroutine
-	go func() {
-		err := server.StartServer(9000)
-		if err != nil {
-			fmt.Printf("Error starting server: %v\n", err)
-		}
-	}()
-
+	err := server.StartServer(9000)
+	if err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+	}
 	fmt.Println("OAuth2 server is running on port 9000")
 }
