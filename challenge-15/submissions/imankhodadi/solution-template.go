@@ -182,7 +182,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	codeChallenge := r.URL.Query().Get("code_challenge")
 	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
-
+	if codeChallenge != "" && codeChallengeMethod == "" {
+		codeChallengeMethod = "plain"
+	}
 	s.mu.RLock()
 	client, ok := s.clients[clientID]
 	s.mu.RUnlock()
@@ -286,6 +288,19 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	case "refresh_token":
 		refToken := r.Form.Get("refresh_token")
 
+		// Verify ownership before rotating
+		s.mu.RLock()
+		rt, exists := s.refreshTokens[refToken]
+		s.mu.RUnlock()
+		if !exists {
+			writeJSONError(w, "invalid_grant", "invalid refresh token", http.StatusBadRequest)
+			return
+		}
+		if rt.ClientID != clientID {
+			writeJSONError(w, "invalid_grant", "refresh token does not belong to this client", http.StatusBadRequest)
+			return
+		}
+
 		accessToken, refreshToken, err := s.RefreshAccessToken(refToken)
 		if err != nil {
 			writeJSONError(w, "invalid_grant", err.Error(), http.StatusBadRequest)
@@ -309,9 +324,9 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		redirectURI := r.Form.Get("redirect_uri")
 		codeVerifier := r.Form.Get("code_verifier")
 		s.mu.Lock()
-		defer s.mu.Unlock()
 		authReq, ok := s.authCodes[code]
 		if !ok {
+			s.mu.Unlock()
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
@@ -319,23 +334,27 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		delete(s.authCodes, code)
 
 		if authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
+			s.mu.Unlock()
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
 
 		if authReq.CodeChallenge != "" {
 			if !VerifyCodeChallenge(codeVerifier, authReq.CodeChallenge, authReq.CodeChallengeMethod) {
+				s.mu.Unlock()
 				writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 				return
 			}
 		}
 		accessToken, err := GenerateRandomString(32)
 		if err != nil {
+			s.mu.Unlock()
 			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
 		refreshToken, err := GenerateRandomString(32)
 		if err != nil {
+			s.mu.Unlock()
 			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -355,6 +374,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		s.tokens[accessToken] = token
 		s.refreshTokens[refreshToken] = rt
+		s.mu.Unlock()
 		tokenType := "Bearer"
 		expiresIn := 3600
 		scope := strings.Join(authReq.Scopes, " ")
@@ -441,16 +461,21 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 	defer s.mu.Unlock()
 
 	if isRefreshToken {
-		_, exists := s.refreshTokens[token]
-		if !exists {
-			return errors.New("token does not exist")
-		}
+		// Revocation of unknown tokens should be a no-op per RFC 7009.
+		// RFC 7009 specifies that the server should respond with 200 even for invalid or already-revoked tokens.
+		// Returning an error here forces callers to special-case "token doesn't exist,"
+		// which complicates any future /revoke HTTP endpoint built on top of this method.
+		// delete flaged lines for future use (required for this assignment)
+		_, exists := s.refreshTokens[token] // delete
+		if !exists {                        // delete
+			return errors.New("token does not exist") // delete
+		} // delete
 		delete(s.refreshTokens, token)
 	} else {
-		_, exists := s.tokens[token]
-		if !exists {
-			return errors.New("token does not exist")
-		}
+		_, exists := s.tokens[token] // delete
+		if !exists {                 // delete
+			return errors.New("token does not exist") // delete
+		} // delete
 		delete(s.tokens, token)
 	}
 
@@ -496,9 +521,10 @@ type OAuth2Client struct {
 	RefreshToken string
 	// TokenExpiry is when the access token expires
 	TokenExpiry time.Time
+
+	mu sync.RWMutex
 }
 
-// NewOAuth2Client creates a new OAuth2 client
 func NewOAuth2Client(config OAuth2Config) *OAuth2Client {
 	return &OAuth2Client{Config: config}
 }
@@ -625,14 +651,16 @@ func (c *OAuth2Client) DoRefreshToken() error {
 }
 
 // MakeAuthenticatedRequest makes a request with the access token
-func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*http.Response, error) {
+func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string) (*http.Response, error) {
 	//  Implement authenticated request
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now()) {
 		if err := c.DoRefreshToken(); err != nil {
 			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
 		}
 	}
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, targetURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -653,7 +681,10 @@ func main() {
 		RedirectURIs:  []string{"http://localhost:8080/callback"},
 		AllowedScopes: []string{"read", "write"},
 	}
-	server.RegisterClient(client)
+	if err := server.RegisterClient(client); err != nil {
+		fmt.Printf("Error registering client: %v\n", err)
+		return
+	}
 	fmt.Println("OAuth2 server is running on port 9000")
 	err := server.StartServer(9000)
 	if err != nil {
