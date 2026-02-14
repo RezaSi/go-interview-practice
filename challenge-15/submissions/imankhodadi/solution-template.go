@@ -215,10 +215,8 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
-	s.authCodes[code] = &AuthorizationCode{
+	authCode := &AuthorizationCode{
 		Code:                code,
 		ClientID:            clientID,
 		UserID:              "user1", // TODO: replace with actual user authentication
@@ -229,6 +227,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		CodeChallengeMethod: codeChallengeMethod,
 	}
 
+	s.mu.Lock()
+	s.authCodes[code] = authCode
+	s.mu.Unlock()
 	v := url.Values{}
 	v.Set("code", code)
 	if state != "" {
@@ -267,7 +268,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		writeJSONError(w, "invalid request", "error parsing form", http.StatusBadRequest)
+		writeJSONError(w, "invalid_request", "error parsing form", http.StatusBadRequest)
 		return
 	}
 	grantType := r.Form.Get("grant_type")
@@ -310,8 +311,14 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		authReq, ok := s.authCodes[code]
-		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
+		if !ok {
+			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
+			return
+		}
+		// Always delete the code on first use attempt to enforce single-use
+		delete(s.authCodes, code)
 
+		if authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
@@ -322,15 +329,14 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		delete(s.authCodes, code)
 		accessToken, err := GenerateRandomString(32)
 		if err != nil {
-			writeJSONError(w, "server error", "internal server error", http.StatusInternalServerError)
+			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
 		refreshToken, err := GenerateRandomString(32)
 		if err != nil {
-			writeJSONError(w, "server error", "internal server error", http.StatusInternalServerError)
+			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
 		token := &Token{
@@ -458,9 +464,11 @@ func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
 	case "S256":
 		hashedVerifier := sha256.Sum256([]byte(codeVerifier))
 		expectedChallenge := base64.RawURLEncoding.EncodeToString(hashedVerifier[:])
-		return expectedChallenge == codeChallenge
+		//constant-time comparison in PKCE verification, instead of return expectedChallenge == codeChallenge
+		return subtle.ConstantTimeCompare([]byte(expectedChallenge), []byte(codeChallenge)) == 1
 	case "plain":
-		return codeVerifier == codeChallenge
+		// return codeVerifier == codeChallenge
+		return subtle.ConstantTimeCompare([]byte(codeVerifier), []byte(codeChallenge)) == 1
 	default:
 		return false
 	}
@@ -619,6 +627,11 @@ func (c *OAuth2Client) DoRefreshToken() error {
 // MakeAuthenticatedRequest makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*http.Response, error) {
 	//  Implement authenticated request
+	if !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now()) {
+		if err := c.DoRefreshToken(); err != nil {
+			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
+		}
+	}
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, err
