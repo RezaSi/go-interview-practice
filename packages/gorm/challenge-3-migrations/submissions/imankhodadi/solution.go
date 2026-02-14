@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// DROP COLUMN requires SQLite ≥ 3.35.0.
+
 // MigrationVersion tracks the current database schema version
 type MigrationVersion struct {
 	ID        uint `gorm:"primaryKey"`
@@ -42,7 +44,7 @@ type Category struct {
 }
 
 // ----------------------------------------------------------------
-// Degine all migrations
+// Define all migrations
 // ----------------------------------------------------------------
 
 type Migration struct {
@@ -90,18 +92,22 @@ var migrations = []Migration{
 	{
 		Version: 3,
 		Up: func(tx *gorm.DB) error {
-			return tx.Exec(`
-				ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0;
-				ALTER TABLE products ADD COLUMN sku TEXT NOT NULL DEFAULT '';
-				ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;
-			`).Error
+			if err := tx.Exec(`ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0`).Error; err != nil {
+				return err
+			}
+			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL DEFAULT ''`).Error; err != nil {
+				return err
+			}
+			return tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error
 		},
 		Down: func(tx *gorm.DB) error {
-			return tx.Exec(`
-				ALTER TABLE products DROP COLUMN stock;
-				ALTER TABLE products DROP COLUMN sku;
-				ALTER TABLE products DROP COLUMN is_active;
-			`).Error
+			if err := tx.Exec(`ALTER TABLE products DROP COLUMN stock`).Error; err != nil {
+				return err
+			}
+			if err := tx.Exec(`ALTER TABLE products DROP COLUMN sku`).Error; err != nil {
+				return err
+			}
+			return tx.Exec(`ALTER TABLE products DROP COLUMN is_active`).Error
 		},
 	},
 }
@@ -179,82 +185,85 @@ func RunMigration(db *gorm.DB, version int) error {
 }
 
 func RollbackMigration(db *gorm.DB, version int) error {
-	current, err := GetMigrationVersion(db)
-	if err != nil {
-		return err
-	}
-	if version >= current {
-		return fmt.Errorf("nothing to rollback, version %d < current %d. ", version, current)
-	}
-	if version < 0 {
-		return errors.New("version cannot be negative")
-	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		// TODO: don't use len(migrations) as the max version, which only works if migration versions are exactly 1, 2, …, N.
+		// If a version is ever skipped or reordered, this check and the iteration logic will silently skip or misapply migrations.
+		// consider sorting migrations by Version at init time and deriving the max from the last element for robustness.
 
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	for i := len(migrations) - 1; i >= 0; i-- {
-		m := migrations[i]
-		if m.Version <= current && m.Version > version {
-			if err := m.Down(tx); err != nil {
-				tx.Rollback()
-				return err
-			}
-			if err := removeMigrationVersion(tx, m.Version); err != nil {
-				tx.Rollback()
-				return err
+		current, err := GetMigrationVersion(db)
+		if err != nil {
+			return err
+		}
+		if version >= current {
+			return fmt.Errorf("nothing to rollback: target version %d >= current version %d", version, current)
+		}
+		if version < 0 {
+			return errors.New("version cannot be negative")
+		}
+		if tx.Error != nil {
+			return tx.Error
+		}
+		for i := len(migrations) - 1; i >= 0; i-- {
+			m := migrations[i]
+			if m.Version <= current && m.Version > version {
+				if err := m.Down(tx); err != nil {
+					return err
+				}
+				if err := removeMigrationVersion(tx, m.Version); err != nil {
+					return err
+				}
 			}
 		}
-	}
-	return tx.Commit().Error
+		return nil
+	})
 }
 
 func SeedData(db *gorm.DB) error {
-	var count int64
-	if err := db.Model(&Product{}).Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil // Already seeded
-	}
-
-	if err := db.Model(&Category{}).Count(&count).Error; err != nil {
-		return err
-	}
-	if count == 0 {
-		cat := Category{Name: "Category 1", Description: "Category 1"}
-		if err := db.Create(&cat).Error; err != nil {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := db.Model(&Product{}).Count(&count).Error; err != nil {
 			return err
 		}
-	}
-	cat := Category{}
-	if err := db.First(&cat).Error; err != nil {
-		return err
-	}
+		if count > 0 {
+			return nil // Already seeded
+		}
 
-	products := []Product{
-		{
-			Name:        "Product 1",
-			Price:       421.39,
-			Description: "Product 1",
-			CategoryID:  cat.ID,
-			Stock:       200,
-			SKU:         "SKU-001",
-			IsActive:    true,
-		},
-		{
-			Name:        "Product 2",
-			Price:       76.96,
-			Description: "Product 2",
-			CategoryID:  cat.ID,
-			Stock:       1000,
-			SKU:         "SKU-002",
-			IsActive:    true,
-		},
-	}
-	return db.Create(&products).Error
+		if err := db.Model(&Category{}).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			cat := Category{Name: "Category 1", Description: "Category 1"}
+			if err := db.Create(&cat).Error; err != nil {
+				return err
+			}
+		}
+		cat := Category{}
+		if err := db.First(&cat).Error; err != nil {
+			return err
+		}
+
+		products := []Product{
+			{
+				Name:        "Product 1",
+				Price:       421.39,
+				Description: "Product 1",
+				CategoryID:  cat.ID,
+				Stock:       200,
+				SKU:         "SKU-001",
+				IsActive:    true,
+			},
+			{
+				Name:        "Product 2",
+				Price:       76.96,
+				Description: "Product 2",
+				CategoryID:  cat.ID,
+				Stock:       1000,
+				SKU:         "SKU-002",
+				IsActive:    true,
+			},
+		}
+		return db.Create(&products).Error
+	})
 }
 
 func CreateProduct(db *gorm.DB, product *Product) error {
@@ -283,11 +292,14 @@ func GetProductsByCategory(db *gorm.DB, categoryID uint) ([]Product, error) {
 
 func UpdateProductStock(db *gorm.DB, productID uint, quantity int) error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		if quantity < 0 {
+			return errors.New("stock quantity cannot be negative")
+		}
 		var product Product
 		if err := tx.First(&product, productID).Error; err != nil {
 			return err
 		}
-		product.Stock = quantity
-		return tx.Save(&product).Error
+		return tx.Model(&product).Update("stock", quantity).Error
 	})
 }
+
