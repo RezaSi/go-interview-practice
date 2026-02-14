@@ -12,18 +12,16 @@ import (
 
 // DROP COLUMN requires SQLite ≥ 3.35.0.
 
-// MigrationVersion tracks the current database schema version
 type MigrationVersion struct {
 	ID        uint `gorm:"primaryKey"`
 	Version   int  `gorm:"unique;not null"`
 	AppliedAt time.Time
 }
 
-// Product represents a product in the e-commerce system
 type Product struct {
 	ID          uint     `gorm:"primaryKey"`
 	Name        string   `gorm:"not null"`
-	Price       float64  `gorm:"not null"`
+	Price       float64  `gorm:"not null"` //use an integer (cents) or a decimal type
 	Description string   `gorm:"type:text"`
 	CategoryID  uint     `gorm:"not null"`
 	Category    Category `gorm:"foreignKey:CategoryID"`
@@ -94,6 +92,7 @@ var migrations = []Migration{
 				return err
 			}
 			// category_id = 0, which won't match any category, change in production
+			// consider adding category_id from the begining (this is just for assignment)
 			return tx.Exec("ALTER TABLE products ADD COLUMN category_id INTEGER NOT NULL DEFAULT 0").Error
 		},
 		Down: func(tx *gorm.DB) error {
@@ -114,6 +113,10 @@ var migrations = []Migration{
 				return err
 			}
 			if err := tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error; err != nil {
+				return err
+			}
+			// Backfill unique SKU values for existing rows to avoid unique index violation
+			if err := tx.Exec(`UPDATE products SET sku = 'SKU-LEGACY-' || id WHERE sku = ''`).Error; err != nil {
 				return err
 			}
 			return tx.Exec(`CREATE UNIQUE INDEX idx_products_sku ON products(sku)`).Error
@@ -178,8 +181,9 @@ func RunMigration(db *gorm.DB, version int) error {
 	if version < current {
 		return fmt.Errorf("version %d < current %d", version, current)
 	}
-	if version > len(migrations) {
-		return fmt.Errorf("invalid version %d, (max = %d)", version, len(migrations))
+	maxVersion := migrations[len(migrations)-1].Version
+	if version > maxVersion {
+		return fmt.Errorf("invalid version %d, (max = %d)", version, maxVersion)
 	}
 	if version == current {
 		return nil
