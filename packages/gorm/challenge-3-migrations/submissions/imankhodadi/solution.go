@@ -78,7 +78,7 @@ var migrations = []Migration{
 			err := tx.Exec(`
 				CREATE TABLE IF NOT EXISTS categories (
 					id INTEGER PRIMARY KEY,
-				name TEXT NOT NULL UNIQUE,
+					name TEXT NOT NULL UNIQUE,
 					description TEXT,
 					created_at DATETIME,
 					updated_at DATETIME
@@ -102,7 +102,7 @@ var migrations = []Migration{
 			if err := tx.Exec(`ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0`).Error; err != nil {
 				return err
 			}
-			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL DEFAULT ''`).Error; err != nil {
+			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL`).Error; err != nil {
 				return err
 			}
 			return tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error
@@ -171,24 +171,20 @@ func RunMigration(db *gorm.DB, version int) error {
 		return nil
 	}
 
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	for _, m := range migrations {
-		if m.Version > current && m.Version <= version {
-			if err := m.Up(tx); err != nil {
-				tx.Rollback()
-				return err
-			}
-			if err := setMigrationVersion(tx, m.Version); err != nil {
-				tx.Rollback()
-				return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, m := range migrations {
+			if m.Version > current && m.Version <= version {
+				if err := m.Up(tx); err != nil {
+					return err
+				}
+				if err := setMigrationVersion(tx, m.Version); err != nil {
+					return err
+				}
 			}
 		}
-	}
-	return tx.Commit().Error
+
+		return nil
+	})
 }
 
 func RollbackMigration(db *gorm.DB, version int) error {
@@ -273,7 +269,7 @@ func SeedData(db *gorm.DB) error {
 func CreateProduct(db *gorm.DB, product *Product) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		var count int64
-		if err := db.Model(&Product{}).Where("sku=?", product.SKU).Count(&count).Error; err != nil {
+		if err := tx.Model(&Product{}).Where("sku=?", product.SKU).Count(&count).Error; err != nil {
 			return err
 		}
 		if count > 0 {
@@ -281,10 +277,10 @@ func CreateProduct(db *gorm.DB, product *Product) error {
 		}
 
 		var cat Category
-		if err := db.First(&cat, product.CategoryID).Error; err != nil {
+		if err := tx.First(&cat, product.CategoryID).Error; err != nil {
 			return err
 		}
-		return db.Create(product).Error
+		return tx.Create(product).Error
 	})
 }
 
