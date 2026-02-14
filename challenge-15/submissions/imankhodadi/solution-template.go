@@ -16,23 +16,16 @@ import (
 	"time"
 )
 
-// OAuth2Config contains configuration for the OAuth2 server
 type OAuth2Config struct {
 	// AuthorizationEndpoint is the endpoint for authorization requests
 	AuthorizationEndpoint string
 	// TokenEndpoint is the endpoint for token requests
 	TokenEndpoint string
-	// ClientID is the OAuth2 client identifier
-	ClientID string
-	// ClientSecret is the secret for the client
-	ClientSecret string
-	// RedirectURI is the URI to redirect to after authorization
-	RedirectURI string
-	// Scopes is a list of requested scopes
-	Scopes []string
+	ClientID      string
+	ClientSecret  string
+	RedirectURI   string
+	Scopes        []string
 }
-
-// OAuth2Server implements an OAuth2 authorization server
 type OAuth2Server struct {
 	// clients stores registered OAuth2 clients
 	clients map[string]*OAuth2ClientInfo
@@ -59,18 +52,12 @@ type OAuth2ClientInfo struct {
 	// AllowedScopes is a list of scopes the client can request
 	AllowedScopes []string
 }
-
-// User represents a user in the system
 type User struct {
-	// ID is the unique identifier for the user
-	ID string
-	// Username is the username for the user
+	ID       string
 	Username string
-	// Password is the password for the user (in a real system, this would be hashed)
 	Password string
 }
 
-// AuthorizationCode represents an issued authorization code
 type AuthorizationCode struct {
 	// Code is the authorization code string
 	Code string
@@ -92,33 +79,20 @@ type AuthorizationCode struct {
 
 // Token represents an issued access token
 type Token struct {
-	// AccessToken is the token string
 	AccessToken string
-	// ClientID is the client that owns the token
-	ClientID string
-	// UserID is the user that authorized the token
-	UserID string
-	// Scopes is a list of authorized scopes
-	Scopes []string
-	// ExpiresAt is when the token expires
-	ExpiresAt time.Time
+	ClientID    string
+	UserID      string
+	Scopes      []string
+	ExpiresAt   time.Time
 }
-
-// RefreshToken represents an issued refresh token
 type RefreshToken struct {
-	// RefreshToken is the token string
 	RefreshToken string
-	// ClientID is the client that owns the token
-	ClientID string
-	// UserID is the user that authorized the token
-	UserID string
-	// Scopes is a list of authorized scopes
-	Scopes []string
-	// ExpiresAt is when the token expires
-	ExpiresAt time.Time
+	ClientID     string
+	UserID       string
+	Scopes       []string // Scopes is a list of authorized scopes
+	ExpiresAt    time.Time
 }
 
-// NewOAuth2Server creates a new OAuth2Server
 func NewOAuth2Server() *OAuth2Server {
 	server := &OAuth2Server{
 		clients:       make(map[string]*OAuth2ClientInfo),
@@ -127,35 +101,28 @@ func NewOAuth2Server() *OAuth2Server {
 		refreshTokens: make(map[string]*RefreshToken),
 		users:         make(map[string]*User),
 	}
-
-	// Pre-register some users
 	server.users["user1"] = &User{
 		ID:       "user1",
 		Username: "testuser",
 		Password: "password",
 	}
-
 	return server
 }
 
 // RegisterClient registers a new OAuth2 client
 func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
-	//  Implement client registration
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if _, ok := s.clients[client.ClientID]; ok {
 		return fmt.Errorf("client already exists")
 	}
-
 	s.clients[client.ClientID] = client
-
 	return nil
 }
 
-// GenerateRandomString generates a random string of the specified length
+// TODO: You allocate length random bytes but then base64-encode them (which expands the output) and truncate back to length characters.
+// Each base64 character carries 6 bits of entropy, so a 32-character token has ~192 bits of effective randomness—not the ~256 bits
+// you'd expect from 32 random bytes. This is still more than sufficient for token security, but if the intent is to control entropy
+// rather than string length, consider allocating ceil(length * 3/4) bytes instead (to avoid wasting randomness), or document the effective entropy.
 func GenerateRandomString(length int) (string, error) {
-	//  Implement secure random string generation
 	if length <= 0 {
 		return "", fmt.Errorf("length must be positive")
 	}
@@ -166,15 +133,12 @@ func GenerateRandomString(length int) (string, error) {
 	}
 	return base64.RawURLEncoding.EncodeToString(b)[:length], nil
 }
-
-// HandleAuthorize handles the authorization endpoint
 func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	//  Implement authorization endpoint
 	// 1. Validate request parameters (client_id, redirect_uri, response_type, scope, state)
 	// 2. Authenticate the user (for this challenge, could be a simple login form)
 	// 3. Present a consent screen to the user
 	// 4. Generate an authorization code and redirect to the client with the code
-
 	clientID := r.URL.Query().Get("client_id")
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	responseType := r.URL.Query().Get("response_type")
@@ -185,25 +149,20 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	if codeChallenge != "" && codeChallengeMethod == "" {
 		codeChallengeMethod = "plain"
 	}
-	s.mu.RLock()
 	client, ok := s.clients[clientID]
-	s.mu.RUnlock()
 	if !ok {
 		http.Error(w, "client id does not exist", http.StatusBadRequest)
 		return
 	}
-
 	if !slices.Contains(client.RedirectURIs, redirectURI) {
 		http.Error(w, "invalid_redirect_uri", http.StatusBadRequest)
 		return
 	}
-
 	if responseType != "code" {
 		http.Redirect(w, r, fmt.Sprintf("%s?error=unsupported_response_type&state=%s",
 			redirectURI, url.QueryEscape(state)), http.StatusFound)
 		return
 	}
-
 	reqScopes := strings.Fields(scope)
 	for _, rs := range reqScopes {
 		if !slices.Contains(client.AllowedScopes, rs) {
@@ -211,13 +170,11 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	code, err := GenerateRandomString(32)
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
-
 	authCode := &AuthorizationCode{
 		Code:                code,
 		ClientID:            clientID,
@@ -228,10 +185,7 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		CodeChallenge:       codeChallenge,
 		CodeChallengeMethod: codeChallengeMethod,
 	}
-
-	s.mu.Lock()
 	s.authCodes[code] = authCode
-	s.mu.Unlock()
 	v := url.Values{}
 	v.Set("code", code)
 	if state != "" {
@@ -257,9 +211,7 @@ type TokenResponse struct {
 	Scope        string `json:"scope"`
 }
 
-// HandleToken handles the token endpoint
 func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
-	//  Implement token endpoint
 	// 1. Validate request parameters (grant_type, code, redirect_uri, client_id, client_secret)
 	// 2. Verify the authorization code
 	// 3. For PKCE, verify the code_verifier
@@ -276,22 +228,21 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	grantType := r.Form.Get("grant_type")
 	clientID := r.Form.Get("client_id")
 	clientSecret := r.Form.Get("client_secret")
-	s.mu.RLock()
 	client, ok := s.clients[clientID]
-	s.mu.RUnlock()
+	if !ok {
+		writeJSONError(w, "invalid_client", "invalid client", http.StatusUnauthorized)
+		return
+	}
 	// instead of "client.ClientSecret != clientSecret", Use crypto/subtle.ConstantTimeCompare for secret comparisons
-	if !ok || subtle.ConstantTimeCompare([]byte(client.ClientSecret), []byte(clientSecret)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(client.ClientSecret), []byte(clientSecret)) != 1 {
 		writeJSONError(w, "invalid_client", "invalid client", http.StatusUnauthorized)
 		return
 	}
 	switch grantType {
 	case "refresh_token":
 		refToken := r.Form.Get("refresh_token")
-
 		// Verify ownership before rotating
-		s.mu.RLock()
 		rt, exists := s.refreshTokens[refToken]
-		s.mu.RUnlock()
 		if !exists {
 			writeJSONError(w, "invalid_grant", "invalid refresh token", http.StatusBadRequest)
 			return
@@ -300,7 +251,6 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			writeJSONError(w, "invalid_grant", "refresh token does not belong to this client", http.StatusBadRequest)
 			return
 		}
-
 		accessToken, refreshToken, err := s.RefreshAccessToken(refToken)
 		if err != nil {
 			writeJSONError(w, "invalid_grant", err.Error(), http.StatusBadRequest)
@@ -317,44 +267,34 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			Scope:        scope,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
-
+		errEncoder := json.NewEncoder(w).Encode(resp)
+		if errEncoder != nil {
+			fmt.Println("error in encoding data", errEncoder)
+		}
 	case "authorization_code":
 		code := r.Form.Get("code")
 		redirectURI := r.Form.Get("redirect_uri")
 		codeVerifier := r.Form.Get("code_verifier")
-		s.mu.Lock()
 		authReq, ok := s.authCodes[code]
-		if !ok {
-			s.mu.Unlock()
-			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
-			return
-		}
 		// Always delete the code on first use attempt to enforce single-use
 		delete(s.authCodes, code)
-
-		if authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
-			s.mu.Unlock()
+		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
-
 		if authReq.CodeChallenge != "" {
 			if !VerifyCodeChallenge(codeVerifier, authReq.CodeChallenge, authReq.CodeChallengeMethod) {
-				s.mu.Unlock()
 				writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 				return
 			}
 		}
 		accessToken, err := GenerateRandomString(32)
 		if err != nil {
-			s.mu.Unlock()
 			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
 		refreshToken, err := GenerateRandomString(32)
 		if err != nil {
-			s.mu.Unlock()
 			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -374,7 +314,6 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		s.tokens[accessToken] = token
 		s.refreshTokens[refreshToken] = rt
-		s.mu.Unlock()
 		tokenType := "Bearer"
 		expiresIn := 3600
 		scope := strings.Join(authReq.Scopes, " ")
@@ -386,51 +325,39 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			Scope:        scope,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		errEncoder := json.NewEncoder(w).Encode(resp)
+		if errEncoder != nil {
+			fmt.Println("error in encoding data", errEncoder)
+		}
 	default:
 		writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 	}
 }
 
-// ValidateToken validates an access token
 func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
-	//  Implement token validation
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	tokenInfo, exists := s.tokens[token]
 	if !exists {
 		return nil, errors.New("token not found")
 	}
-
 	if tokenInfo.ExpiresAt.Before(time.Now()) {
 		return nil, errors.New("token expired")
 	}
-
 	return tokenInfo, nil
 }
 
-// RefreshAccessToken refreshes an access token using a refresh token
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
-	//  Implement token refresh
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	rt, exists := s.refreshTokens[refreshToken]
 	if !exists || rt.ExpiresAt.Before(time.Now()) {
 		return nil, nil, errors.New("token expired")
 	}
-
 	rToken, err := GenerateRandomString(32)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	rRefreshToken, err := GenerateRandomString(32)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	t := &Token{
 		AccessToken: rToken,
 		ClientID:    rt.ClientID,
@@ -438,7 +365,6 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 		Scopes:      rt.Scopes,
 		ExpiresAt:   time.Now().Add(1 * time.Hour),
 	}
-
 	r := &RefreshToken{
 		RefreshToken: rRefreshToken,
 		ClientID:     rt.ClientID,
@@ -447,19 +373,14 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 	}
 	delete(s.refreshTokens, refreshToken)
-
 	s.tokens[rToken] = t
 	s.refreshTokens[rRefreshToken] = r
-
 	return t, r, nil
 }
 
 // RevokeToken revokes an access or refresh token
 func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 	//  Implement token revocation
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if isRefreshToken {
 		// Revocation of unknown tokens should be a no-op per RFC 7009.
 		// RFC 7009 specifies that the server should respond with 200 even for invalid or already-revoked tokens.
@@ -478,7 +399,6 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 		} // delete
 		delete(s.tokens, token)
 	}
-
 	return nil
 }
 
@@ -489,24 +409,19 @@ func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
 	case "S256":
 		hashedVerifier := sha256.Sum256([]byte(codeVerifier))
 		expectedChallenge := base64.RawURLEncoding.EncodeToString(hashedVerifier[:])
-		//constant-time comparison in PKCE verification, instead of return expectedChallenge == codeChallenge
 		return subtle.ConstantTimeCompare([]byte(expectedChallenge), []byte(codeChallenge)) == 1
 	case "plain":
-		// return codeVerifier == codeChallenge
 		return subtle.ConstantTimeCompare([]byte(codeVerifier), []byte(codeChallenge)) == 1
 	default:
 		return false
 	}
 }
 
-// StartServer starts the OAuth2 server
 func (s *OAuth2Server) StartServer(port int) error {
-	// Register HTTP handlers
 	mux := http.NewServeMux()
 	mux.HandleFunc("/authorize", s.HandleAuthorize)
 	mux.HandleFunc("/token", s.HandleToken)
-
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), mux) // TODO: add timeouts
 }
 
 // Client code to demonstrate usage////////////////////////////////////////////////////////////////////////
@@ -514,15 +429,11 @@ func (s *OAuth2Server) StartServer(port int) error {
 // OAuth2Client represents a client application using OAuth2
 type OAuth2Client struct {
 	// Config is the OAuth2 configuration
-	Config OAuth2Config
-	// Token is the current access token
-	AccessToken string
-	// RefreshToken is the current refresh token
+	Config       OAuth2Config
+	AccessToken  string
 	RefreshToken string
-	// TokenExpiry is when the access token expires
-	TokenExpiry time.Time
-
-	mu sync.RWMutex
+	TokenExpiry  time.Time
+	mu           sync.RWMutex
 }
 
 func NewOAuth2Client(config OAuth2Config) *OAuth2Client {
@@ -536,7 +447,6 @@ func (c *OAuth2Client) GetAuthorizationURL(state string, codeChallenge string, c
 	if err != nil {
 		return "", err
 	}
-
 	q := authURL.Query()
 	q.Set("client_id", c.Config.ClientID)
 	q.Set("redirect_uri", c.Config.RedirectURI)
@@ -589,7 +499,6 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
 		return err
 	}
-
 	c.AccessToken = tr.AccessToken
 	c.RefreshToken = tr.RefreshToken
 	if tr.ExpiresIn > 0 {
@@ -597,17 +506,14 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	} else {
 		c.TokenExpiry = time.Time{}
 	}
-
 	return nil
 }
 
 // RefreshToken refreshes the access token using the refresh token
 func (c *OAuth2Client) DoRefreshToken() error {
-	//  Implement token refresh
 	if c.RefreshToken == "" {
 		return errors.New("no refresh token")
 	}
-
 	v := url.Values{}
 	v.Set("grant_type", "refresh_token")
 	v.Set("refresh_token", c.RefreshToken)
@@ -619,24 +525,20 @@ func (c *OAuth2Client) DoRefreshToken() error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		var e map[string]any
 		_ = json.NewDecoder(resp.Body).Decode(&e)
 		return errors.New("refresh token request failed")
 	}
-
 	var tr TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
 		return err
 	}
-
 	c.AccessToken = tr.AccessToken
 	if tr.RefreshToken != "" {
 		c.RefreshToken = tr.RefreshToken
@@ -646,34 +548,30 @@ func (c *OAuth2Client) DoRefreshToken() error {
 	} else {
 		c.TokenExpiry = time.Time{}
 	}
-
 	return nil
 }
 
 // MakeAuthenticatedRequest makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string) (*http.Response, error) {
 	//  Implement authenticated request
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	if !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now()) {
 		if err := c.DoRefreshToken(); err != nil {
 			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
 		}
 	}
+	accessToken := c.AccessToken
 	req, err := http.NewRequest(method, targetURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	if c.AccessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	if accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 	}
 	return http.DefaultClient.Do(req)
 }
 
 func main() {
-	// Example of starting the OAuth2 server
 	server := NewOAuth2Server()
-
 	// Register a client
 	client := &OAuth2ClientInfo{
 		ClientID:      "example-client",
@@ -690,5 +588,4 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}
-
 }
