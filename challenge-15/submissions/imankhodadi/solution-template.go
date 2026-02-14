@@ -37,8 +37,7 @@ type OAuth2Server struct {
 	refreshTokens map[string]*RefreshToken
 	// users stores user credentials for demonstration purposes
 	users map[string]*User
-	// mutex for concurrent access to data
-	mu sync.RWMutex
+	mu    sync.RWMutex
 }
 
 // OAuth2ClientInfo represents a registered OAuth2 client
@@ -105,7 +104,7 @@ func NewOAuth2Server() *OAuth2Server {
 	server.users["user1"] = &User{
 		ID:       "user1",
 		Username: "testuser",
-		Password: "password",
+		Password: "password", // just for test
 	}
 	return server
 }
@@ -152,9 +151,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	if codeChallenge != "" && codeChallengeMethod == "" {
 		codeChallengeMethod = "plain"
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
 	client, ok := s.clients[clientID]
+	s.mu.RUnlock()
 	if !ok {
 		http.Error(w, "client id does not exist", http.StatusBadRequest)
 		return
@@ -190,7 +189,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		CodeChallenge:       codeChallenge,
 		CodeChallengeMethod: codeChallengeMethod,
 	}
+	s.mu.Lock()
 	s.authCodes[code] = authCode
+	s.mu.Unlock()
 	v := url.Values{}
 	v.Set("code", code)
 	if state != "" {
@@ -235,9 +236,9 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	grantType := r.Form.Get("grant_type")
 	clientID := r.Form.Get("client_id")
 	clientSecret := r.Form.Get("client_secret")
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
 	client, ok := s.clients[clientID]
+	s.mu.RUnlock()
 	if !ok {
 		writeJSONError(w, "invalid_client", "invalid client", http.StatusUnauthorized)
 		return
@@ -251,7 +252,9 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	case "refresh_token":
 		refToken := r.Form.Get("refresh_token")
 		// Verify ownership before rotating
+		s.mu.RLock()
 		rt, exists := s.refreshTokens[refToken]
+		s.mu.RUnlock()
 		if !exists {
 			writeJSONError(w, "invalid_grant", "invalid refresh token", http.StatusBadRequest)
 			return
@@ -284,9 +287,11 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		code := r.Form.Get("code")
 		redirectURI := r.Form.Get("redirect_uri")
 		codeVerifier := r.Form.Get("code_verifier")
+		s.mu.Lock()
 		authReq, ok := s.authCodes[code]
 		// Always delete the code on first use attempt to enforce single-use
 		delete(s.authCodes, code)
+		s.mu.Unlock()
 		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
 			writeJSONError(w, "invalid_grant", "invalid_grant", http.StatusBadRequest)
 			return
@@ -322,8 +327,10 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			ExpiresAt:    time.Now().Add(24 * time.Hour),
 			AccessToken:  accessToken,
 		}
+		s.mu.Lock()
 		s.tokens[accessToken] = token
 		s.refreshTokens[refreshToken] = rt
+		s.mu.Unlock()
 		tokenType := "Bearer"
 		expiresIn := 3600
 		scope := strings.Join(authReq.Scopes, " ")
@@ -346,8 +353,8 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
 	tokenInfo, exists := s.tokens[token]
+	s.mu.RUnlock()
 	if !exists {
 		return nil, errors.New("token not found")
 	}
@@ -357,9 +364,10 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 	return tokenInfo, nil
 }
 
-// caller must hold the mutex
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
+	s.mu.RLock()
 	rt, exists := s.refreshTokens[refreshToken]
+	s.mu.RUnlock()
 	if !exists || rt.ExpiresAt.Before(time.Now()) {
 		return nil, nil, errors.New("token expired")
 	}
@@ -386,7 +394,7 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 		AccessToken:  rToken,
 	}
-	delete(s.refreshTokens, refreshToken)
+
 	// TODO: Consider revoking old access tokens during refresh token rotation.
 	// When a refresh token is rotated, the old refresh token is correctly deleted,
 	// but any access tokens previously issued under that session remain valid until
@@ -394,7 +402,9 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 	// access token to limit the window of exposure from a leaked token.
 	// This would require tracking which access token is associated with a refresh token
 	// (e.g., storing the access token string in the RefreshToken struct).
-
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.refreshTokens, refreshToken)
 	s.tokens[rToken] = t
 	s.refreshTokens[rRefreshToken] = r
 	return t, r, nil
@@ -402,24 +412,27 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 
 // revokes an access or refresh token
 func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+
 	if isRefreshToken {
 		// Revocation of unknown tokens should be a no-op per RFC 7009.
 		// RFC 7009 specifies that the server should respond with 200 even for invalid or already-revoked tokens.
 		// Returning an error here forces callers to special-case "token doesn't exist,"
 		// which complicates any future /revoke HTTP endpoint built on top of this method.
 		// delete flaged lines for future use (required for this assignment)
-		_, exists := s.refreshTokens[token] // delete
-		if !exists {                        // delete
-			return errors.New("token does not exist") // delete
-		} // delete
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		_, exists := s.refreshTokens[token] // TODO(imankhodadi): delete
+		if !exists {                        // TODO(imankhodadi): delete
+			return errors.New("token does not exist") // TODO(imankhodadi): delete
+		} // TODO(imankhodadi): delete
 		delete(s.refreshTokens, token)
 	} else {
-		_, exists := s.tokens[token] // delete
-		if !exists {                 // delete
-			return errors.New("token does not exist") // delete
-		} // delete
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		_, exists := s.tokens[token] // TODO(imankhodadi): delete
+		if !exists {                 // TODO(imankhodadi): delete
+			return errors.New("token does not exist") // TODO(imankhodadi): delete
+		} // TODO(imankhodadi): delete
 		delete(s.tokens, token)
 	}
 	return nil
@@ -506,8 +519,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	}
 	v.Set("client_id", c.Config.ClientID)
 	v.Set("client_secret", c.Config.ClientSecret)
-	c.mu.Lock()
-	defer c.mu.Lock()
+
 	req, err := http.NewRequest("POST", c.Config.TokenEndpoint, strings.NewReader(v.Encode()))
 	if err != nil {
 		return err
@@ -533,6 +545,8 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
 		return err
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.AccessToken = tr.AccessToken
 	c.RefreshToken = tr.RefreshToken
 	if tr.ExpiresIn > 0 {
@@ -544,8 +558,8 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 }
 
 // RefreshToken refreshes the access token using the refresh token
-// the caller must hold the mutex
 func (c *OAuth2Client) DoRefreshToken() error {
+	c.mu.RLock()
 	if c.RefreshToken == "" {
 		return errors.New("no refresh token")
 	}
@@ -555,6 +569,7 @@ func (c *OAuth2Client) DoRefreshToken() error {
 	v.Set("client_id", c.Config.ClientID)
 	v.Set("client_secret", c.Config.ClientSecret)
 	req, err := http.NewRequest("POST", c.Config.TokenEndpoint, strings.NewReader(v.Encode()))
+	c.mu.Unlock()
 	if err != nil {
 		return err
 	}
@@ -574,6 +589,8 @@ func (c *OAuth2Client) DoRefreshToken() error {
 	if err := json.NewDecoder(resp.Body).Decode(&tr); err != nil {
 		return err
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.AccessToken = tr.AccessToken
 	if tr.RefreshToken != "" {
 		c.RefreshToken = tr.RefreshToken
@@ -589,14 +606,15 @@ func (c *OAuth2Client) DoRefreshToken() error {
 // makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string) (*http.Response, error) {
 	//  Implement authenticated request
-	c.mu.Lock()
-	defer c.mu.Lock()
+	c.mu.RLock()
 	if !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now()) {
 		if err := c.DoRefreshToken(); err != nil {
+			c.mu.RUnlock()
 			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
 		}
 	}
 	accessToken := c.AccessToken
+	c.mu.RUnlock()
 	req, err := http.NewRequest(method, targetURL, nil)
 	if err != nil {
 		return nil, err
