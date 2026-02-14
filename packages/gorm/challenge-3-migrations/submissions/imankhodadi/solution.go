@@ -102,7 +102,7 @@ var migrations = []Migration{
 			if err := tx.Exec(`ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0`).Error; err != nil {
 				return err
 			}
-			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL`).Error; err != nil {
+			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL DEFAULT ''`).Error; err != nil {
 				return err
 			}
 			return tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error
