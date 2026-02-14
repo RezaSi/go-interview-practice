@@ -75,7 +75,14 @@ var migrations = []Migration{
 	{
 		Version: 2,
 		Up: func(tx *gorm.DB) error {
-			err := tx.Migrator().CreateTable(&Category{})
+			err := tx.Exec(`
+				CREATE TABLE IF NOT EXISTS categories (
+					id INTEGER PRIMARY KEY,
+				name TEXT NOT NULL UNIQUE,
+					description TEXT,
+					created_at DATETIME,
+					updated_at DATETIME
+			);`).Error
 			if err != nil {
 				return err
 			}
@@ -190,7 +197,7 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		// If a version is ever skipped or reordered, this check and the iteration logic will silently skip or misapply migrations.
 		// consider sorting migrations by Version at init time and deriving the max from the last element for robustness.
 
-		current, err := GetMigrationVersion(db)
+		current, err := GetMigrationVersion(tx)
 		if err != nil {
 			return err
 		}
@@ -199,9 +206,6 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		}
 		if version < 0 {
 			return errors.New("version cannot be negative")
-		}
-		if tx.Error != nil {
-			return tx.Error
 		}
 		for i := len(migrations) - 1; i >= 0; i-- {
 			m := migrations[i]
@@ -221,24 +225,24 @@ func RollbackMigration(db *gorm.DB, version int) error {
 func SeedData(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		var count int64
-		if err := db.Model(&Product{}).Count(&count).Error; err != nil {
+		if err := tx.Model(&Product{}).Count(&count).Error; err != nil {
 			return err
 		}
 		if count > 0 {
 			return nil // Already seeded
 		}
 
-		if err := db.Model(&Category{}).Count(&count).Error; err != nil {
+		if err := tx.Model(&Category{}).Count(&count).Error; err != nil {
 			return err
 		}
 		if count == 0 {
 			cat := Category{Name: "Category 1", Description: "Category 1"}
-			if err := db.Create(&cat).Error; err != nil {
+			if err := tx.Create(&cat).Error; err != nil {
 				return err
 			}
 		}
 		cat := Category{}
-		if err := db.First(&cat).Error; err != nil {
+		if err := tx.First(&cat).Error; err != nil {
 			return err
 		}
 
@@ -262,24 +266,26 @@ func SeedData(db *gorm.DB) error {
 				IsActive:    true,
 			},
 		}
-		return db.Create(&products).Error
+		return tx.Create(&products).Error
 	})
 }
 
 func CreateProduct(db *gorm.DB, product *Product) error {
-	var count int64
-	if err := db.Model(&Product{}).Where("sku=?", product.SKU).Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return fmt.Errorf("SKU %s already exists", product.SKU)
-	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := db.Model(&Product{}).Where("sku=?", product.SKU).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return fmt.Errorf("SKU %s already exists", product.SKU)
+		}
 
-	var cat Category
-	if err := db.First(&cat, product.CategoryID).Error; err != nil {
-		return err
-	}
-	return db.Create(product).Error
+		var cat Category
+		if err := db.First(&cat, product.CategoryID).Error; err != nil {
+			return err
+		}
+		return db.Create(product).Error
+	})
 }
 
 func GetProductsByCategory(db *gorm.DB, categoryID uint) ([]Product, error) {
@@ -302,4 +308,3 @@ func UpdateProductStock(db *gorm.DB, productID uint, quantity int) error {
 		return tx.Model(&product).Update("stock", quantity).Error
 	})
 }
-
