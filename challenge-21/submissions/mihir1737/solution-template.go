@@ -30,7 +30,9 @@ func BinarySearch(arr []int, target int) int {
 
 	for l <= r {
 		m := l + (r-l)/2
-		fmt.Println(m)
+	for l <= r {
+		m := l + (r-l)/2
+		if arr[m] == target {
 		if arr[m] == target {
 			return m
 		} else if arr[m] < target {
