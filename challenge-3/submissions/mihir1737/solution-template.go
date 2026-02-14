@@ -53,9 +53,9 @@ func (m *Manager) GetAverageSalary() float64 {
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for _, v := range m.Employees {
-		if v.ID == id {
-			return &v
+	for i := range m.Employees {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
 		}
 	}
 
