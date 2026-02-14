@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -53,6 +54,12 @@ type Migration struct {
 	Down    func(*gorm.DB) error
 }
 
+func init() {
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].Version < migrations[j].Version
+	})
+}
+
 var migrations = []Migration{
 	{
 		Version: 1,
@@ -86,6 +93,7 @@ var migrations = []Migration{
 			if err != nil {
 				return err
 			}
+			// category_id = 0, which won't match any category, change in production
 			return tx.Exec("ALTER TABLE products ADD COLUMN category_id INTEGER NOT NULL DEFAULT 0").Error
 		},
 		Down: func(tx *gorm.DB) error {
@@ -105,9 +113,15 @@ var migrations = []Migration{
 			if err := tx.Exec(`ALTER TABLE products ADD COLUMN sku TEXT NOT NULL DEFAULT ''`).Error; err != nil {
 				return err
 			}
-			return tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error
+			if err := tx.Exec(`ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true`).Error; err != nil {
+				return err
+			}
+			return tx.Exec(`CREATE UNIQUE INDEX idx_products_sku ON products(sku)`).Error
 		},
 		Down: func(tx *gorm.DB) error {
+			if err := tx.Exec(`DROP INDEX IF EXISTS idx_products_sku`).Error; err != nil {
+				return err
+			}
 			if err := tx.Exec(`ALTER TABLE products DROP COLUMN stock`).Error; err != nil {
 				return err
 			}
@@ -292,15 +306,15 @@ func GetProductsByCategory(db *gorm.DB, categoryID uint) ([]Product, error) {
 	return products, err
 }
 
-func UpdateProductStock(db *gorm.DB, productID uint, quantity int) error {
+func UpdateProductStock(db *gorm.DB, productID uint, newStock int) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		if quantity < 0 {
+		if newStock < 0 {
 			return errors.New("stock quantity cannot be negative")
 		}
 		var product Product
 		if err := tx.First(&product, productID).Error; err != nil {
 			return err
 		}
-		return tx.Model(&product).Update("stock", quantity).Error
+		return tx.Model(&product).Update("stock", newStock).Error
 	})
 }
