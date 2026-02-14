@@ -42,6 +42,9 @@ func CountWordFrequency(text string) map[string]int {
 	ans := make(map[string]int)
 	for _, s := range splits {
 		normalized := normalizeString(s)
+		if normalized == "" {
+			continue
+		}
 		ans[normalized]++
 	}
 	return ans
