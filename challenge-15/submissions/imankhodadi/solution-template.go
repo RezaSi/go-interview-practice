@@ -183,11 +183,12 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	codeChallenge := r.URL.Query().Get("code_challenge")
 	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
 
+	s.mu.RLock()
 	client, ok := s.clients[clientID]
+	s.mu.RUnlock()
 	if !ok {
 		http.Error(w, "client id does not exist", http.StatusBadRequest)
 		return
-
 	}
 
 	if !slices.Contains(client.RedirectURIs, redirectURI) {
@@ -261,6 +262,10 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	// 3. For PKCE, verify the code_verifier
 	// 4. Generate access and refresh tokens
 	// 5. Return the tokens as a JSON response
+	if r.Method != http.MethodPost {
+		writeJSONError(w, "invalid_request", "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	if err := r.ParseForm(); err != nil {
 		writeJSONError(w, "invalid request", "error parsing form", http.StatusBadRequest)
 		return
@@ -282,7 +287,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 		accessToken, refreshToken, err := s.RefreshAccessToken(refToken)
 		if err != nil {
-			writeJSONError(w, "server error", "internal server error", http.StatusInternalServerError)
+			writeJSONError(w, "invalid_grant", err.Error(), http.StatusBadRequest)
 			return
 		}
 		tokenType := "Bearer"
@@ -303,9 +308,10 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		redirectURI := r.Form.Get("redirect_uri")
 		codeVerifier := r.Form.Get("code_verifier")
 		s.mu.Lock()
+		defer s.mu.Unlock()
 		authReq, ok := s.authCodes[code]
-		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI {
-			s.mu.Unlock()
+		if !ok || authReq.ExpiresAt.Before(time.Now()) || authReq.RedirectURI != redirectURI || authReq.ClientID != clientID {
+
 			writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
 			return
 		}
@@ -343,7 +349,6 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		s.tokens[accessToken] = token
 		s.refreshTokens[refreshToken] = rt
-		s.mu.Unlock()
 		tokenType := "Bearer"
 		expiresIn := 3600
 		scope := strings.Join(authReq.Scopes, " ")
@@ -542,7 +547,8 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	if resp.StatusCode != http.StatusOK {
 		var e map[string]any
 		_ = json.NewDecoder(resp.Body).Decode(&e)
-		return errors.New("token exchange failed")
+		desc, _ := e["error_description"].(string)
+		return fmt.Errorf("token exchange failed: %s", desc)
 	}
 
 	var tr TokenResponse
@@ -635,10 +641,10 @@ func main() {
 		AllowedScopes: []string{"read", "write"},
 	}
 	server.RegisterClient(client)
-
+	fmt.Println("OAuth2 server is running on port 9000")
 	err := server.StartServer(9000)
 	if err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}
-	fmt.Println("OAuth2 server is running on port 9000")
+
 }
