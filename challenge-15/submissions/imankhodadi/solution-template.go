@@ -179,7 +179,7 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	reqScopes := strings.Fields(scope)
 	for _, rs := range reqScopes {
 		if !slices.Contains(client.AllowedScopes, rs) {
-			http.Error(w, "scope not allowed", http.StatusBadRequest)
+			http.Redirect(w, r, fmt.Sprintf("%s?error=invalid_scope&state=%s", redirectURI, url.QueryEscape(state)), http.StatusFound)
 			return
 		}
 	}
@@ -207,6 +207,15 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		v.Set("state", state)
 	}
 	http.Redirect(w, r, redirectURI+"?"+v.Encode(), http.StatusFound)
+}
+
+func writeTokenResponse(w http.ResponseWriter, resp *TokenResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Pragma", "no-cache")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		fmt.Println("error in encoding data", err)
+	}
 }
 
 func writeJSONError(w http.ResponseWriter, errCode, desc string, status int) {
@@ -277,13 +286,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			RefreshToken: refreshToken.RefreshToken,
 			Scope:        scope,
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Pragma", "no-cache")
-
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			fmt.Println("error in encoding data", err)
-		}
+		writeTokenResponse(w, resp)
 	case "authorization_code":
 		code := r.Form.Get("code")
 		redirectURI := r.Form.Get("redirect_uri")
@@ -342,14 +345,9 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			RefreshToken: refreshToken,
 			Scope:        scope,
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Pragma", "no-cache")
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			fmt.Println("error in encoding data", err)
-		}
+		writeTokenResponse(w, resp)
 	default:
-		writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
+		writeJSONError(w, "unsupported_grant_type", "unsupported grant type", http.StatusBadRequest)
 	}
 }
 
@@ -367,14 +365,7 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 }
 
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) (*Token, *RefreshToken, error) {
-	rToken, err := GenerateRandomString(32)
-	if err != nil {
-		return nil, nil, err
-	}
-	rRefreshToken, err := GenerateRandomString(32)
-	if err != nil {
-		return nil, nil, err
-	}
+
 	// TODO: Consider revoking old access tokens during refresh token rotation.
 	// When a refresh token is rotated, the old refresh token is correctly deleted,
 	// but any access tokens previously issued under that session remain valid until
@@ -393,6 +384,15 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	}
 	if rt.ClientID != clientID {
 		return nil, nil, errors.New("refresh token does not belong to this client")
+	}
+	//Note: the random generation inside the mutex, which is fine for an in-memory server but worth considering if lock contention becomes a concern.
+	rToken, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, err
+	}
+	rRefreshToken, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, err
 	}
 	t := &Token{
 		AccessToken: rToken,
@@ -623,6 +623,9 @@ func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string)
 	}
 	accessToken := c.AccessToken
 	c.mu.RUnlock()
+	if accessToken == "" {
+		return nil, errors.New("no access token available; call ExchangeCodeForToken first")
+	}
 	req, err := http.NewRequest(method, targetURL, nil)
 	if err != nil {
 		return nil, err
