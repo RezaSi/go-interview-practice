@@ -82,7 +82,7 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 		}
 	}
 	return &circuitBreaker{
-		name:            "circuit-breaker",
+		name:            "circuit-breaker", //TODO: get from function parameter (cannot change function signature foe the assignment)
 		config:          config,
 		state:           StateClosed,
 		lastStateChange: time.Now(),
@@ -128,17 +128,19 @@ func (cb *circuitBreaker) checkState() (State, error) {
 	if state == StateOpen {
 		if time.Since(lastStateChange) >= cb.config.Timeout {
 			cb.mutex.Lock()
+			var changed bool
+			var oldState State
 			// Double-check after acquiring write lock
 			if cb.state == StateOpen && time.Since(cb.lastStateChange) >= cb.config.Timeout {
-				changed, oldState := cb.setState(StateHalfOpen)
-				if changed && cb.config.OnStateChange != nil {
-					cb.config.OnStateChange(cb.name, oldState, StateHalfOpen)
-				}
+				changed, oldState = cb.setState(StateHalfOpen)
 				state = StateHalfOpen
 			} else {
 				state = cb.state
 			}
 			cb.mutex.Unlock()
+			if changed && cb.config.OnStateChange != nil {
+				cb.config.OnStateChange(cb.name, oldState, StateHalfOpen)
+			}
 		}
 	}
 	return state, nil
@@ -159,23 +161,31 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 		cb.requests++
 		cb.mutex.Unlock()
 		// Execute operation
-		result, err := operation()
+		result, err := operation() //pass context to operation in production
+
 		cb.mutex.Lock()
-		defer cb.mutex.Unlock()
 		cb.metrics.Requests++
+		var changed bool
+		var oldState State
 		if err != nil {
 			// Failed in half-open, go back to open
 			cb.metrics.Failures++
 			cb.metrics.ConsecutiveFailures++
 			cb.metrics.LastFailureTime = time.Now()
 			cb.lastStateChange = time.Now()
-			cb.setState(StateOpen)
+			changed, oldState = cb.setState(StateOpen)
 		} else {
 			// Success in half-open, go to closed
 			cb.metrics.Successes++
 			cb.lastStateChange = time.Now()
-			cb.setState(StateClosed)
+			changed, oldState = cb.setState(StateClosed)
 
+		}
+		newState := cb.state
+		cb.mutex.Unlock()
+
+		if changed && cb.config.OnStateChange != nil {
+			cb.config.OnStateChange(cb.name, oldState, newState)
 		}
 		return result, err
 	}
@@ -186,8 +196,9 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 		// Context was canceled or deadline exceeded
 		return nil, ctx.Err()
 	default:
-		result, err := operation()
+		result, err := operation() //pass context to operation in production
 		cb.mutex.Lock()
+		defer cb.mutex.Unlock()
 		cb.metrics.Requests++
 		if err != nil {
 			cb.metrics.Failures++
@@ -198,7 +209,6 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 				cb.lastStateChange = time.Now()
 				oldState := cb.state
 				cb.setState(StateOpen)
-				cb.mutex.Unlock()
 				if cb.config.OnStateChange != nil {
 					cb.config.OnStateChange("circuit-breaker", oldState, StateOpen)
 				}
@@ -208,7 +218,6 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 			cb.metrics.Successes++
 			cb.metrics.ConsecutiveFailures = 0
 		}
-		cb.mutex.Unlock()
 		return result, err
 	}
 }
@@ -245,6 +254,7 @@ func (cb *circuitBreaker) setState(newState State) (bool, State) {
 	}
 	oldState := cb.state
 	cb.state = newState
+	cb.lastStateChange = time.Now()
 
 	// Reset metrics when transitioning to closed
 	if newState == StateClosed {
