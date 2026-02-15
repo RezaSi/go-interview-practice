@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"slices"
@@ -158,7 +159,7 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	codeChallenge := r.URL.Query().Get("code_challenge")
 	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
 	if codeChallenge != "" && codeChallengeMethod == "" {
-		codeChallengeMethod = "plain"
+		codeChallengeMethod = "S256"
 	}
 	s.mu.RLock()
 	client, ok := s.clients[clientID]
@@ -217,7 +218,7 @@ func writeTokenResponse(w http.ResponseWriter, resp *TokenResponse) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Pragma", "no-cache")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		fmt.Println("error in encoding data", err)
+		log.Printf("error encoding token response: %v", err)
 	}
 }
 
@@ -276,7 +277,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		accessToken, refreshToken, err := s.RefreshAccessToken(refToken, clientID)
 
 		if err != nil {
-			writeJSONError(w, "invalid_grant", err.Error(), http.StatusBadRequest)
+			writeJSONError(w, "invalid_grant", "invalid refresh token", http.StatusBadRequest)
 			return
 		}
 		tokenType := "Bearer"
@@ -368,14 +369,8 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 }
 
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) (*Token, *RefreshToken, error) {
-
-	// TODO: Consider revoking old access tokens during refresh token rotation.
-	// When a refresh token is rotated, the old refresh token is correctly deleted,
-	// but any access tokens previously issued under that session remain valid until
-	// they naturally expire. In a stricter security model, you'd also delete the old
-	// access token to limit the window of exposure from a leaked token.
-	// This would require tracking which access token is associated with a refresh token
-	// (e.g., storing the access token string in the RefreshToken struct).
+	// Refresh token rotation: old refresh token and its associated access token
+	// are both revoked when a new pair is issued.
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	rt, exists := s.refreshTokens[refreshToken]
@@ -388,7 +383,10 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	if rt.ClientID != clientID {
 		return nil, nil, errors.New("refresh token does not belong to this client")
 	}
-	//Note: the random generation inside the mutex, which is fine for an in-memory server but worth considering if lock contention becomes a concern.
+	//Note: the random generation inside the mutex, which is fine for an in-memory server
+	// but worth considering if lock contention becomes a concern.
+	// This is called twice while holding the write lock, blocking all other server operations
+	// (token validation, authorization, etc.).
 	rToken, err := GenerateRandomString(32)
 	if err != nil {
 		return nil, nil, err
@@ -621,14 +619,16 @@ func (c *OAuth2Client) DoRefreshToken() error {
 // makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string) (*http.Response, error) {
 	//  Implement authenticated request
-	c.mu.RLock()
-	if !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now()) {
-		c.mu.RUnlock()
+	c.mu.Lock()
+	needsRefresh := !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now())
+	c.mu.Unlock()
+
+	if needsRefresh {
 		if err := c.DoRefreshToken(); err != nil {
 			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
 		}
-		c.mu.RLock()
 	}
+	c.mu.RLock()
 	accessToken := c.AccessToken
 	c.mu.RUnlock()
 	if accessToken == "" {
@@ -657,6 +657,8 @@ func main() {
 		return
 	}
 	fmt.Println("OAuth2 server is running on port 9000")
+	// TODO The *http.Server is created locally and never returned or stored, so callers (and tests) cannot call srv.Shutdown(ctx).
+	// For a challenge solution this is fine, but it limits testability.
 	err := server.StartServer(9000)
 	if err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
