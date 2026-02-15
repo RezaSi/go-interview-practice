@@ -8,19 +8,6 @@ import (
 	"time"
 )
 
-func validateConfig(config Config) error {
-	if config.MaxRequests == 0 {
-		return errors.New("MaxRequests must be greater than 0")
-	}
-	if config.Timeout <= 0 {
-		return errors.New("Timeout must be greater than 0")
-	}
-	if config.ReadyToTrip == nil {
-		return errors.New("ReadyToTrip function is required")
-	}
-	return nil
-}
-
 type State int
 
 const (
@@ -81,13 +68,13 @@ var (
 )
 
 func NewCircuitBreaker(config Config) CircuitBreaker {
-	if config.MaxRequests == 0 {
+	if config.MaxRequests <= 0 {
 		config.MaxRequests = 1
 	}
-	if config.Interval == 0 {
+	if config.Interval <= 0 {
 		config.Interval = time.Minute
 	}
-	if config.Timeout == 0 {
+	if config.Timeout <= 0 {
 		config.Timeout = 30 * time.Second
 	}
 	if config.ReadyToTrip == nil {
@@ -103,8 +90,14 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 	}
 }
 
+func checkInterval() {
+	//TODO:
+	//The Interval field is intended to periodically reset closed-state metrics so stale failures
+	// don't accumulate indefinitely.
+}
+
 // executes the given operation through the circuit breaker
-func (cb *circuitBreaker) Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error) {
+func (cb *circuitBreaker) Call(ctx context.Context, operation func() (any, error)) (any, error) {
 	// 1. Check current state and handle accordingly
 	// 2. For StateClosed: execute operation and track metrics
 	// 3. For StateOpen: check if timeout has passed, transition to half-open or fail fast
@@ -114,6 +107,7 @@ func (cb *circuitBreaker) Call(ctx context.Context, operation func() (interface{
 	if err != nil {
 		return nil, err
 	}
+	checkInterval()
 	switch state {
 	case StateClosed:
 		return cb.callClosed(ctx, operation)
@@ -154,7 +148,6 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 		// Context was canceled or deadline exceeded
 		return nil, ctx.Err()
 	default:
-
 		cb.mutex.Lock()
 		// Check if we've exceeded max requests in half-open
 		if cb.requests >= int64(cb.config.MaxRequests) {
@@ -174,6 +167,7 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 		} else {
 			// Success in half-open, go to closed
 			cb.setState(StateClosed)
+
 		}
 		return result, err
 	}
@@ -186,7 +180,6 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 	default:
 		result, err := operation()
 		cb.mutex.Lock()
-		defer cb.mutex.Unlock()
 		cb.metrics.Requests++
 		if err != nil {
 			cb.metrics.Failures++
@@ -195,12 +188,19 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 			// Check if we should trip to open
 			if cb.config.ReadyToTrip(cb.metrics) {
 				cb.lastStateChange = time.Now()
-				cb.setState(StateOpen)
+				oldState := cb.state
+				cb.state = StateOpen
+				cb.mutex.Unlock()
+				if cb.config.OnStateChange != nil {
+					cb.config.OnStateChange("circuit-breaker", oldState, StateOpen)
+				}
+				return result, err
 			}
 		} else {
 			cb.metrics.Successes++
 			cb.metrics.ConsecutiveFailures = 0
 		}
+		cb.mutex.Unlock()
 		return result, err
 	}
 }
@@ -242,69 +242,14 @@ func (cb *circuitBreaker) setState(newState State) {
 	if newState == StateClosed {
 		cb.resetMetrics()
 	}
+	// Reset half-open request counter when entering half-open
+	if newState == StateHalfOpen {
+		cb.requests = 0
+	}
 }
 func (cb *circuitBreaker) resetMetrics() {
 	cb.metrics = Metrics{}
 	cb.requests = 0
-}
-
-// canExecute determines if a request can be executed in the current state
-func (cb *circuitBreaker) canExecute() error {
-	switch cb.state {
-	case StateOpen:
-		if time.Since(cb.lastStateChange) < cb.config.Timeout {
-			return ErrCircuitBreakerOpen
-		}
-	case StateHalfOpen:
-		if cb.requests >= int64(cb.config.MaxRequests) {
-			return ErrTooManyRequests
-		}
-	}
-	return nil
-}
-
-// recordSuccess records a successful operation
-func (cb *circuitBreaker) recordSuccess() {
-	// 1. Increment success and request counters
-	// 2. Reset consecutive failures
-	// 3. In half-open state, consider transitioning to closed
-	cb.metrics.Successes++
-	cb.requests++
-	cb.metrics.Requests++
-	cb.metrics.Failures = 0
-	if cb.state == StateHalfOpen {
-		cb.state = StateClosed
-	}
-}
-
-// recordFailure records a failed operation
-func (cb *circuitBreaker) recordFailure() {
-	// 1. Increment failure and request counters
-	// 2. Increment consecutive failures
-	// 3. Update last failure time
-	// 4. Check if circuit should trip (ReadyToTrip function)
-	// 5. In half-open state, transition back to open
-
-	cb.metrics.Failures++
-	cb.metrics.Requests++
-	cb.metrics.ConsecutiveFailures++
-	cb.metrics.LastFailureTime = time.Now()
-	res := cb.config.ReadyToTrip(cb.metrics)
-	if cb.state == StateHalfOpen && res {
-		cb.state = StateOpen
-	}
-}
-
-// shouldTrip determines if the circuit breaker should trip to open state
-func (cb *circuitBreaker) shouldTrip() bool {
-	// Use the ReadyToTrip function from config with current metrics
-	return false
-}
-
-// isReady checks if the circuit breaker is ready to transition from open to half-open
-func (cb *circuitBreaker) isReady() bool {
-	// Check if enough time has passed since last state change (Timeout duration)
-	return false
 }
 
 // Example usage and testing helper functions
