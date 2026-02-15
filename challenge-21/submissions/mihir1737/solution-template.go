@@ -30,9 +30,6 @@ func BinarySearch(arr []int, target int) int {
 
 	for l <= r {
 		m := l + (r-l)/2
-	for l <= r {
-		m := l + (r-l)/2
-		if arr[m] == target {
 		if arr[m] == target {
 			return m
 		} else if arr[m] < target {
@@ -80,5 +77,5 @@ func FindInsertPosition(arr []int, target int) int {
 			r = m - 1
 		}
 	}
-	return l;
+	return l
 }
