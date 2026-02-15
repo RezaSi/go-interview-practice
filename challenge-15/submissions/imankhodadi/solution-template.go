@@ -281,9 +281,8 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Pragma", "no-cache")
 
-		errEncoder := json.NewEncoder(w).Encode(resp)
-		if errEncoder != nil {
-			fmt.Println("error in encoding data", errEncoder)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			fmt.Println("error in encoding data", err)
 		}
 	case "authorization_code":
 		code := r.Form.Get("code")
@@ -346,9 +345,8 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Pragma", "no-cache")
-		errEncoder := json.NewEncoder(w).Encode(resp)
-		if errEncoder != nil {
-			fmt.Println("error in encoding data", errEncoder)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			fmt.Println("error in encoding data", err)
 		}
 	default:
 		writeJSONError(w, "invalid_grant", "invalid grant type", http.StatusBadRequest)
@@ -369,19 +367,6 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 }
 
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) (*Token, *RefreshToken, error) {
-	// s.mu.RLock()
-	// Verify ownership before rotating
-	// rt, exists := s.refreshTokens[refreshToken]
-	// if !exists {
-	// 	return nil, nil, errors.New("invalid refresh token")
-	// }
-	// if rt.ClientID != clientID {
-	// 	return nil, nil, errors.New("refresh token does not belong to this client")
-	// }
-	// s.mu.RUnlock()
-	// if !exists || rt.ExpiresAt.Before(time.Now()) {
-	// 	return nil, nil, errors.New("token expired")
-	// }
 	rToken, err := GenerateRandomString(32)
 	if err != nil {
 		return nil, nil, err
@@ -390,22 +375,6 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	if err != nil {
 		return nil, nil, err
 	}
-	// t := &Token{
-	// 	AccessToken: rToken,
-	// 	ClientID:    rt.ClientID,
-	// 	UserID:      rt.UserID,
-	// 	Scopes:      rt.Scopes,
-	// 	ExpiresAt:   time.Now().Add(1 * time.Hour),
-	// }
-	// r := &RefreshToken{
-	// 	RefreshToken: rRefreshToken,
-	// 	ClientID:     rt.ClientID,
-	// 	UserID:       rt.UserID,
-	// 	Scopes:       rt.Scopes,
-	// 	ExpiresAt:    time.Now().Add(24 * time.Hour),
-	// 	AccessToken:  rToken,
-	// }
-
 	// TODO: Consider revoking old access tokens during refresh token rotation.
 	// When a refresh token is rotated, the old refresh token is correctly deleted,
 	// but any access tokens previously issued under that session remain valid until
@@ -416,10 +385,15 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	rt, exists := s.refreshTokens[refreshToken]
-	if !exists || rt.ExpiresAt.Before(time.Now()) {
+	if !exists {
+		return nil, nil, errors.New("invalid refresh token")
+	}
+	if rt.ExpiresAt.Before(time.Now()) {
 		return nil, nil, errors.New("token expired")
 	}
-
+	if rt.ClientID != clientID {
+		return nil, nil, errors.New("refresh token does not belong to this client")
+	}
 	t := &Token{
 		AccessToken: rToken,
 		ClientID:    rt.ClientID,
@@ -453,18 +427,18 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 		// delete flaged lines for future use (required for this assignment)
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		_, exists := s.refreshTokens[token] // TODO(imankhodadi): delete
-		if !exists {                        // TODO(imankhodadi): delete
-			return errors.New("token does not exist") // TODO(imankhodadi): delete
-		} // TODO(imankhodadi): delete
+		_, exists := s.refreshTokens[token]
+		if !exists {
+			return errors.New("token does not exist") // cannot delete this, part of assignment unittests
+		}
 		delete(s.refreshTokens, token)
 	} else {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		_, exists := s.tokens[token] // TODO(imankhodadi): delete
-		if !exists {                 // TODO(imankhodadi): delete
-			return errors.New("token does not exist") // TODO(imankhodadi): delete
-		} // TODO(imankhodadi): delete
+		_, exists := s.tokens[token]
+		if !exists {
+			return errors.New("token does not exist") // cannot delete this, part of assignment unittests
+		}
 		delete(s.tokens, token)
 	}
 	return nil
@@ -593,7 +567,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 func (c *OAuth2Client) DoRefreshToken() error {
 	c.mu.RLock()
 	if c.RefreshToken == "" {
-		c.mu.Unlock()
+		c.mu.RUnlock()
 		return errors.New("no refresh token")
 	}
 	v := url.Values{}
@@ -656,7 +630,8 @@ func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string)
 	if accessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 	}
-	return http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: 30 * time.Second}
+	return client.Do(req)
 }
 
 func main() {
