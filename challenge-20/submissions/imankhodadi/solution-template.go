@@ -52,14 +52,13 @@ type CircuitBreaker interface { // defines the operations for a circuit breaker
 }
 
 type circuitBreaker struct {
-	name             string
-	config           Config
-	state            State
-	metrics          Metrics
-	mutex            sync.RWMutex
-	requests         int64
-	lastStateChange  time.Time
-	halfOpenRequests uint32
+	name            string
+	config          Config
+	state           State
+	metrics         Metrics
+	mutex           sync.RWMutex
+	requests        int64
+	lastStateChange time.Time
 }
 
 var (
@@ -131,7 +130,10 @@ func (cb *circuitBreaker) checkState() (State, error) {
 			cb.mutex.Lock()
 			// Double-check after acquiring write lock
 			if cb.state == StateOpen && time.Since(cb.lastStateChange) >= cb.config.Timeout {
-				cb.setState(StateHalfOpen)
+				changed, oldState := cb.setState(StateHalfOpen)
+				if changed && cb.config.OnStateChange != nil {
+					cb.config.OnStateChange(cb.name, oldState, StateHalfOpen)
+				}
 				state = StateHalfOpen
 			} else {
 				state = cb.state
@@ -160,12 +162,18 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 		result, err := operation()
 		cb.mutex.Lock()
 		defer cb.mutex.Unlock()
+		cb.metrics.Requests++
 		if err != nil {
 			// Failed in half-open, go back to open
+			cb.metrics.Failures++
+			cb.metrics.ConsecutiveFailures++
+			cb.metrics.LastFailureTime = time.Now()
 			cb.lastStateChange = time.Now()
 			cb.setState(StateOpen)
 		} else {
 			// Success in half-open, go to closed
+			cb.metrics.Successes++
+			cb.lastStateChange = time.Now()
 			cb.setState(StateClosed)
 
 		}
@@ -189,7 +197,7 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 			if cb.config.ReadyToTrip(cb.metrics) {
 				cb.lastStateChange = time.Now()
 				oldState := cb.state
-				cb.state = StateOpen
+				cb.setState(StateOpen)
 				cb.mutex.Unlock()
 				if cb.config.OnStateChange != nil {
 					cb.config.OnStateChange("circuit-breaker", oldState, StateOpen)
@@ -224,20 +232,20 @@ func (cb *circuitBreaker) GetMetrics() Metrics {
 }
 
 // setState changes the circuit breaker state and triggers callbacks
-func (cb *circuitBreaker) setState(newState State) {
+// setState changes state and returns (changed, oldState) so the caller
+// can invoke the callback outside the lock.
+func (cb *circuitBreaker) setState(newState State) (bool, State) {
 	// 1. Check if state actually changed
 	// 2. Update lastStateChange time
 	// 3. Reset appropriate metrics based on new state
 	// 4. Call OnStateChange callback if configured
 	// 5. Handle half-open specific logic (reset halfOpenRequests)
 	if cb.state == newState {
-		return
+		return false, cb.state
 	}
 	oldState := cb.state
 	cb.state = newState
-	if cb.config.OnStateChange != nil {
-		cb.config.OnStateChange("circuit-breaker", oldState, newState)
-	}
+
 	// Reset metrics when transitioning to closed
 	if newState == StateClosed {
 		cb.resetMetrics()
@@ -246,6 +254,7 @@ func (cb *circuitBreaker) setState(newState State) {
 	if newState == StateHalfOpen {
 		cb.requests = 0
 	}
+	return true, oldState
 }
 func (cb *circuitBreaker) resetMetrics() {
 	cb.metrics = Metrics{}
