@@ -88,11 +88,12 @@ type AuthorizationCode struct {
 
 // Token represents an issued access token
 type Token struct {
-	AccessToken string
-	ClientID    string
-	UserID      string
-	Scopes      []string
-	ExpiresAt   time.Time
+	AccessToken  string
+	ClientID     string
+	UserID       string
+	Scopes       []string
+	ExpiresAt    time.Time
+	RefreshToken string
 }
 type RefreshToken struct {
 	RefreshToken string
@@ -159,7 +160,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	codeChallenge := r.URL.Query().Get("code_challenge")
 	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
 	if codeChallenge != "" && codeChallengeMethod == "" {
-		codeChallengeMethod = "S256"
+		codeChallengeMethod = "plain"
+		// RFC 7636, when code_challenge is present but code_challenge_method is omitted,
+		// the default must be "plain"
 	}
 	s.mu.RLock()
 	client, ok := s.clients[clientID]
@@ -439,9 +442,12 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 	} else {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		_, exists := s.tokens[token]
+		tokenTemp, exists := s.tokens[token]
 		if !exists {
 			return errors.New("token does not exist") // cannot delete this, part of assignment unittests
+		}
+		if tokenTemp.RefreshToken != "" {
+			delete(s.refreshTokens, tokenTemp.RefreshToken)
 		}
 		delete(s.tokens, token)
 	}
@@ -570,18 +576,18 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 // RefreshToken refreshes the access token using the refresh token
 func (c *OAuth2Client) DoRefreshToken() error {
 	c.mu.RLock()
-	RefreshToken := c.RefreshToken
-	Config := c.Config
+	refreshToken := c.RefreshToken
+	cfg := c.Config
 	c.mu.RUnlock()
-	if RefreshToken == "" {
+	if refreshToken == "" {
 		return errors.New("no refresh token")
 	}
 	v := url.Values{}
 	v.Set("grant_type", "refresh_token")
-	v.Set("refresh_token", RefreshToken)
-	v.Set("client_id", Config.ClientID)
-	v.Set("client_secret", Config.ClientSecret)
-	req, err := http.NewRequest("POST", Config.TokenEndpoint, strings.NewReader(v.Encode()))
+	v.Set("refresh_token", refreshToken)
+	v.Set("client_id", cfg.ClientID)
+	v.Set("client_secret", cfg.ClientSecret)
+	req, err := http.NewRequest("POST", cfg.TokenEndpoint, strings.NewReader(v.Encode()))
 
 	if err != nil {
 		return err
@@ -619,9 +625,9 @@ func (c *OAuth2Client) DoRefreshToken() error {
 // makes a request with the access token
 func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string) (*http.Response, error) {
 	//  Implement authenticated request
-	c.mu.Lock()
+	c.mu.RLock()
 	needsRefresh := !c.TokenExpiry.IsZero() && c.TokenExpiry.Before(time.Now())
-	c.mu.Unlock()
+	c.mu.RUnlock()
 
 	if needsRefresh {
 		if err := c.DoRefreshToken(); err != nil {
