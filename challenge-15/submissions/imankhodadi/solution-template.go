@@ -251,6 +251,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 	// 4. Generate access and refresh tokens
 	// 5. Return the tokens as a JSON response
 	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
 		writeJSONError(w, "invalid_request", "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -324,11 +325,12 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		token := &Token{
-			AccessToken: accessToken,
-			ClientID:    clientID,
-			UserID:      authReq.UserID,
-			Scopes:      authReq.Scopes,
-			ExpiresAt:   time.Now().Add(1 * time.Hour),
+			AccessToken:  accessToken,
+			ClientID:     clientID,
+			UserID:       authReq.UserID,
+			Scopes:       authReq.Scopes,
+			ExpiresAt:    time.Now().Add(1 * time.Hour),
+			RefreshToken: refreshToken,
 		}
 		rt := &RefreshToken{
 			RefreshToken: refreshToken,
@@ -374,6 +376,16 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) (*Token, *RefreshToken, error) {
 	// Refresh token rotation: old refresh token and its associated access token
 	// are both revoked when a new pair is issued.
+	// Generate random tokens outside the lock to reduce contention
+	rToken, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, err
+	}
+	rRefreshToken, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	rt, exists := s.refreshTokens[refreshToken]
@@ -386,24 +398,14 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	if rt.ClientID != clientID {
 		return nil, nil, errors.New("refresh token does not belong to this client")
 	}
-	//Note: the random generation inside the mutex, which is fine for an in-memory server
-	// but worth considering if lock contention becomes a concern.
-	// This is called twice while holding the write lock, blocking all other server operations
-	// (token validation, authorization, etc.).
-	rToken, err := GenerateRandomString(32)
-	if err != nil {
-		return nil, nil, err
-	}
-	rRefreshToken, err := GenerateRandomString(32)
-	if err != nil {
-		return nil, nil, err
-	}
+
 	t := &Token{
-		AccessToken: rToken,
-		ClientID:    rt.ClientID,
-		UserID:      rt.UserID,
-		Scopes:      rt.Scopes,
-		ExpiresAt:   time.Now().Add(1 * time.Hour),
+		AccessToken:  rToken,
+		ClientID:     rt.ClientID,
+		UserID:       rt.UserID,
+		Scopes:       rt.Scopes,
+		ExpiresAt:    time.Now().Add(1 * time.Hour),
+		RefreshToken: rRefreshToken,
 	}
 	r := &RefreshToken{
 		RefreshToken: rRefreshToken,
@@ -422,15 +424,14 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 
 // revokes an access or refresh token
 func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
-
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if isRefreshToken {
 		// Revocation of unknown tokens should be a no-op per RFC 7009.
 		// RFC 7009 specifies that the server should respond with 200 even for invalid or already-revoked tokens.
 		// Returning an error here forces callers to special-case "token doesn't exist,"
 		// which complicates any future /revoke HTTP endpoint built on top of this method.
 		// delete flaged lines for future use (required for this assignment)
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		rt, exists := s.refreshTokens[token]
 		if !exists {
 			return errors.New("token does not exist") // cannot delete this, part of assignment unittests
@@ -440,8 +441,6 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 		}
 		delete(s.refreshTokens, token)
 	} else {
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		tokenTemp, exists := s.tokens[token]
 		if !exists {
 			return errors.New("token does not exist") // cannot delete this, part of assignment unittests
@@ -630,6 +629,12 @@ func (c *OAuth2Client) MakeAuthenticatedRequest(targetURL string, method string)
 	c.mu.RUnlock()
 
 	if needsRefresh {
+		//  call DoRefreshToken() without holding a lock across both operations.
+		//  If two goroutines both observe needsRefresh == true simultaneously,
+		// the second DoRefreshToken call will fail because the old refresh token was
+		// already rotated and revoked. For a single-goroutine demo this is fine,
+		// but worth documenting if the client is intended to be goroutine-safe
+		// (given the sync.RWMutex on the struct).
 		if err := c.DoRefreshToken(); err != nil {
 			return nil, fmt.Errorf("token expired and refresh failed: %w", err)
 		}
