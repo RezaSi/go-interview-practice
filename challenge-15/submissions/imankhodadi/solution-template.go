@@ -176,8 +176,12 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if responseType != "code" {
-		http.Redirect(w, r, fmt.Sprintf("%s?error=unsupported_response_type&state=%s",
-			redirectURI, url.QueryEscape(state)), http.StatusFound)
+		errParams := url.Values{}
+		errParams.Set("error", "unsupported_response_type")
+		if state != "" {
+			errParams.Set("state", state)
+		}
+		http.Redirect(w, r, redirectURI+"?"+errParams.Encode(), http.StatusFound)
 		return
 	}
 	// TODO: make a default scope. When scope is an empty string, strings.Fields returns []string{}, the loop body never executes,
@@ -186,7 +190,12 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	reqScopes := strings.Fields(scope)
 	for _, rs := range reqScopes {
 		if !slices.Contains(client.AllowedScopes, rs) {
-			http.Redirect(w, r, fmt.Sprintf("%s?error=invalid_scope&state=%s", redirectURI, url.QueryEscape(state)), http.StatusFound)
+			errParams := url.Values{}
+			errParams.Set("error", "invalid_scope")
+			if state != "" {
+				errParams.Set("state", state)
+			}
+			http.Redirect(w, r, redirectURI+"?"+errParams.Encode(), http.StatusFound)
 			return
 		}
 	}
@@ -324,11 +333,13 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			writeJSONError(w, "server_error", "internal server error", http.StatusInternalServerError)
 			return
 		}
+		scopesCopy := make([]string, len(authReq.Scopes))
+		copy(scopesCopy, authReq.Scopes)
 		token := &Token{
 			AccessToken:  accessToken,
 			ClientID:     clientID,
 			UserID:       authReq.UserID,
-			Scopes:       authReq.Scopes,
+			Scopes:       scopesCopy,
 			ExpiresAt:    time.Now().Add(1 * time.Hour),
 			RefreshToken: refreshToken,
 		}
@@ -336,7 +347,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 			RefreshToken: refreshToken,
 			ClientID:     clientID,
 			UserID:       authReq.UserID,
-			Scopes:       authReq.Scopes,
+			Scopes:       scopesCopy,
 			ExpiresAt:    time.Now().Add(24 * time.Hour),
 			AccessToken:  accessToken,
 		}
@@ -399,11 +410,13 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 		return nil, nil, errors.New("refresh token does not belong to this client")
 	}
 
+	scopesCopy := make([]string, len(rt.Scopes))
+	copy(scopesCopy, rt.Scopes)
 	t := &Token{
 		AccessToken:  rToken,
 		ClientID:     rt.ClientID,
 		UserID:       rt.UserID,
-		Scopes:       rt.Scopes,
+		Scopes:       scopesCopy,
 		ExpiresAt:    time.Now().Add(1 * time.Hour),
 		RefreshToken: rRefreshToken,
 	}
@@ -411,7 +424,7 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 		RefreshToken: rRefreshToken,
 		ClientID:     rt.ClientID,
 		UserID:       rt.UserID,
-		Scopes:       rt.Scopes,
+		Scopes:       scopesCopy,
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 		AccessToken:  rToken,
 	}
