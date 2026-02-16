@@ -67,7 +67,7 @@ var (
 )
 
 func NewCircuitBreaker(config Config) CircuitBreaker {
-	if config.MaxRequests <= 0 {
+	if config.MaxRequests == 0 {
 		config.MaxRequests = 1
 	}
 	if config.Interval <= 0 {
@@ -89,12 +89,10 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 	}
 }
 
-func checkInterval() {
-	//TODO:
-	//The Interval field is intended to periodically reset closed-state metrics so stale failures
-	// don't accumulate indefinitely.
-	// what is the best way to schedule this? and what should it do?
-}
+//TODO: add a checkInterval
+// The Interval field is intended to periodically reset closed-state metrics so stale failures
+// don't accumulate indefinitely.
+// what is the best way to schedule this? and what should it do?
 
 // executes the given operation through the circuit breaker
 func (cb *circuitBreaker) Call(ctx context.Context, operation func() (any, error)) (any, error) {
@@ -162,6 +160,11 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 	result, err := operation() //pass context to operation in production
 
 	cb.mutex.Lock()
+	// Another probe may have already transitioned the state.
+	if cb.state != StateHalfOpen {
+		cb.mutex.Unlock()
+		return result, err
+	}
 	cb.metrics.Requests++
 	var changed bool
 	var oldState State
@@ -204,7 +207,6 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 			cb.metrics.LastFailureTime = time.Now()
 			// Check if we should trip to open
 			if cb.config.ReadyToTrip(cb.metrics) {
-				cb.lastStateChange = time.Now()
 				changed, oldState = cb.setState(StateOpen)
 			}
 		} else {
@@ -241,11 +243,6 @@ func (cb *circuitBreaker) GetMetrics() Metrics {
 // setState changes state and returns (changed, oldState) so the caller
 // can invoke the callback outside the lock.
 func (cb *circuitBreaker) setState(newState State) (bool, State) {
-	// 1. Check if state actually changed
-	// 2. Update lastStateChange time
-	// 3. Reset appropriate metrics based on new state
-	// 4. Call OnStateChange callback if configured
-	// 5. Handle half-open specific logic (reset halfOpenRequests)
 	if cb.state == newState {
 		return false, cb.state
 	}
