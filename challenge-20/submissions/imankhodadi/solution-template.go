@@ -46,7 +46,7 @@ type Config struct {
 }
 
 type CircuitBreaker interface { // defines the operations for a circuit breaker
-	Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error)
+	Call(ctx context.Context, operation func() (any, error)) (any, error)
 	GetState() State
 	GetMetrics() Metrics
 }
@@ -88,11 +88,6 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 		lastStateChange: time.Now(),
 	}
 }
-
-//TODO: add a checkInterval
-// The Interval field is intended to periodically reset closed-state metrics so stale failures
-// don't accumulate indefinitely.
-// what is the best way to schedule this? and what should it do?
 
 // executes the given operation through the circuit breaker
 func (cb *circuitBreaker) Call(ctx context.Context, operation func() (any, error)) (any, error) {
@@ -177,9 +172,14 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 	} else {
 		// Success in half-open
 		cb.metrics.Successes++
-		// ths assignment requires to transfer to Closed state after one state, but a better solution is
+		// ths assignment requires to transfer to Closed state after one success, but a better solution is
 		// transition to Closed after all MaxRequests probes succeed, which is the typical pattern (e.g., Sony gobreaker).
 		// change in production
+		// resetting all metrics. Subsequent in-flight probes hit the guard and return their result/error to the caller —
+		// but their outcome is never recorded in metrics.
+		// This means Metrics.Requests/Successes/Failures will undercount under concurrency.
+		// This is a known trade-off, metrics are best-effort during HalfOpen-to-Closed transitions,
+		// so consumers don't rely on exact counts.
 		changed, oldState = cb.setState(StateClosed)
 	}
 	newState := cb.state
@@ -191,34 +191,39 @@ func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (an
 	return result, err
 }
 func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any, error)) (any, error) {
-	select {
-	case <-ctx.Done():
-		// Context was canceled or deadline exceeded
+	if ctx.Err() != nil {
 		return nil, ctx.Err()
-	default:
-		result, err := operation() //pass context to operation in production
-		cb.mutex.Lock()
-		cb.metrics.Requests++
-		var changed bool
-		var oldState State
-		if err != nil {
-			cb.metrics.Failures++
-			cb.metrics.ConsecutiveFailures++
-			cb.metrics.LastFailureTime = time.Now()
-			// Check if we should trip to open
-			if cb.config.ReadyToTrip(cb.metrics) {
-				changed, oldState = cb.setState(StateOpen)
-			}
-		} else {
-			cb.metrics.Successes++
-			cb.metrics.ConsecutiveFailures = 0
-		}
+	}
+	result, err := operation() //pass context to operation in production
+	cb.mutex.Lock()
+	if cb.state != StateClosed {
 		cb.mutex.Unlock()
-		if changed && cb.config.OnStateChange != nil {
-			cb.config.OnStateChange(cb.name, oldState, StateOpen)
-		}
 		return result, err
 	}
+	cb.metrics.Requests++
+	var changed bool
+	var oldState State
+	if err != nil {
+		cb.metrics.Failures++
+		cb.metrics.ConsecutiveFailures++
+		cb.metrics.LastFailureTime = time.Now()
+		// Check if we should trip to open
+		if cb.config.ReadyToTrip(cb.metrics) {
+			changed, oldState = cb.setState(StateOpen)
+		}
+	} else {
+		if cb.lastStateChange.Add(cb.config.Interval).Before(time.Now()) {
+			cb.metrics.Successes = 0
+			cb.metrics.Failures = 0
+		}
+		cb.metrics.Successes++
+		cb.metrics.ConsecutiveFailures = 0
+	}
+	cb.mutex.Unlock()
+	if changed && cb.config.OnStateChange != nil {
+		cb.config.OnStateChange(cb.name, oldState, StateOpen)
+	}
+	return result, err
 }
 
 func (cb *circuitBreaker) GetState() State {
@@ -289,18 +294,16 @@ func main() {
 	ctx := context.Background()
 
 	// Successful operation
-	result, err := cb.Call(ctx, func() (interface{}, error) {
+	result, err := cb.Call(ctx, func() (any, error) {
 		return "success", nil
 	})
 	fmt.Printf("Result: %v, Error: %v\n", result, err)
 
 	// Failing operation
-	result, err = cb.Call(ctx, func() (interface{}, error) {
+	result, err = cb.Call(ctx, func() (any, error) {
 		return nil, errors.New("simulated failure")
 	})
 	fmt.Printf("Result: %v, Error: %v\n", result, err)
-
-	// Print current state and metrics
 	fmt.Printf("Current state: %v\n", cb.GetState())
 	fmt.Printf("Current metrics: %+v\n", cb.GetMetrics())
 }
