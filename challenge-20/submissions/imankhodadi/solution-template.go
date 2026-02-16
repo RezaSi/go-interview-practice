@@ -205,6 +205,7 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 		cb.metrics.Requests = 0
 		cb.metrics.Successes = 0
 		cb.metrics.Failures = 0
+		cb.metrics.ConsecutiveFailures = 0
 		cb.lastStateChange = time.Now()
 	}
 	cb.metrics.Requests++
@@ -230,6 +231,7 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 }
 
 func (cb *circuitBreaker) GetState() State {
+	cb.checkState() // to update for Open→HalfOpen
 	cb.mutex.RLock()
 	defer cb.mutex.RUnlock()
 	return cb.state
