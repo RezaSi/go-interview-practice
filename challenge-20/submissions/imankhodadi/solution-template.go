@@ -200,6 +200,13 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 		cb.mutex.Unlock()
 		return result, err
 	}
+	// Roll the statistical window if the interval has elapsed
+	if cb.lastStateChange.Add(cb.config.Interval).Before(time.Now()) {
+		cb.metrics.Requests = 0
+		cb.metrics.Successes = 0
+		cb.metrics.Failures = 0
+		cb.lastStateChange = time.Now()
+	}
 	cb.metrics.Requests++
 	var changed bool
 	var oldState State
@@ -207,15 +214,10 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 		cb.metrics.Failures++
 		cb.metrics.ConsecutiveFailures++
 		cb.metrics.LastFailureTime = time.Now()
-		// Check if we should trip to open
 		if cb.config.ReadyToTrip(cb.metrics) {
 			changed, oldState = cb.setState(StateOpen)
 		}
 	} else {
-		if cb.lastStateChange.Add(cb.config.Interval).Before(time.Now()) {
-			cb.metrics.Successes = 0
-			cb.metrics.Failures = 0
-		}
 		cb.metrics.Successes++
 		cb.metrics.ConsecutiveFailures = 0
 	}
