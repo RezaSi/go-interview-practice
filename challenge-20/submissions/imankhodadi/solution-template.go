@@ -30,7 +30,7 @@ func (s State) String() string {
 }
 
 type Metrics struct {
-	Requests            int64
+	Requests            int64 //total request count
 	Successes           int64
 	Failures            int64
 	ConsecutiveFailures int64
@@ -52,13 +52,13 @@ type CircuitBreaker interface { // defines the operations for a circuit breaker
 }
 
 type circuitBreaker struct {
-	name            string
-	config          Config
-	state           State
-	metrics         Metrics
-	mutex           sync.RWMutex
-	requests        int64
-	lastStateChange time.Time
+	name             string
+	config           Config
+	state            State
+	metrics          Metrics
+	mutex            sync.RWMutex
+	halfOpenRequests int64
+	lastStateChange  time.Time
 }
 
 var (
@@ -93,6 +93,7 @@ func checkInterval() {
 	//TODO:
 	//The Interval field is intended to periodically reset closed-state metrics so stale failures
 	// don't accumulate indefinitely.
+	// what is the best way to schedule this? and what should it do?
 }
 
 // executes the given operation through the circuit breaker
@@ -106,7 +107,6 @@ func (cb *circuitBreaker) Call(ctx context.Context, operation func() (any, error
 	if err != nil {
 		return nil, err
 	}
-	checkInterval()
 	switch state {
 	case StateClosed:
 		return cb.callClosed(ctx, operation)
@@ -147,48 +147,45 @@ func (cb *circuitBreaker) checkState() (State, error) {
 }
 
 func (cb *circuitBreaker) callHalfOpen(ctx context.Context, operation func() (any, error)) (any, error) {
-	select {
-	case <-ctx.Done():
-		// Context was canceled or deadline exceeded
+	if ctx.Err() != nil {
 		return nil, ctx.Err()
-	default:
-		cb.mutex.Lock()
-		// Check if we've exceeded max requests in half-open
-		if cb.requests >= int64(cb.config.MaxRequests) {
-			cb.mutex.Unlock()
-			return nil, ErrTooManyRequests
-		}
-		cb.requests++
-		cb.mutex.Unlock()
-		// Execute operation
-		result, err := operation() //pass context to operation in production
-
-		cb.mutex.Lock()
-		cb.metrics.Requests++
-		var changed bool
-		var oldState State
-		if err != nil {
-			// Failed in half-open, go back to open
-			cb.metrics.Failures++
-			cb.metrics.ConsecutiveFailures++
-			cb.metrics.LastFailureTime = time.Now()
-			cb.lastStateChange = time.Now()
-			changed, oldState = cb.setState(StateOpen)
-		} else {
-			// Success in half-open, go to closed
-			cb.metrics.Successes++
-			cb.lastStateChange = time.Now()
-			changed, oldState = cb.setState(StateClosed)
-
-		}
-		newState := cb.state
-		cb.mutex.Unlock()
-
-		if changed && cb.config.OnStateChange != nil {
-			cb.config.OnStateChange(cb.name, oldState, newState)
-		}
-		return result, err
 	}
+	cb.mutex.Lock()
+	// Check if we've exceeded max requests in half-open
+	if cb.halfOpenRequests >= int64(cb.config.MaxRequests) {
+		cb.mutex.Unlock()
+		return nil, ErrTooManyRequests
+	}
+	cb.halfOpenRequests++
+	cb.mutex.Unlock()
+	// Execute operation
+	result, err := operation() //pass context to operation in production
+
+	cb.mutex.Lock()
+	cb.metrics.Requests++
+	var changed bool
+	var oldState State
+	if err != nil {
+		// Failed in half-open, go back to open
+		cb.metrics.Failures++
+		cb.metrics.ConsecutiveFailures++
+		cb.metrics.LastFailureTime = time.Now()
+		changed, oldState = cb.setState(StateOpen)
+	} else {
+		// Success in half-open
+		cb.metrics.Successes++
+		// ths assignment requires to transfer to Closed state after one state, but a better solution is
+		// transition to Closed after all MaxRequests probes succeed, which is the typical pattern (e.g., Sony gobreaker).
+		// change in production
+		changed, oldState = cb.setState(StateClosed)
+	}
+	newState := cb.state
+	cb.mutex.Unlock()
+
+	if changed && cb.config.OnStateChange != nil {
+		cb.config.OnStateChange(cb.name, oldState, newState)
+	}
+	return result, err
 }
 func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any, error)) (any, error) {
 	select {
@@ -198,8 +195,9 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 	default:
 		result, err := operation() //pass context to operation in production
 		cb.mutex.Lock()
-		defer cb.mutex.Unlock()
 		cb.metrics.Requests++
+		var changed bool
+		var oldState State
 		if err != nil {
 			cb.metrics.Failures++
 			cb.metrics.ConsecutiveFailures++
@@ -207,16 +205,15 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 			// Check if we should trip to open
 			if cb.config.ReadyToTrip(cb.metrics) {
 				cb.lastStateChange = time.Now()
-				oldState := cb.state
-				cb.setState(StateOpen)
-				if cb.config.OnStateChange != nil {
-					cb.config.OnStateChange("circuit-breaker", oldState, StateOpen)
-				}
-				return result, err
+				changed, oldState = cb.setState(StateOpen)
 			}
 		} else {
 			cb.metrics.Successes++
 			cb.metrics.ConsecutiveFailures = 0
+		}
+		cb.mutex.Unlock()
+		if changed && cb.config.OnStateChange != nil {
+			cb.config.OnStateChange(cb.name, oldState, StateOpen)
 		}
 		return result, err
 	}
@@ -262,13 +259,13 @@ func (cb *circuitBreaker) setState(newState State) (bool, State) {
 	}
 	// Reset half-open request counter when entering half-open
 	if newState == StateHalfOpen {
-		cb.requests = 0
+		cb.halfOpenRequests = 0
 	}
 	return true, oldState
 }
 func (cb *circuitBreaker) resetMetrics() {
 	cb.metrics = Metrics{}
-	cb.requests = 0
+	cb.halfOpenRequests = 0
 }
 
 // Example usage and testing helper functions
