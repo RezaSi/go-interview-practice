@@ -221,9 +221,10 @@ func (cb *circuitBreaker) callClosed(ctx context.Context, operation func() (any,
 		cb.metrics.Successes++
 		cb.metrics.ConsecutiveFailures = 0
 	}
+	newState := cb.state
 	cb.mutex.Unlock()
 	if changed && cb.config.OnStateChange != nil {
-		cb.config.OnStateChange(cb.name, oldState, StateOpen)
+		cb.config.OnStateChange(cb.name, oldState, newState)
 	}
 	return result, err
 }
