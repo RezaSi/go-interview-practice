@@ -114,11 +114,13 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
 // ListProducts returns all products with optional filtering by category
 func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	//Query the database for products
+	var args []interface{}
 	query := "SELECT id, name, price, quantity, category FROM products"
 	if category != "" {
 		query += " WHERE category = ?"
+		args = append(args, category)
 	}
-	rows, err := ps.db.Query(query, category)
+	rows, err := ps.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +136,6 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		products = append(products, p)
 	}
 
-	// TODO: If category is not empty, filter by category
 	return products, nil
 }
 
@@ -144,11 +145,7 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
+	defer tx.Rollback() 
 
 	stmt, err := tx.Prepare("UPDATE products SET quantity = ? WHERE id = ?")
 	if err != nil {
@@ -177,6 +174,7 @@ func main() {
 	db, err := InitDB("db.db")
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	p := Product{
 		Name:     "Nike",
