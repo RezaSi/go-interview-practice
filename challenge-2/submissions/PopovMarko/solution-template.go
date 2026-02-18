@@ -22,7 +22,7 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	// TODO: Implement the function
+	//function implementation
 	result := ""
 	for _,v := range s {
     result = string(v) + result
