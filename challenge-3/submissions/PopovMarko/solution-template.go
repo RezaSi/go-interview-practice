@@ -53,12 +53,14 @@ func (m *Manager) FindEmployeeByID(id int) *Employee {
 	// Find employee by ID
 	for i := range m.Employees {
 		if m.Employees[i].ID == id {
-			return &m.Employees[i]
+			res := &m.Employees[i]
+			return res
 		}
 	}
 	return nil
 }
 
+// Main function
 func main() {
 	manager := Manager{}
 	manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
