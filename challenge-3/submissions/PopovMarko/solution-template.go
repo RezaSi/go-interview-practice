@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-// Imployee struct
+// Employee struct
 type Employee struct {
 	ID     int
 	Name   string
@@ -17,7 +17,7 @@ type Manager struct {
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
-	// Append employee to employeer list
+	// Append employee to employee list
 	m.Employees = append(m.Employees, e)
 }
 
@@ -36,7 +36,7 @@ func (m *Manager) RemoveEmployee(id int) {
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-	// Get aveage salary of all employee
+	// Get average salary of all employees
 	if len(m.Employees) == 0 {
 		return 0.0
 	}
@@ -50,7 +50,7 @@ func (m *Manager) GetAverageSalary() float64 {
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	// Find emplyee by ID
+	// Find employee by ID
 	for i := range m.Employees {
 		if m.Employees[i].ID == id {
 			return &m.Employees[i]
