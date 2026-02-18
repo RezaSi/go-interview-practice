@@ -23,9 +23,9 @@ func main() {
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
 	//function implementation
-	result := ""
-	for _,v := range s {
-    result = string(v) + result
-  }
-  return result
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }
