@@ -26,7 +26,9 @@ func (m *Manager) RemoveEmployee(id int) {
 	// Delete employee by ID
 	for i, e := range m.Employees {
 		if e.ID == id {
-			m.Employees = append(m.Employees[:i], m.Employees[i+1:]...)
+			copy(m.Employees[i:], m.Employees[i+1:])
+			m.Employees[len(m.Employees)-1] = Employee{}
+			m.Employees = m.Employees[:len(m.Employees)-1]
 			return
 		}
 	}
