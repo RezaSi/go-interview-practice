@@ -28,7 +28,6 @@ func ReverseString(s string) string {
 	r := ""
     for i := 0; i < len(runes); i++ {
     r += string(runes[len(runes) -1-i])
-    fmt.Println(r)
     }
  
 	return r
