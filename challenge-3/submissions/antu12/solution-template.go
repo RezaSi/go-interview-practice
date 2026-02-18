@@ -45,7 +45,8 @@ func (m *Manager) FindEmployeeByID(id int) *Employee {
 	// TODO: Implement this method
 	for i := range m.Employees {
 		if m.Employees[i].ID == id {
-			return &m.Employees[i]
+			e := m.Employees[i]
+			return &e
 		}
 	}
 	return nil
