@@ -16,7 +16,6 @@ import (
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
-
 // Func counts number of words in string
 func CountWordFrequency(text string) map[string]int {
 	res := make(map[string]int)
@@ -32,13 +31,7 @@ func CountWordFrequency(text string) map[string]int {
 			continue
 		}
 		st := strings.Trim(s, ".,-?! ")
-		_, exist := res[st]
-		if exist {
-			res[st]++
-		} else {
-			res[st] = 1
-		}
+		res[st]++
 	}
 	return res
 }
-
