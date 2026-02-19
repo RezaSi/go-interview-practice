@@ -22,16 +22,16 @@ func CountWordFrequency(text string) map[string]int {
 	if text == "" {
 		return res
 	}
+
 	lowerString := strings.ToLower(text)
-	r := strings.NewReplacer("'", "", "-", " ", "\t", " ", "\n", " ")
-	repString := r.Replace(lowerString)
-	sepString := strings.Split(repString, " ")
-	for _, s := range sepString {
-		if s == "" {
-			continue
+	repString := strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			return r
 		}
-		st := strings.Trim(s, ".,-?! ")
-		res[st]++
+		return ' '
+	}, lowerString)
+	for _, s := range strings.Fields(repString) {
+		res[s]++
 	}
 	return res
 }
