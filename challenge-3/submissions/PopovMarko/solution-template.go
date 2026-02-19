@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-// Imployee struct
+// Employee struct
 type Employee struct {
 	ID     int
 	Name   string
@@ -16,25 +16,30 @@ type Manager struct {
 }
 
 // AddEmployee adds a new employee to the manager's list.
+// func(*Manager) AddEmployee(Employee)
 func (m *Manager) AddEmployee(e Employee) {
-	// Append employee to employeer list
+	// Append employee to employee list
 	m.Employees = append(m.Employees, e)
 }
 
 // RemoveEmployee removes an employee by ID from the manager's list.
+// func(*Manager) RemoveEmployee(int)
 func (m *Manager) RemoveEmployee(id int) {
 	// Delete employee by ID
 	for i, e := range m.Employees {
 		if e.ID == id {
-			m.Employees = append(m.Employees[:i], m.Employees[i+1:]...)
+			copy(m.Employees[i:], m.Employees[i+1:])
+			m.Employees[len(m.Employees)-1] = Employee{}
+			m.Employees = m.Employees[:len(m.Employees)-1]
 			return
 		}
 	}
 }
 
 // GetAverageSalary calculates the average salary of all employees.
+// func(*Manager) GetAverageSalary() float64
 func (m *Manager) GetAverageSalary() float64 {
-	// Get aveage salary of all employee
+	// Get average salary of all employees
 	if len(m.Employees) == 0 {
 		return 0.0
 	}
@@ -47,16 +52,19 @@ func (m *Manager) GetAverageSalary() float64 {
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
+// func(*Manager) FindEmployeeByID(int) *Employee
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	// Find emplyee by ID
+	// Find employee by ID
 	for i := range m.Employees {
 		if m.Employees[i].ID == id {
-			return &m.Employees[i]
+			res := &m.Employees[i]
+			return res
 		}
 	}
 	return nil
 }
 
+// Main function
 func main() {
 	manager := Manager{}
 	manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
