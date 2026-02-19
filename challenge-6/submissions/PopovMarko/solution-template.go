@@ -11,6 +11,7 @@ import (
 //
 // Words are defined as sequences of letters and digits.
 // All words are converted to lowercase before counting.
+// Possessives (e.g., "let's") have the apostrophe removed ("lets").
 // All punctuation, spaces, and other non-alphanumeric characters are ignored.
 //
 // For example:
