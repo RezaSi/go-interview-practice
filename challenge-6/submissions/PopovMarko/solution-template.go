@@ -21,9 +21,6 @@ import (
 func CountWordFrequency(text string) map[string]int {
 	// Define new map res to return
 	res := make(map[string]int)
-	if text == "" {
-		return res
-	}
 	// Normalize input string
 	lowerString := strings.ToLower(text)
 	lowerString = strings.ReplaceAll(lowerString, "'s", "s")
