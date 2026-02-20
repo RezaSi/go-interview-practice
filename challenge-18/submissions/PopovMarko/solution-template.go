@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"os"
 )
 
 func main() {
@@ -22,13 +21,12 @@ func main() {
 func CelsiusToFahrenheit(celsius float64) float64 {
 	// Validate parameter not to be lower than absolute zero
 	if celsius < -273.15 {
-		fmt.Printf("temperature below absolute zero %.2f\n", celsius)
-		os.Exit(1)
+		panic(fmt.Sprintf("temperature below absolute zero %.2f\n", celsius))
 	}
 
 	f := celsius*9.0/5.0 + 32
 
-	return round(f, 2)
+	return Round(f, 2)
 }
 
 // FahrenheitToCelsius converts a temperature from Fahrenheit to Celsius
@@ -36,15 +34,15 @@ func CelsiusToFahrenheit(celsius float64) float64 {
 func FahrenheitToCelsius(fahrenheit float64) float64 {
 	// Validate parameter not to be lower than absolute zero
 	if fahrenheit < -459.67 {
-		fmt.Printf("temperature below absolute zero %.2f\n", fahrenheit)
+		panic(fmt.Sprintf("temperature below absolute zero %.2f\n", fahrenheit))
 	}
 
 	c := (fahrenheit - 32) * 5.0 / 9.0
-	return round(c, 2)
+	return Round(c, 2)
 }
 
-// round rounds a float64 value to the specified number of decimal places
-func round(value float64, decimals int) float64 {
+// Round rounds a float64 value to the specified number of decimal places
+func Round(value float64, decimals int) float64 {
 	precision := math.Pow10(decimals)
 	return math.Round(value*precision) / precision
 }
