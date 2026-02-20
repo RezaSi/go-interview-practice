@@ -20,10 +20,12 @@ func main() {
 // CelsiusToFahrenheit converts a temperature from Celsius to Fahrenheit
 // Formula: F = C × 9/5 + 32
 func CelsiusToFahrenheit(celsius float64) float64 {
+	// Validate parameter not to be lower than absolute zero
 	if celsius < -273.15 {
 		fmt.Printf("temperature below absolute zero %.2f\n", celsius)
 		os.Exit(1)
 	}
+
 	f := celsius*9.0/5.0 + 32
 
 	return round(f, 2)
@@ -32,9 +34,11 @@ func CelsiusToFahrenheit(celsius float64) float64 {
 // FahrenheitToCelsius converts a temperature from Fahrenheit to Celsius
 // Formula: C = (F - 32) × 5/9
 func FahrenheitToCelsius(fahrenheit float64) float64 {
+	// Validate parameter not to be lower than absolute zero
 	if fahrenheit < -459.67 {
 		fmt.Printf("temperature below absolute zero %.2f\n", fahrenheit)
 	}
+
 	c := (fahrenheit - 32) * 5.0 / 9.0
 	return round(c, 2)
 }
