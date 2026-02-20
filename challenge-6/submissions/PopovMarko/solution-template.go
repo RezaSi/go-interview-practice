@@ -24,7 +24,7 @@ func CountWordFrequency(text string) map[string]int {
 	// Normalize input string
 	lowerString := strings.ToLower(text)
 	lowerString = strings.ReplaceAll(lowerString, "'s", "s")
-	// Func apply to every element of lowerString
+	// Replace every non-alphanumeric character with a space.
 	repString := strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
