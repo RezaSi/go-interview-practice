@@ -3,6 +3,7 @@ package challenge6
 
 import (
 	"strings"
+	"unicode"
 )
 
 // CountWordFrequency takes a string containing multiple words and returns
@@ -25,11 +26,10 @@ func CountWordFrequency(text string) map[string]int {
 	}
 	// Normalize input string
 	lowerString := strings.ToLower(text)
-
 	lowerString = strings.ReplaceAll(lowerString, "'s", "s")
 	// Func apply to every element of lowerString
 	repString := strings.Map(func(r rune) rune {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
 		}
 		return ' '
