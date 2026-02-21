@@ -19,11 +19,14 @@ import (
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
+
 	// Define new map res to return
 	res := make(map[string]int)
+
 	// Normalize input string
 	lowerString := strings.ToLower(text)
 	lowerString = strings.ReplaceAll(lowerString, "'s", "s")
+
 	// Replace every non-alphanumeric character with a space.
 	repString := strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
