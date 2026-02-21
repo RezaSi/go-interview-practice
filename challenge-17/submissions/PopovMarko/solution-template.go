@@ -1,16 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 	"unicode"
 )
 
 func main() {
 	// Get input from the user
-	var input string
 	fmt.Print("Enter a string to check if it's a palindrome: ")
-	fmt.Scanln(&input)
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimRight(input, "\r\n")
 
 	// Call the IsPalindrome function and print the result
 	result := IsPalindrome(input)
@@ -28,23 +31,28 @@ func IsPalindrome(s string) bool {
 		return true
 	}
 
-	// Normalization of the string to lower case, delete all not alphanumeric symbols
-	// and spaces
+	// Normalization of the string to lower case
 	s = strings.ToLower(s)
+
+	//delete all not alphanumeric runes
 	s = strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
 		}
 		return ' '
 	}, s)
+
+	// Replace all spaces
 	s = strings.ReplaceAll(s, " ", "")
+	// Get a slice of runes to keep all UTF-8 symbol
+	runes := []rune(s)
 	l := 0
-	r := len(s) - 1
+	r := len(runes) - 1
 
 	// Loop with two indexes left and right that steps towards each other
-	// and compare each symbol
+	// and compare each runes
 	for l <= r {
-		if s[l] != s[r] {
+		if runes[l] != runes[r] {
 			return false
 		}
 		l++
