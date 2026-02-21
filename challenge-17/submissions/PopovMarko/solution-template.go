@@ -11,8 +11,12 @@ import (
 func main() {
 	// Get input from the user
 	fmt.Print("Enter a string to check if it's a palindrome: ")
+
+	// New reader with Stdin returns buffered reader
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
+
+	// input string normalization
 	input = strings.TrimRight(input, "\r\n")
 
 	// Call the IsPalindrome function and print the result
@@ -39,11 +43,9 @@ func IsPalindrome(s string) bool {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return r
 		}
-		return ' '
+		return -1
 	}, s)
 
-	// Replace all spaces
-	s = strings.ReplaceAll(s, " ", "")
 	// Get a slice of runes to keep all UTF-8 symbol
 	runes := []rune(s)
 	l := 0
