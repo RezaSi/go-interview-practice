@@ -17,25 +17,19 @@ import (
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
+var nonAlphanumeric = regexp.MustCompile("[^a-zA-Z0-9']+")
+
 func CountWordFrequency(text string) map[string]int {
 	words := CleanText(text)
-	if len(words) == 0 {
-	    return map[string]int{}
-	}
 	var res = map[string]int{}
 	for _, word := range words {
-	    if _, ok := res[word]; ok {
-	        res[word]++
-	    } else {
-	        res[word] = 1
-	    }
+	    res[word]++
 	}
 	return res
 }
 
 func CleanText(text string) []string {
-    reg := regexp.MustCompile("[^a-zA-Z0-9']+")
-    text = reg.ReplaceAllString(text, " ")
+    text = nonAlphanumeric.ReplaceAllString(text, " ")
     text = strings.ToLower(text)
     text = strings.ReplaceAll(text, "'", "")
     return strings.Fields(text)
