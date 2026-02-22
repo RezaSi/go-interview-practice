@@ -6,6 +6,8 @@ import (
 	"regexp"
 )
 
+var nonAlphanumeric = regexp.MustCompile("[^a-zA-Z0-9']+")
+
 // CountWordFrequency takes a string containing multiple words and returns
 // a map where each key is a word and the value is the number of times that
 // word appears in the string. The comparison is case-insensitive.
@@ -17,10 +19,8 @@ import (
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
-var nonAlphanumeric = regexp.MustCompile("[^a-zA-Z0-9']+")
-
 func CountWordFrequency(text string) map[string]int {
-	words := CleanText(text)
+	words := cleanText(text)
 	var res = map[string]int{}
 	for _, word := range words {
 	    res[word]++
@@ -28,7 +28,7 @@ func CountWordFrequency(text string) map[string]int {
 	return res
 }
 
-func CleanText(text string) []string {
+func cleanText(text string) []string {
     text = nonAlphanumeric.ReplaceAllString(text, " ")
     text = strings.ToLower(text)
     text = strings.ReplaceAll(text, "'", "")
