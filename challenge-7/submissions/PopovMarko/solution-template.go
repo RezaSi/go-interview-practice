@@ -85,7 +85,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 		return nil, &NegativeAmountError{initialBalance}
 	}
 
-	// Check initialBalance more then minBalance
+	// Check initialBalance more than minBalance
 	if initialBalance < minBalance {
 		return nil, &InsufficientFundsError{initialBalance, minBalance}
 	}
@@ -126,7 +126,7 @@ func (a *BankAccount) Withdraw(amount float64) error {
 		return &NegativeAmountError{amount}
 	}
 
-	// Check amount not exceeded it's limit
+	// Check amount not exceeded its limit
 	if amount > MaxTransactionAmount {
 		return &ExceedsLimitError{amount, MaxTransactionAmount}
 	}
@@ -160,6 +160,11 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	// Guard against self-transfer
 	if a == target {
 		return &AccountError{"Can't transfer to the same account"}
+	}
+
+	//Guard against nil target
+	if target == nil {
+		return &AccountError{"Target account is nil"}
 	}
 
 	// Lock in canonical order to prevent deadlock
