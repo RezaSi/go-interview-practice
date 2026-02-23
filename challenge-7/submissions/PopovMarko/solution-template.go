@@ -20,8 +20,6 @@ const (
 	MaxTransactionAmount = 10_000.0 // Example limit for deposits/withdrawals
 )
 
-var mutex = sync.Mutex{}
-
 // Custom error types
 
 // AccountError is a general error type for bank account operations.
@@ -60,7 +58,7 @@ type ExceedsLimitError struct {
 }
 
 func (e *ExceedsLimitError) Error() string {
-	return fmt.Sprintf("Max limit %.2f operation of %.2f not aloud", e.Restrict, e.Amount)
+	return fmt.Sprintf("Max limit %.2f operation of %.2f not allowed", e.Restrict, e.Amount)
 }
 
 // NewBankAccount creates a new bank account with the given parameters.
@@ -113,9 +111,9 @@ func (a *BankAccount) Deposit(amount float64) error {
 	}
 
 	// Update balance under Mutex
-	mutex.Lock()
+	a.mu.Lock()
 	a.Balance += amount
-	mutex.Unlock()
+	a.mu.Unlock()
 	return nil
 }
 
@@ -133,15 +131,15 @@ func (a *BankAccount) Withdraw(amount float64) error {
 		return &ExceedsLimitError{amount, MaxTransactionAmount}
 	}
 
-	// Check for enough sum on balance
+	// Check for enough sum on balance under Mutex
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if a.Balance-amount < a.MinBalance {
 		return &InsufficientFundsError{a.Balance, amount}
 	}
 
 	//Update balance under Mutex
-	mutex.Lock()
 	a.Balance -= amount
-	mutex.Unlock()
 	return nil
 }
 
@@ -160,15 +158,24 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	}
 
 	// Check for enought sum for transfer
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if a.Balance-amount < a.MinBalance {
 		return &InsufficientFundsError{a.Balance, amount}
 	}
 
 	// Update balance and target balance under Mutex
-	mutex.Lock()
+	first, second := a, target
+	if first.ID > second.ID {
+		first, second = second, first
+	}
+	// Lock Mutex for current and target account
+	first.mu.Lock()
+	defer first.mu.Unlock()
+	second.mu.Lock()
+	defer second.mu.Unlock()
 	a.Balance -= amount
 	target.Balance += amount
-	mutex.Unlock()
 	return nil
 }
 
