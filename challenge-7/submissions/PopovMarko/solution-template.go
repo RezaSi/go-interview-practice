@@ -88,7 +88,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 
 	// Check initialBalance more than minBalance
 	if initialBalance < minBalance {
-		return nil, &AccountError{fmt.Sprintf("initialBalance %.2f is below minBalance %.2f", initialBalance, minBalance)}
+		return nil, &InsufficientFundsError{initialBalance, minBalance}
 	}
 	return &BankAccount{
 		ID:         id,
