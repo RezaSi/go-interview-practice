@@ -65,12 +65,12 @@ func (e *ExceedsLimitError) Error() string {
 // It returns an error if any of the parameters are invalid.
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
 	// Validate parameters
-	// Check id not blanc
+	// Check id not blank
 	if id == "" {
 		return nil, &AccountError{"id is empty"}
 	}
 
-	// Check owner is not blanc
+	// Check owner is not blank
 	if owner == "" {
 		return nil, &AccountError{"Owner is empty"}
 	}
@@ -157,23 +157,29 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		return &ExceedsLimitError{amount, MaxTransactionAmount}
 	}
 
-	// Check for enought sum for transfer
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.Balance-amount < a.MinBalance {
-		return &InsufficientFundsError{a.Balance, amount}
+	// Guard against self-transfer
+	if a == target {
+		return &AccountError{"Can't transfer to the same account"}
 	}
 
-	// Update balance and target balance under Mutex
+	// Lock in canonical order to prevent deadlock
 	first, second := a, target
 	if first.ID > second.ID {
 		first, second = second, first
 	}
+
 	// Lock Mutex for current and target account
 	first.mu.Lock()
 	defer first.mu.Unlock()
 	second.mu.Lock()
 	defer second.mu.Unlock()
+
+	// Check for enough sum for transfer
+	if a.Balance-amount < a.MinBalance {
+		return &InsufficientFundsError{a.Balance, amount}
+	}
+
+	// Update balance
 	a.Balance -= amount
 	target.Balance += amount
 	return nil
