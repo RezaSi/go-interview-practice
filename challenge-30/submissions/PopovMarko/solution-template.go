@@ -112,8 +112,7 @@ func ProcessItems(ctx context.Context, items []string) ([]string, error) {
 		select {
 		case <-ctx.Done():
 			return processedItems, ctx.Err()
-		default:
-			time.Sleep(50 * time.Millisecond)
+		case <-time.After(50 * time.Millisecond):
 			processedItems = append(processedItems, "processed_"+i)
 		}
 	}
