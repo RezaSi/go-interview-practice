@@ -50,7 +50,9 @@ func (cm *simpleContextManager) AddValue(parent context.Context, key, value any)
 	return context.WithValue(parent, key, value)
 }
 
-// GetValue retrieves a value from the context
+// GetValue retrieves a value from context.
+// NOTE: It cannot distinguish between a missing key and a stored nil value.
+// Callers should avoid storing nil in context.
 func (cm *simpleContextManager) GetValue(ctx context.Context, key any) (any, bool) {
 	v := ctx.Value(key)
 	if v != nil {
@@ -61,15 +63,12 @@ func (cm *simpleContextManager) GetValue(ctx context.Context, key any) (any, boo
 
 // ExecuteWithContext executes a task that can be cancelled via context
 func (cm *simpleContextManager) ExecuteWithContext(ctx context.Context, task func() error) error {
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 
-	// Start goroutine with task processing and close channel
 	go func() {
 		errCh <- task()
-		close(errCh)
 	}()
 
-	// Select wait for goroutine end or context cancelled
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
