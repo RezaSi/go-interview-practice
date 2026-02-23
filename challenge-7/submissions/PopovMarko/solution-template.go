@@ -4,6 +4,7 @@ package challenge7
 import (
 	"fmt"
 	"sync"
+	"unsafe"
 )
 
 // BankAccount represents a bank account with balance management and minimum balance requirements.
@@ -87,7 +88,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 
 	// Check initialBalance more than minBalance
 	if initialBalance < minBalance {
-		return nil, &InsufficientFundsError{initialBalance, minBalance}
+		return nil, &AccountError{fmt.Sprintf("initialBalance %.2f is below minBalance %.2f", initialBalance, minBalance)}
 	}
 	return &BankAccount{
 		ID:         id,
@@ -100,20 +101,20 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 // Deposit adds the specified amount to the account balance.
 // It returns an error if the amount is invalid or exceeds the transaction limit.
 func (a *BankAccount) Deposit(amount float64) error {
-	// Check amount not exceeded operation limits
-	if amount > MaxTransactionAmount {
-		return &ExceedsLimitError{amount, MaxTransactionAmount}
-	}
-
 	// Check amount not negative
 	if amount < 0 {
 		return &NegativeAmountError{amount}
 	}
 
+	// Check amount not exceeded operation limits
+	if amount > MaxTransactionAmount {
+		return &ExceedsLimitError{amount, MaxTransactionAmount}
+	}
+
 	// Update balance under Mutex
 	a.mu.Lock()
+	defer a.mu.Unlock()
 	a.Balance += amount
-	a.mu.Unlock()
 	return nil
 }
 
@@ -157,19 +158,19 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		return &ExceedsLimitError{amount, MaxTransactionAmount}
 	}
 
-	// Guard against self-transfer
-	if a == target {
-		return &AccountError{"Can't transfer to the same account"}
-	}
-
 	//Guard against nil target
 	if target == nil {
 		return &AccountError{"Target account is nil"}
 	}
 
+	// Guard against self-transfer
+	if a == target {
+		return &AccountError{"Can't transfer to the same account"}
+	}
+
 	// Lock in canonical order to prevent deadlock
 	first, second := a, target
-	if first.ID > second.ID {
+	if uintptr(unsafe.Pointer(first)) > uintptr(unsafe.Pointer(second)) {
 		first, second = second, first
 	}
 
