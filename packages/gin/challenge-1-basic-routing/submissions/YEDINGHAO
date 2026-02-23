@@ -1,0 +1,250 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+// User represents a user in our system
+type User struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name" binding:"required"`
+	Email string `json:"email" binding:"required"`
+	Age   int    `json:"age" binding:"required"`
+}
+
+// Response represents a standard API response
+type Response struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data,omitempty"`
+	Message string      `json:"message,omitempty"`
+	Error   string      `json:"error,omitempty"`
+	Code    int         `json:"code,omitempty"`
+}
+
+// In-memory storage
+var users = []User{
+	{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
+	{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
+	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
+}
+var nextID = 4
+
+func main() {
+	// TODO: Create Gin router
+	router := gin.Default()
+
+	// TODO: Setup routes
+	// GET /users - Get all users
+	router.GET("/users", getAllUsers)
+
+	// GET /users/:id - Get user by ID
+	router.GET("/users/:id", getUserByID)
+	// POST /users - Create new user
+	router.POST("/users", createUser)
+	// PUT /users/:id - Update user
+	router.PUT("/users/:id", updateUser)
+	// DELETE /users/:id - Delete user
+	router.DELETE("/users/:id", deleteUser)
+	// GET /users/search - Search users by name
+	router.GET("/users/search", searchUsers)
+	// TODO: Start server on port 8080
+	router.Run(":8080")
+}
+
+// TODO: Implement handler functions
+
+// getAllUsers handles GET /users
+func getAllUsers(c *gin.Context) {
+	c.IndentedJSON(200, Response{
+		Success: true,
+		Data:    users,
+		Code:    200,
+	})
+}
+
+// getUserByID handles GET /users/:id
+func getUserByID(c *gin.Context) {
+	// TODO: Get user by ID
+	// Handle invalid ID format
+	// Return 404 if user not found
+	id := c.Param("id")
+	UserId, err := strconv.Atoi(id)
+	if err != nil {
+		c.IndentedJSON(400, Response{
+			Success: false,
+			Message: "Invalid ID",
+			Code:    400,
+		})
+		return
+	}
+
+	for _, a := range users {
+		if a.ID == UserId {
+			c.IndentedJSON(http.StatusOK, Response{
+				Success: true,
+				Data:    a,
+				Code:    200,
+			})
+			return
+		}
+	}
+	c.IndentedJSON(404, Response{
+		Success: false,
+		Message: "not found",
+		Code:    404,
+	})
+}
+
+// createUser handles POST /users
+func createUser(c *gin.Context) {
+	// TODO: Parse JSON request body
+	// Validate required fields
+	// Add user to storage
+	// Return created user
+
+	var newUser User
+
+	if err := c.ShouldBindJSON(&newUser); err != nil {
+		c.IndentedJSON(400, Response{
+			Success: false,
+			Message: "Invalid JSON format",
+			Code:    400,
+		})
+		return
+	}
+
+	newUser.ID = nextID
+	nextID++
+
+	users = append(users, newUser)
+	c.IndentedJSON(201, Response{
+		Success: true,
+		Message: "Created Successfully",
+		Data:    newUser,
+		Code:    201,
+	})
+}
+
+// updateUser handles PUT /users/:id
+func updateUser(c *gin.Context) {
+	// TODO: Get user ID from path
+	// Parse JSON request body
+	// Find and update user
+	// Return updated user
+
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	var newUser User
+
+	if err := c.ShouldBindJSON(&newUser); err != nil {
+		c.IndentedJSON(400, Response{
+			Success: false,
+			Message: "Invalid JSON format",
+			Code:    400,
+		})
+		return
+	}
+	newUser.ID = id
+	for i, a := range users {
+		if id == a.ID {
+			users[i] = newUser
+			c.IndentedJSON(200, Response{
+				Success: true,
+				Data:    newUser,
+				Code:    200,
+			})
+			return
+		}
+	}
+	c.IndentedJSON(404, Response{
+		Success: false,
+		Message: "Not Found User",
+		Code:    404,
+	})
+}
+
+// deleteUser handles DELETE /users/:id
+func deleteUser(c *gin.Context) {
+	// TODO: Get user ID from path
+	// Find and remove user
+	// Return success message
+
+	id := c.Param("id")
+	UserId, _ := strconv.Atoi(id)
+	flag := false
+	var newUsers []User
+	for _, a := range users {
+		if a.ID == UserId {
+			flag = true
+			continue
+		}
+		newUsers = append(newUsers, a)
+	}
+	users = newUsers
+	if flag {
+		c.IndentedJSON(200, Response{
+			Success: true,
+			Code:    200,
+		})
+	} else {
+		c.IndentedJSON(http.StatusNotFound, Response{
+			Success: false,
+			Message: "Not Found",
+			Code:    404,
+		})
+	}
+
+}
+
+// searchUsers handles GET /users/search?name=value
+func searchUsers(c *gin.Context) {
+	// TODO: Get name query parameter
+	// Filter users by name (case-insensitive)
+	// Return matching users
+
+	name := c.Query("name")
+
+	if name == "" {
+		c.IndentedJSON(400, Response{
+			Success: false,
+			Code:    400,
+		})
+		return
+	}
+
+	results := make([]User, 0)
+
+	searchName := strings.ToLower(name)
+
+	for _, user := range users {
+		if strings.Contains(strings.ToLower(user.Name), searchName) {
+			results = append(results, user)
+		}
+	}
+
+	c.IndentedJSON(200, Response{
+		Success: true,
+		Data:    results,
+		Message: fmt.Sprintf("找到 %d 个匹配的用户", len(results)),
+		Code:    200,
+	})
+}
+
+// Helper function to find user by ID
+func findUserByID(id int) (*User, int) {
+	// TODO: Implement user lookup
+	// Return user pointer and index, or nil and -1 if not found
+
+	for i, a := range users {
+		if id == a.ID {
+			return &users[i], i
+		}
+	}
+
+	return nil, -1
+}
