@@ -152,7 +152,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		return &NegativeAmountError{amount}
 	}
 
-	// Check amount not exceeded it's limit
+	// Check amount not exceeded its limit
 	if amount > MaxTransactionAmount {
 		return &ExceedsLimitError{amount, MaxTransactionAmount}
 	}
@@ -189,4 +189,3 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	target.Balance += amount
 	return nil
 }
-
