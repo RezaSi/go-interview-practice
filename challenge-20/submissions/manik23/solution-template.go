@@ -34,7 +34,7 @@ func (s State) String() string {
 // stateChangeNotifier is a callback upon changing states
 type stateChangeNotifier func()
 
-var notify stateChangeNotifier
+var NoStateChange stateChangeNotifier
 
 // Metrics represents the circuit breaker metrics
 type Metrics struct {
@@ -96,6 +96,8 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 		}
 	}
 
+	NoStateChange = func() {}
+
 	return &circuitBreakerImpl{
 		name:            "circuit-breaker",
 		config:          config,
@@ -113,37 +115,34 @@ func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interf
 	// 4. For StateHalfOpen: limit concurrent requests and handle state transitions
 	// 5. Update metrics and state based on operation result
 
-	select {
-	case <-ctx.Done():
-		{
-			return nil, errors.New("Call: context is cancelled")
-		}
-	default:
-		{
-			cb.mutex.Lock()
-			if err := cb.canExecute(); err != nil {
-				cb.mutex.Unlock()
-				return nil, err
-			}
-			cb.mutex.Unlock()
-
-			if notify != nil {
-				notify()
-			}
-
-			res, err := operation()
-
-			cb.mutex.Lock()
-			defer cb.mutex.Unlock()
-			if err != nil {
-				cb.recordFailure()
-				return nil, err
-			}
-
-			cb.recordSuccess()
-			return res, nil
-		}
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
+
+	cb.mutex.Lock()
+	notify, err := cb.canExecute()
+	if err != nil {
+		cb.mutex.Unlock()
+		return nil, err
+	}
+	cb.mutex.Unlock()
+
+	if notify != nil {
+		notify()
+	}
+
+	res, err := operation()
+
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+	if err != nil {
+		cb.recordFailure()()
+		return nil, err
+	}
+
+	cb.recordSuccess()()
+	return res, nil
+
 }
 
 // GetState returns the current state of the circuit breaker
@@ -186,21 +185,19 @@ func (cb *circuitBreakerImpl) setState(newState State) func() {
 			return func() {
 				cb.config.OnStateChange("circuit-breaker", oldState, newState)
 			}
-
 		}
 	}
 
-	return func() {} // no - operation
+	return NoStateChange
 }
 
 func (cb *circuitBreakerImpl) resetMetrics() {
 	cb.metrics = Metrics{}
 	cb.halfOpenRequests = 0
-	cb.metrics.ConsecutiveFailures = 0
 }
 
 // canExecute determines if a request can be executed in the current state
-func (cb *circuitBreakerImpl) canExecute() error {
+func (cb *circuitBreakerImpl) canExecute() (stateChangeNotifier, error) {
 	// TODO: Implement request execution permission logic
 	// 1. For StateClosed: always allow
 	// 2. For StateOpen: check if timeout has passed for transition to half-open
@@ -211,34 +208,34 @@ func (cb *circuitBreakerImpl) canExecute() error {
 	case StateHalfOpen:
 		{
 			if cb.halfOpenRequests >= cb.config.MaxRequests {
-				return ErrTooManyRequests
+				return NoStateChange, ErrTooManyRequests
 			}
 
 			cb.halfOpenRequests++
-			return nil
+			return NoStateChange, nil
 		}
 
 	case StateOpen:
 		{
 			if cb.isReady() {
-				notify = cb.setState(StateHalfOpen)
-				return nil
+
+				return cb.setState(StateHalfOpen), nil
 			}
-			return ErrCircuitBreakerOpen
+			return NoStateChange, ErrCircuitBreakerOpen
 		}
 
 	case StateClosed:
 		{
-			return nil
+			return NoStateChange, nil
 		}
 
 	default:
-		return errors.New("unknown circuit breaker state")
+		return NoStateChange, nil
 	}
 }
 
 // recordSuccess records a successful operation
-func (cb *circuitBreakerImpl) recordSuccess() {
+func (cb *circuitBreakerImpl) recordSuccess() stateChangeNotifier {
 	// TODO: Implement success recording
 	// 1. Increment success and request counters
 	// 2. Reset consecutive failures
@@ -247,12 +244,13 @@ func (cb *circuitBreakerImpl) recordSuccess() {
 	cb.metrics.Successes++
 	cb.metrics.ConsecutiveFailures = 0
 	if cb.state == StateHalfOpen {
-		notify = cb.setState(StateClosed)
+		return cb.setState(StateClosed)
 	}
+	return NoStateChange
 }
 
 // recordFailure records a failed operation
-func (cb *circuitBreakerImpl) recordFailure() {
+func (cb *circuitBreakerImpl) recordFailure() stateChangeNotifier {
 	// TODO: Implement failure recording
 	// 1. Increment failure and request counters
 	// 2. Increment consecutive failures
@@ -266,12 +264,15 @@ func (cb *circuitBreakerImpl) recordFailure() {
 	cb.metrics.LastFailureTime = time.Now()
 
 	if cb.state == StateHalfOpen {
-		notify = cb.setState(StateOpen)
+		return cb.setState(StateOpen)
 	}
 
 	if cb.shouldTrip() {
-		notify = cb.setState(StateOpen)
+		return cb.setState(StateOpen)
 	}
+
+	return NoStateChange
+
 }
 
 // shouldTrip determines if the circuit breaker should trip to open state
@@ -283,7 +284,7 @@ func (cb *circuitBreakerImpl) shouldTrip() bool {
 
 // isReady checks if the circuit breaker is ready to transition from open to half-open
 func (cb *circuitBreakerImpl) isReady() bool {
-	return time.Since(cb.metrics.LastFailureTime) > cb.config.Timeout
+	return time.Since(cb.lastStateChange) > cb.config.Timeout
 }
 
 // Example usage and testing helper functions
