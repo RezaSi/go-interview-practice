@@ -40,7 +40,7 @@ type InsufficientFundsError struct {
 
 func (e *InsufficientFundsError) Error() string {
 
-	return fmt.Sprintf("Insufficient funds, balance %.2f, is below min balance %.2f", e.Balance, e.Amount)
+	return fmt.Sprintf("Insufficient funds, balance %.2f, min balance %.2f", e.Balance, e.Amount)
 }
 
 // NegativeAmountError occurs when an amount for deposit, withdrawal, or transfer is negative.
