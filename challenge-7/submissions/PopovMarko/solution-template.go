@@ -34,13 +34,13 @@ func (e *AccountError) Error() string {
 
 // InsufficientFundsError occurs when a withdrawal or transfer would bring the balance below minimum.
 type InsufficientFundsError struct {
-	Balance float64
-	Amount  float64
+	Balance    float64
+	MinBalance float64
 }
 
 func (e *InsufficientFundsError) Error() string {
 
-	return fmt.Sprintf("Insufficient funds, balance %.2f, min balance %.2f", e.Balance, e.Amount)
+	return fmt.Sprintf("Insufficient funds, balance %.2f, min balance %.2f", e.Balance, e.MinBalance)
 }
 
 // NegativeAmountError occurs when an amount for deposit, withdrawal, or transfer is negative.
