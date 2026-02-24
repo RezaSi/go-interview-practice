@@ -163,10 +163,7 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 	// 5. Handle half-open specific logic (reset halfOpenRequests)
 
 	if cb.state != newState {
-		if cb.config.OnStateChange != nil {
-			cb.config.OnStateChange("circuit-breaker", cb.state, newState)
-		}
-
+		
 		cb.state = newState
 		cb.lastStateChange = time.Now()
 
