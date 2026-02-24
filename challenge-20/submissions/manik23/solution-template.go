@@ -125,11 +125,11 @@ func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interf
 				cb.mutex.Unlock()
 				return nil, err
 			}
+			cb.mutex.Unlock()
 
 			if notify != nil {
 				notify()
 			}
-			cb.mutex.Unlock()
 
 			res, err := operation()
 
