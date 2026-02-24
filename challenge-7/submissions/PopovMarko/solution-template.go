@@ -40,7 +40,7 @@ type InsufficientFundsError struct {
 
 func (e *InsufficientFundsError) Error() string {
 
-	return fmt.Sprintf("Insufficient funds, balance %.2f, amount to spend %.2f", e.Balance, e.Amount)
+	return fmt.Sprintf("Insufficient funds, balance %.2f, is below min balance %.2f", e.Balance, e.Amount)
 }
 
 // NegativeAmountError occurs when an amount for deposit, withdrawal, or transfer is negative.
@@ -68,7 +68,7 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 	// Validate parameters
 	// Check id not blank
 	if id == "" {
-		return nil, &AccountError{"id is empty"}
+		return nil, &AccountError{"ID is empty"}
 	}
 
 	// Check owner is not blank
@@ -136,7 +136,7 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.Balance-amount < a.MinBalance {
-		return &InsufficientFundsError{a.Balance, amount}
+		return &InsufficientFundsError{a.Balance, a.MinBalance}
 	}
 
 	//Update balance under Mutex
@@ -182,7 +182,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 
 	// Check for enough sum for transfer
 	if a.Balance-amount < a.MinBalance {
-		return &InsufficientFundsError{a.Balance, amount}
+		return &InsufficientFundsError{a.Balance, a.MinBalance}
 	}
 
 	// Update balance
