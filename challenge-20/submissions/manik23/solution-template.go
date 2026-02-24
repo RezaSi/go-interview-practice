@@ -1,6 +1,4 @@
-package main
-
-// Package challenge20 contains the implementation for Challenge 20: Circuit Breaker Pattern
+package ch20
 
 import (
 	"context"
@@ -163,16 +161,15 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 	// 5. Handle half-open specific logic (reset halfOpenRequests)
 
 	if cb.state != newState {
-		
+		if cb.config.OnStateChange != nil {
+			cb.config.OnStateChange("circuit-breaker", cb.state, newState)
+		}
+
 		cb.state = newState
 		cb.lastStateChange = time.Now()
 
 		if newState == StateClosed {
 			cb.resetMetrics()
-		}
-
-		if newState == StateHalfOpen {
-			cb.halfOpenRequests = 1
 		}
 
 	}
@@ -206,7 +203,8 @@ func (cb *circuitBreakerImpl) canExecute() error {
 	case StateOpen:
 		{
 			if cb.isReady() {
-				cb.setState(StateHalfOpen)
+				cb.state = StateHalfOpen
+				cb.halfOpenRequests = 1
 				return nil
 			}
 			return ErrCircuitBreakerOpen
@@ -249,12 +247,6 @@ func (cb *circuitBreakerImpl) recordFailure() {
 	cb.metrics.Failures++
 	cb.metrics.ConsecutiveFailures++
 	cb.metrics.LastFailureTime = time.Now()
-
-	if cb.state == StateHalfOpen {
-		cb.setState(StateOpen)
-		return
-	}
-
 	if cb.shouldTrip() {
 		cb.setState(StateOpen)
 	}
@@ -269,7 +261,7 @@ func (cb *circuitBreakerImpl) shouldTrip() bool {
 
 // isReady checks if the circuit breaker is ready to transition from open to half-open
 func (cb *circuitBreakerImpl) isReady() bool {
-	return time.Since(cb.lastStateChange) > cb.config.Timeout
+	return time.Since(cb.metrics.LastFailureTime) > cb.config.Timeout
 }
 
 // Example usage and testing helper functions
