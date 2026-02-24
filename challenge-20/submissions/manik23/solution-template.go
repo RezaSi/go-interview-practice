@@ -174,6 +174,10 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 			cb.resetMetrics()
 		}
 
+		if newState == StateHalfOpen {
+			cb.halfOpenRequests = 1
+		}
+
 	}
 }
 
@@ -206,7 +210,6 @@ func (cb *circuitBreakerImpl) canExecute() error {
 		{
 			if cb.isReady() {
 				cb.setState(StateHalfOpen)
-				cb.halfOpenRequests = 1
 				return nil
 			}
 			return ErrCircuitBreakerOpen
@@ -249,6 +252,12 @@ func (cb *circuitBreakerImpl) recordFailure() {
 	cb.metrics.Failures++
 	cb.metrics.ConsecutiveFailures++
 	cb.metrics.LastFailureTime = time.Now()
+
+	if cb.state == StateHalfOpen {
+		cb.setState(StateOpen)
+		return
+	}
+
 	if cb.shouldTrip() {
 		cb.setState(StateOpen)
 	}
