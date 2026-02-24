@@ -107,7 +107,10 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 }
 
 // Call executes the given operation through the circuit breaker
-func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error) {
+func (cb *circuitBreakerImpl) Call(
+	ctx context.Context,
+	operation func() (interface{}, error),
+) (interface{}, error) {
 	// TODO: Implement the main circuit breaker logic
 	// 1. Check current state and handle accordingly
 	// 2. For StateClosed: execute operation and track metrics
@@ -134,15 +137,22 @@ func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interf
 	res, err := operation()
 
 	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
+	var stateChangeCallback func()
 	if err != nil {
-		cb.recordFailure()()
+		stateChangeCallback = cb.recordFailure()
+		cb.mutex.Unlock()
+		if stateChangeCallback != nil {
+			stateChangeCallback()
+		}
 		return nil, err
 	}
 
-	cb.recordSuccess()()
+	stateChangeCallback = cb.recordSuccess()
+	cb.mutex.Unlock()
+	if stateChangeCallback != nil {
+		stateChangeCallback()
+	}
 	return res, nil
-
 }
 
 // GetState returns the current state of the circuit breaker
@@ -218,7 +228,6 @@ func (cb *circuitBreakerImpl) canExecute() (stateChangeNotifier, error) {
 	case StateOpen:
 		{
 			if cb.isReady() {
-
 				return cb.setState(StateHalfOpen), nil
 			}
 			return NoStateChange, ErrCircuitBreakerOpen
@@ -272,7 +281,6 @@ func (cb *circuitBreakerImpl) recordFailure() stateChangeNotifier {
 	}
 
 	return NoStateChange
-
 }
 
 // shouldTrip determines if the circuit breaker should trip to open state
