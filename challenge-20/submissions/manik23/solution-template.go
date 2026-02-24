@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 )
@@ -138,7 +137,6 @@ func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interf
 			return res, nil
 		}
 	}
-
 }
 
 // GetState returns the current state of the circuit breaker
@@ -177,12 +175,12 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 		}
 
 	}
-
 }
 
 func (cb *circuitBreakerImpl) resetMetrics() {
 	cb.metrics = Metrics{}
 	cb.halfOpenRequests = 0
+	cb.metrics.ConsecutiveFailures = 0
 }
 
 // canExecute determines if a request can be executed in the current state
@@ -207,8 +205,7 @@ func (cb *circuitBreakerImpl) canExecute() error {
 	case StateOpen:
 		{
 			if cb.isReady() {
-				log.Println(" canExecute: circuit-breaker", StateOpen, StateHalfOpen)
-				cb.state = StateHalfOpen
+				cb.setState(StateHalfOpen)
 				cb.halfOpenRequests = 1
 				return nil
 			}
@@ -223,7 +220,6 @@ func (cb *circuitBreakerImpl) canExecute() error {
 	default:
 		return errors.New("unknown circuit breaker state")
 	}
-
 }
 
 // recordSuccess records a successful operation
