@@ -272,7 +272,7 @@ func (cb *circuitBreakerImpl) shouldTrip() bool {
 
 // isReady checks if the circuit breaker is ready to transition from open to half-open
 func (cb *circuitBreakerImpl) isReady() bool {
-	return time.Since(cb.metrics.LastFailureTime) > cb.config.Timeout
+	return time.Since(cb.lastStateChange) > cb.config.Timeout
 }
 
 // Example usage and testing helper functions
