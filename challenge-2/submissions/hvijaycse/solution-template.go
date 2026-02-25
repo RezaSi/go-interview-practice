@@ -19,15 +19,15 @@ func main() {
 		fmt.Println(output)
 	}
 }
-
+// ReverseString returns the reversed string of s.
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	// TODO: Implement the function
 
-	reverse := make([]rune, len(s))
+	reverse := []rune(s)
+	length := len(reverse)
 
-	for i := range len(s) {
-		reverse[i] = rune(s[len(s)-i -1])
+	for i := 0; i < length/2; i++ {
+		reverse[i], reverse[length-i-1] = reverse[length-i-1], reverse[i]
 
 	}
 	return string(reverse)
