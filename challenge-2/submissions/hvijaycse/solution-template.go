@@ -24,10 +24,10 @@ func main() {
 func ReverseString(s string) string {
 	// TODO: Implement the function
 
-	reverse := make([]byte, len(s))
+	reverse := make([]rune, len(s))
 
 	for i := range len(s) {
-		reverse[i] = s[len(s)-i -1]
+		reverse[i] = rune(s[len(s)-i -1])
 
 	}
 	return string(reverse)
