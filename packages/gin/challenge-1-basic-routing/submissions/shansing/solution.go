@@ -66,6 +66,8 @@ func withNextId(fn func(int)) {
 
 func main() {
 	router := gin.Default()
+	// GET /users/search - Search users by name
+	router.GET("/users/search", searchUsers)
 	// GET /users - Get all users
 	router.GET("/users", getAllUsers)
 	// GET /users/:id - Get user by ID
@@ -76,8 +78,6 @@ func main() {
 	router.PUT("/users/:id", updateUser)
 	// DELETE /users/:id - Delete user
 	router.DELETE("/users/:id", deleteUser)
-	// GET /users/search - Search users by name
-	router.GET("/users/search", searchUsers)
 
 	err := router.Run(":8080")
 	if err != nil {
