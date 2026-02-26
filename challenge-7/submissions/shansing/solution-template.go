@@ -179,12 +179,10 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	}
 	a.Balance = aBalance
 	target.Balance = targetBalance
-	if amount > MaxTransactionAmount {
-		return &ExceedsLimitError{}
-	}
-	if amount < 0 {
-		return &NegativeAmountError{}
-	}
+	a.Balance = aBalance
+	target.Balance = targetBalance
+	return nil
+}
 	return nil
 }
 
