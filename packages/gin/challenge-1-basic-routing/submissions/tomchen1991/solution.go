@@ -1,8 +1,10 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +37,7 @@ var users = []User{
 	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
 }
 var nextID = 4
+var usersMutex sync.RWMutex
 
 func main() {
 	router := gin.Default()
@@ -57,12 +60,16 @@ func main() {
 	router.GET("/users/search", searchUsers)
 
 	// Start server on port 8080
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("server failed to start: %v", err)
+	}
 }
-
 
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
+	usersMutex.RLock()
+	defer usersMutex.RUnlock()
+
 	// Return all users
 	c.JSON(http.StatusOK, Response{
 		Success: true,
@@ -83,7 +90,10 @@ func getUserByID(c *gin.Context) {
 		return
 	}
 
+	usersMutex.RLock()
 	user, index := findUserByID(userId.ID)
+	usersMutex.RUnlock()
+
 	if index == -1 {
 		c.JSON(http.StatusNotFound, Response{
 			Success: false,
@@ -120,13 +130,17 @@ func createUser(c *gin.Context) {
 		return
 	}
 
+	usersMutex.Lock()
+
 	var user User
-	user.ID = len(users) + 1
+	user.ID = nextID
+	nextID++
 	user.Name = newUser.Name
 	user.Email = newUser.Email
 	user.Age = newUser.Age
 	// Add user to storage
 	users = append(users, user)
+	defer usersMutex.Unlock()
 	// Return created user
 	c.JSON(http.StatusCreated, Response{
 		Success: true,
@@ -157,6 +171,8 @@ func updateUser(c *gin.Context) {
 		return
 	}
 	// Find and update user
+	usersMutex.Lock()
+
 	var index int = -1
 	for i := 0; i < len(users); i++ {
 		if users[i].ID == userUriId.ID {
@@ -167,6 +183,7 @@ func updateUser(c *gin.Context) {
 			break
 		}
 	}
+	defer usersMutex.Unlock()
 	if index == -1 {
 		c.JSON(http.StatusNotFound, Response{
 			Success: false,
@@ -195,6 +212,9 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 	// Find and remove user
+	usersMutex.Lock()
+	defer usersMutex.Unlock()
+
 	index := -1
 	for i := 0; i < len(users); i++ {
 		if users[i].ID == userUriId.ID {
@@ -237,12 +257,15 @@ func searchUsers(c *gin.Context) {
 		return
 	}
 	// Filter users by name (case-insensitive)
+	usersMutex.RLock()
+
 	result := []User{}
 	for i := 0; i < len(users); i++ {
 		if strings.Contains(strings.ToLower(users[i].Name), strings.ToLower(searchUsersQuery.Name)) {
 			result = append(result, users[i])
 		}
 	}
+	defer usersMutex.RUnlock()
 
 	// Return matching users
 	c.JSON(http.StatusOK, Response{
