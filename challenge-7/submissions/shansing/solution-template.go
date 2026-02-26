@@ -138,11 +138,6 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	if err := checkBalance(newBalance, a.MinBalance); err != nil {
 		return err
 	}
-	if err := checkBalance(newBalance, a.MinBalance); err != nil {
-		return err
-	}
-	a.Balance = newBalance
-	return nil
 	a.Balance = newBalance
 	return nil
 }
@@ -181,10 +176,6 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	}
 	a.Balance = aBalance
 	target.Balance = targetBalance
-	a.Balance = aBalance
-	target.Balance = targetBalance
-	return nil
-}
 	return nil
 }
 
