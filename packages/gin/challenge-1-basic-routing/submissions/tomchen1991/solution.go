@@ -41,6 +41,10 @@ var usersMutex sync.RWMutex
 
 func main() {
 	router := gin.Default()
+
+	// GET /users/search - Search users by name
+	router.GET("/users/search", searchUsers) // Specific route first
+
 	// GET /users - Get all users
 	router.GET("/users", getAllUsers)
 
@@ -55,9 +59,6 @@ func main() {
 
 	// DELETE /users/:id - Delete user
 	router.DELETE("/users/:id", deleteUser)
-
-	// GET /users/search - Search users by name
-	router.GET("/users/search", searchUsers)
 
 	// Start server on port 8080
 	if err := router.Run(":8080"); err != nil {
@@ -91,9 +92,12 @@ func getUserByID(c *gin.Context) {
 	}
 
 	usersMutex.RLock()
-	user, index := findUserByID(userId.ID)
+	userPtr, index := findUserByID(userId.ID)
+	var user User
+	if userPtr != nil {
+		user = *userPtr // copy while lock held
+	}
 	usersMutex.RUnlock()
-
 	if index == -1 {
 		c.JSON(http.StatusNotFound, Response{
 			Success: false,
@@ -105,7 +109,7 @@ func getUserByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, Response{
 		Success: true,
-		Data:    *user,
+		Data:    user,
 	})
 }
 
