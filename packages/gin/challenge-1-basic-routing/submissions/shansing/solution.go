@@ -56,11 +56,6 @@ var usersLock sync.RWMutex
 var nextID = 4
 var nextIdLock sync.Mutex
 
-func withUsersLock(fn func()) {
-	usersLock.Lock()
-	defer usersLock.Unlock()
-	fn()
-}
 func withNextId(fn func(int)) {
 	nextIdLock.Lock()
 	defer nextIdLock.Unlock()
@@ -93,6 +88,9 @@ func main() {
 
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
+	usersLock.RLock()
+	defer usersLock.RUnlock()
+
 	c.JSON(http.StatusOK, ResponseSuccess(users, http.StatusOK))
 }
 
@@ -104,6 +102,9 @@ func getUserByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, ResponseFailure(fmt.Sprintf("id is not number: %s", err), http.StatusBadRequest))
 		return
 	}
+
+	usersLock.RLock()
+	defer usersLock.RUnlock()
 	// Return 404 if user not found
 	var user *User
 	if user, _ = findUserByID(id); user == nil {
@@ -127,6 +128,9 @@ func createUser(c *gin.Context) {
 		return
 	}
 	// Add user to storage
+	usersLock.Lock()
+	defer usersLock.Unlock()
+
 	var newUser User
 	withNextId(func(nextId int) {
 		newUser = User{
@@ -135,9 +139,7 @@ func createUser(c *gin.Context) {
 			Email: userParam.Email,
 			Age:   userParam.Age,
 		}
-		withUsersLock(func() {
-			users = append(users, newUser)
-		})
+		users = append(users, newUser)
 	})
 	// Return created user
 	c.JSON(201, ResponseSuccess(newUser, 201))
@@ -145,7 +147,7 @@ func createUser(c *gin.Context) {
 
 // updateUser handles PUT /users/:id
 func updateUser(c *gin.Context) {
-	// Get return ser ID from path
+	// Get return user ID from path
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ResponseFailure(fmt.Sprintf("id is not number: %s", err), http.StatusBadRequest))
@@ -162,6 +164,9 @@ func updateUser(c *gin.Context) {
 		return
 	}
 	// Find and update user
+	usersLock.Lock()
+	defer usersLock.Unlock()
+
 	user, _ := findUserByID(id)
 	if user == nil {
 		c.JSON(http.StatusNotFound, ResponseFailure("user not found", http.StatusNotFound))
@@ -186,18 +191,20 @@ func deleteUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ResponseFailure(fmt.Sprintf("id is not number: %s", err), http.StatusBadRequest))
+		return
 	}
 	// Find and remove user
+	usersLock.Lock()
+	defer usersLock.Unlock()
+
 	_, i := findUserByID(id)
 	if i < 0 {
 		c.JSON(http.StatusNotFound, ResponseFailure("user not found", http.StatusNotFound))
 		return
 	}
+	users = append(users[:i], users[i+1:]...)
 	// Return success message
-	withUsersLock(func() {
-		users = append(users[:i], users[i+1:]...)
-	})
-	c.JSON(http.StatusOK, ResponseSuccess(users, 200))
+	c.JSON(http.StatusOK, ResponseSuccess(nil, 200))
 }
 
 // searchUsers handles GET /users/search?name=value
@@ -211,6 +218,10 @@ func searchUsers(c *gin.Context) {
 	nameParam = strings.ToLower(nameParam)
 	// Filter users by name (case-insensitive)
 	nameUsers := make([]User, 0)
+
+	usersLock.RLock()
+	defer usersLock.RUnlock()
+
 	for _, user := range users {
 		if strings.Contains(strings.ToLower(user.Name), nameParam) {
 			nameUsers = append(nameUsers, user)
