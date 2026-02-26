@@ -29,9 +29,6 @@ func CountWordFrequency(text string) map[string]int {
 		if normalized == "" {
 			continue
 		}
-3
-Add solution for Challenge 17 by shansing
-
 		countMap[normalized]++
 	}
 	return countMap
