@@ -150,11 +150,12 @@ func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 
 // SortByArea sorts shapes by area in ascending or descending order
 func (sc *ShapeCalculator) SortByArea(shapes []Shape, ascending bool) []Shape {
-	result := shapes[:]
+	result := make([]Shape, len(shapes))
+	copy(result, shapes)
 	if ascending {
 		sort.Slice(result, func(i, j int) bool { return result[i].Area() < result[j].Area() })
 	} else {
-		sort.Slice(result, func(i, j int) bool { return result[i].Area() >= result[j].Area() })
+		sort.Slice(result, func(i, j int) bool { return result[i].Area() > result[j].Area() })
 	}
 	return result
 }
