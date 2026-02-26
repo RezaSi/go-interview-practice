@@ -26,7 +26,11 @@ func CountWordFrequency(text string) map[string]int {
 	for _, word := range words {
 		normalized := strings.ToLower(word)
 		normalized = strings.ReplaceAll(normalized, "'", "")
+		if normalized == "" {
+			continue
+		}
 		countMap[normalized]++
 	}
 	return countMap
+}
 }
