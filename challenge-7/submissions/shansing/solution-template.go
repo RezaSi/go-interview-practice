@@ -156,16 +156,18 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	if amount < 0 {
 		return &NegativeAmountError{}
 	}
-	if a.ID <= target.ID {
+	if a.ID < target.ID {
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		target.mu.Lock()
 		defer target.mu.Unlock()
+	} else if a.ID > target.ID {
+		target.mu.Lock()
+		defer target.mu.Unlock()
+		a.mu.Lock()
+		defer a.mu.Unlock()
 	} else {
-		target.mu.Lock()
-		defer target.mu.Unlock()
-		a.mu.Lock()
-		defer a.mu.Unlock()
+		return &AccountError{}
 	}
 	aBalance := a.Balance - amount
 	if err := checkBalance(aBalance, a.MinBalance); err != nil {
