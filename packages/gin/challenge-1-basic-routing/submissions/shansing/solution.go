@@ -256,8 +256,10 @@ func validateUser(user User, checkEmpty bool) error {
 	if user.Age < 0 {
 		return errors.New("user age is not positive")
 	}
-	if _, err := mail.ParseAddress(user.Email); err != nil {
-		return errors.New("invalid email")
+	if user.Email != "" {
+		if _, err := mail.ParseAddress(user.Email); err != nil {
+			return errors.New("invalid email")
+		}
 	}
 	return nil
 }
