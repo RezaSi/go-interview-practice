@@ -1,6 +1,7 @@
 // Package challenge7 contains the solution for Challenge 7: Bank Account with Error Handling.
 package challenge7
 
+
 import (
 	"sync"
 	// Add any other necessary imports
@@ -128,6 +129,10 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 
+	if target == nil {
+		return &AccountError{message: "Invalid Target account."}
+	}
+
 	err := a.Withdraw(amount)
 
 	if err != nil {
@@ -136,7 +141,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 
 	err = target.Deposit(amount)
 	if err != nil {
-		a.Deposit(amount)
+		_ = a.Deposit(amount)
 		return err
 	}
 	return nil
