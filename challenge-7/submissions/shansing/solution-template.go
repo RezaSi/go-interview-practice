@@ -138,9 +138,11 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	if err := checkBalance(newBalance, a.MinBalance); err != nil {
 		return err
 	}
-	if amount > MaxTransactionAmount {
-		return &ExceedsLimitError{}
+	if err := checkBalance(newBalance, a.MinBalance); err != nil {
+		return err
 	}
+	a.Balance = newBalance
+	return nil
 	a.Balance = newBalance
 	return nil
 }
