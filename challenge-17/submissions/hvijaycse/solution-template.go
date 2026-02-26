@@ -24,9 +24,6 @@ func main() {
 // IsPalindrome checks if a string is a palindrome.
 // A palindrome reads the same backward as forward, ignoring case, spaces, and punctuation.
 func IsPalindrome(s string) bool {
-	// TODO: Implement this function
-	// 1. Clean the string (remove spaces, punctuation, and convert to lowercase)
-	// 2. Check if the cleaned string is the same forwards and backwards
 
 	r_list := []rune(s)
 
