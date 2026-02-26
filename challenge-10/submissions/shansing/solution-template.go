@@ -85,7 +85,7 @@ func NewTriangle(a, b, c float64) (*Triangle, error) {
 		return nil, fmt.Errorf("a, b, c must be positive")
 	}
 	if a+b <= c || a+c <= b || b+c <= a {
-		return nil, fmt.Errorf("not a valid trangle")
+		return nil, fmt.Errorf("not a valid triangle")
 	}
 	return &Triangle{a, b, c}, nil
 }
