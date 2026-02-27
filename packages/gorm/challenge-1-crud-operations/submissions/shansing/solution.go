@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -68,10 +69,13 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 func UpdateUser(db *gorm.DB, user *User) error {
 	// Implement user update
 	return db.Transaction(func(tx *gorm.DB) error {
-		if u := db.First(&User{}, user.ID); u.Error != nil {
-			return fmt.Errorf("user with id %d not found or error", user.ID)
+		if u := tx.First(&User{}, user.ID); u.Error != nil {
+			if errors.Is(u.Error, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("user with id %d not found", user.ID)
+			}
+			return fmt.Errorf("user with id %d error", user.ID)
 		}
-		result := db.Save(user)
+		result := tx.Save(user)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -83,10 +87,13 @@ func UpdateUser(db *gorm.DB, user *User) error {
 func DeleteUser(db *gorm.DB, id uint) error {
 	// Implement user deletion
 	return db.Transaction(func(tx *gorm.DB) error {
-		if u := db.First(&User{}, id); u.Error != nil {
-			return fmt.Errorf("user with id %d not found or error", id)
+		if u := tx.First(&User{}, id); u.Error != nil {
+			if errors.Is(u.Error, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("user with id %d not found", id)
+			}
+			return fmt.Errorf("user with id %d error", id)
 		}
-		result := db.Delete(&User{}, id)
+		result := tx.Delete(&User{}, id)
 		if result.Error != nil {
 			return result.Error
 		}
