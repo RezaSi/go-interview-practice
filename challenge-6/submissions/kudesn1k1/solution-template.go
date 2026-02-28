@@ -3,6 +3,7 @@ package challenge6
 
 import (
     "strings"
+    "unicode"
 	// Add any necessary imports here
 )
 
@@ -20,15 +21,21 @@ import (
 func CountWordFrequency(text string) map[string]int {
     text = strings.ToLower(text)
     
-	m := make(map[string]int)
-	replacer := strings.NewReplacer(".", "", ",", "", "?", "", "!", "", ";", "", "\n", " ", "'", "", "-", " ")
-	
-	text = replacer.Replace(text)
-	
-	words := strings.Fields(text)
-	for _, w := range words {
-	    m[w]++
-	}
+	 m := make(map[string]int)
+    var word strings.Builder
+    for _, r := range text {
+        if unicode.IsLetter(r) || unicode.IsDigit(r) {
+            word.WriteRune(r)
+        } else if (r == '\'') {
+            continue
+        } else if word.Len() > 0 {
+            m[word.String()]++
+            word.Reset()
+        }
+    }
+    if word.Len() > 0 {
+        m[word.String()]++
+    }
 	
 	return m
 } 
