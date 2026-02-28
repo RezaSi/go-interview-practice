@@ -95,7 +95,7 @@ func KMPSearch(text, pattern string) []int {
 
 	// init lps slise
 	res := []int{}
-	lps := make([]int, len(pattern))
+	lps := make([]int, lenPattern)
 	i := 1
 	l := 0
 
@@ -126,7 +126,7 @@ func KMPSearch(text, pattern string) []int {
 		if j == lenPattern {
 			res = append(res, i-j)
 			j = lps[j-1]
-		} else if i < lenText && text[i] != pattern[j] {
+		} else if i < lenText && rText[i] != rPattern[j] {
 			if j != 0 {
 				j = lps[j-1]
 			} else {
@@ -169,15 +169,15 @@ func RabinKarpSearch(text, pattern string) []int {
 
 	// Initial hash
 	for i := range lenPattern {
-		patternHash = (base*patternHash + int(pattern[i])) % mod
-		textHash = (base*textHash + int(text[i])) % mod
+		patternHash = (base*patternHash + int(rPattern[i])) % mod
+		textHash = (base*textHash + int(rText[i])) % mod
 	}
 
 	for i := 0; i <= lenText-lenPattern; i++ {
 		if patternHash == textHash {
 			match := true
 			for j := range lenPattern {
-				if text[i+j] != pattern[j] {
+				if rText[i+j] != rPattern[j] {
 					match = false
 					break
 				}
@@ -188,7 +188,7 @@ func RabinKarpSearch(text, pattern string) []int {
 		}
 
 		if i < lenText-lenPattern {
-			textHash = (base*(textHash-int(text[i])*h) + int(text[i+lenPattern])) % mod
+			textHash = (base*(textHash-int(rText[i])*h) + int(rText[i+lenPattern])) % mod
 			if textHash < 0 {
 				textHash += mod
 			}
