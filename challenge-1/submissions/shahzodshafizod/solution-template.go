@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
 )
 
 var (
@@ -17,14 +16,14 @@ func main() {
 	_, err := fmt.Scanf("%d, %d", &a, &b)
 	if err != nil {
 		fmt.Println("Error reading input:", err)
-		os.Exit(1)
+		return
 	}
 
 	// Call the Sum function and print the result
 	result, err := Sum(a, b)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return
 	}
 	fmt.Println(result)
 }
