@@ -27,12 +27,14 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 
 	var wg sync.WaitGroup
 	for range numWorkers {
-		wg.Go(func() {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			for start := range jobChan {
 				order := bfs(graph, start)
 				resultChan <- Result{start, order}
 			}
-		})
+		}()
 	}
 	go func() {
 		wg.Wait()
