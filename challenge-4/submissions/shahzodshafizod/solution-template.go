@@ -54,28 +54,6 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 	return results
 }
 
-// func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
-// 	results := make(map[int][]int)
-// 	if numWorkers <= 0 {
-// 		return results
-// 	}
-// 	limitChan := make(chan struct{}, numWorkers)
-// 	var mu sync.Mutex
-// 	var wg sync.WaitGroup
-// 	for _, start := range queries {
-// 		limitChan <- struct{}{}
-// 		wg.Go(func() {
-// 			order := bfs(graph, start)
-// 			mu.Lock()
-// 			results[start] = order
-// 			mu.Unlock()
-// 			<-limitChan
-// 		})
-// 	}
-// 	wg.Wait()
-// 	return results
-// }
-
 func bfs(graph map[int][]int, start int) []int {
 	var neighbors []int
 	queue := []int{start}
