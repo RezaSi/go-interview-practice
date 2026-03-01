@@ -50,7 +50,6 @@ func (s *Stack[T]) Push(value T) {
 // Pop removes and returns the top element from the stack
 // Returns an error if the stack is empty
 func (s *Stack[T]) Pop() (T, error) {
-	// TODO: Implement this method
 	var zero T
 
 	if s.IsEmpty() {
@@ -61,7 +60,6 @@ func (s *Stack[T]) Pop() (T, error) {
 	s.Items = s.Items[:length-1]
 	return zero, nil
 }
-
 
 // Peek returns the top element without removing it
 // Returns an error if the stack is empty
@@ -140,7 +138,6 @@ func (q *Queue[T]) Size() int {
 
 // IsEmpty returns true if the queue contains no elements
 func (q *Queue[T]) IsEmpty() bool {
-	// TODO: Implement this method
 	return q.Size() == 0
 }
 
@@ -156,7 +153,6 @@ type Set[T comparable] struct {
 
 // NewSet creates a new empty set
 func NewSet[T comparable]() *Set[T] {
-	// TODO: Implement this function
 	return &Set[T]{
 		ItemSet: map[T]struct{}{},
 	}
@@ -164,7 +160,6 @@ func NewSet[T comparable]() *Set[T] {
 
 // Add adds an element to the set if it's not already present
 func (s *Set[T]) Add(value T) {
-	// TODO: Implement this method
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.ItemSet[value] = struct{}{}
@@ -172,11 +167,6 @@ func (s *Set[T]) Add(value T) {
 
 // Remove removes an element from the set if it exists
 func (s *Set[T]) Remove(value T) {
-
-	if !s.Contains(value) {
-		return
-	}
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.ItemSet, value)
@@ -192,13 +182,16 @@ func (s *Set[T]) Contains(value T) bool {
 
 // Size returns the number of elements in the set
 func (s *Set[T]) Size() int {
-	// TODO: Implement this method
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return len(s.ItemSet)
 }
 
 // Elements returns a slice containing all elements in the set
 func (s *Set[T]) Elements() []T {
-	// TODO: Implement this method
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	items := make([]T, len(s.ItemSet))
 	i := 0
@@ -323,4 +316,3 @@ func RemoveDuplicates[T comparable](slice []T) []T {
 	}
 	return uniques
 }
-
