@@ -1,15 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 	"unicode"
 )
 
 func main() {
 	// Get input from the user
-	var input string
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter a string to check if it's a palindrome: ")
-	fmt.Scanln(&input)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Failed to read input:", err)
+		return
+	}
+	input = strings.TrimSpace(input)
 
 	// Call the IsPalindrome function and print the result
 	result := IsPalindrome(input)
@@ -19,7 +27,6 @@ func main() {
 		fmt.Println("The string is not a palindrome.")
 	}
 }
-
 
 // IsPalindrome checks if a string is a palindrome.
 // A palindrome reads the same backward as forward, ignoring case, spaces, and punctuation.
