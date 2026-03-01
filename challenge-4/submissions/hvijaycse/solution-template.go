@@ -2,19 +2,12 @@ package main
 
 import "sync"
 
-// ConcurrentBFSQueries concurrently processes BFS queries on the provided graph.
-// - graph: adjacency list, e.g., graph[u] = []int{v1, v2, ...}
-// - queries: a list of starting nodes for BFS.
-// - numWorkers: how many goroutines can process BFS queries simultaneously.
-//
-// Return a map from the query (starting node) to the BFS order as a slice of nodes.
-// YOU MUST use concurrency (goroutines + channels) to pass the performance tests.
-
 type Result struct {
 	start int
 	order []int
 }
 
+// standard BFS algo.
 func bfs(graph map[int][]int, start int) []int {
 
 	order := []int{}
@@ -43,6 +36,7 @@ func bfs(graph map[int][]int, start int) []int {
 	return order
 }
 
+// worker to perform  bfs.
 func worker(wg *sync.WaitGroup, graph map[int][]int, jobs <-chan int, result chan<- Result) {
 
 	defer wg.Done()
@@ -55,31 +49,41 @@ func worker(wg *sync.WaitGroup, graph map[int][]int, jobs <-chan int, result cha
 }
 
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
-	// TODO: Implement concurrency-based BFS for multiple queries.
-	// Return an empty map so the code compiles but fails tests if unchanged.
 
 	numWorkers = min(numWorkers, len(queries))
+	output := make(map[int][]int)
+
+	if numWorkers <= 0 {
+		return output
+	}
 	wg := &sync.WaitGroup{}
 	jobs := make(chan int)
 	results := make(chan Result)
 
-	output := make(map[int][]int)
-
 	wg.Add(numWorkers)
-	for _ = range numWorkers {
+
+	// Creating workers to execute task.
+	for range numWorkers {
 		go worker(wg, graph, jobs, results)
 	}
 
+	// Passing the queries to workers using jobs channel
 	go func() {
 		for _, query := range queries {
 			jobs <- query
 		}
+		// closing jobs since all the
+		// queries are passed
 		close(jobs)
 	}()
 
 	// Close results AFTER workers finish
 	go func() {
 		wg.Wait()
+		// Asap the workers are done
+		// we close the results channel
+		// otherwise the range will keep looping
+		// on it forever.
 		close(results)
 	}()
 
