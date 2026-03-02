@@ -181,6 +181,9 @@ func (s *Set[T]) Size() int {
 
 // Elements returns a slice containing all elements in the set
 func (s *Set[T]) Elements() []T {
+	if s == nil {
+		return nil
+	}
 	var res []T
 	for e := range s.Data {
 		res = append(res, e)
@@ -191,11 +194,15 @@ func (s *Set[T]) Elements() []T {
 // Union returns a new set containing all elements from both sets
 func Union[T comparable](s1, s2 *Set[T]) *Set[T] {
 	res := NewSet[T]()
-	for k, v := range s1.Data {
-		res.Data[k] = v
+	if s1 != nil {
+		for k, v := range s1.Data {
+			res.Data[k] = v
+		}
 	}
-	for k, v := range s2.Data {
-		res.Data[k] = v
+	if s2 != nil {
+		for k, v := range s2.Data {
+			res.Data[k] = v
+		}
 	}
 	return res
 }
@@ -203,12 +210,15 @@ func Union[T comparable](s1, s2 *Set[T]) *Set[T] {
 // Intersection returns a new set containing only elements that exist in both sets
 func Intersection[T comparable](s1, s2 *Set[T]) *Set[T] {
 	res := NewSet[T]()
+	if s1 == nil || s2 == nil {
+		return res
+	}
 	if len(s1.Data) < len(s2.Data) {
 		s1, s2 = s2, s1
 	}
-	for k, v := range s1.Data {
+	for k := range s1.Data {
 		if _, ok := s2.Data[k]; ok {
-			res.Data[k] = v
+			res.Data[k] = struct{}{}
 		}
 	}
 	return res
@@ -217,9 +227,16 @@ func Intersection[T comparable](s1, s2 *Set[T]) *Set[T] {
 // Difference returns a new set with elements in s1 that are not in s2
 func Difference[T comparable](s1, s2 *Set[T]) *Set[T] {
 	res := NewSet[T]()
-	for k, v := range s1.Data {
+	if s1 == nil {
+		return res
+	}
+	for k := range s1.Data {
+		if s2 == nil {
+			res.Data[k] = struct{}{}
+			continue
+		}
 		if _, ok := s2.Data[k]; !ok {
-			res.Data[k] = v
+			res.Data[k] = struct{}{}
 		}
 	}
 	return res
