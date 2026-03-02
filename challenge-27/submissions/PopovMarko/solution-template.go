@@ -65,7 +65,7 @@ func (s *Stack[T]) Pop() (T, error) {
 func (s *Stack[T]) Peek() (T, error) {
 	var zero T
 	if len(s.Data) == 0 {
-		return zero, errors.New("Stack is empty")
+		return zero, ErrEmptyCollection
 	}
 	zero = s.Data[len(s.Data)-1]
 	return zero, nil
@@ -217,9 +217,6 @@ func Intersection[T comparable](s1, s2 *Set[T]) *Set[T] {
 // Difference returns a new set with elements in s1 that are not in s2
 func Difference[T comparable](s1, s2 *Set[T]) *Set[T] {
 	res := NewSet[T]()
-	if len(s1.Data) < len(s2.Data) {
-		s1, s2 = s2, s1
-	}
 	for k, v := range s1.Data {
 		if _, ok := s2.Data[k]; !ok {
 			res.Data[k] = v
