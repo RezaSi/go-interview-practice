@@ -54,6 +54,9 @@ func (s *Stack[T]) Push(value T) {
 // Returns an error if the stack is empty
 func (s *Stack[T]) Pop() (T, error) {
 	var zero T
+	if s == nil {
+		return zero, ErrEmptyCollection
+	}
 	if len(s.Data) == 0 {
 		return zero, ErrEmptyCollection
 	}
@@ -67,6 +70,9 @@ func (s *Stack[T]) Pop() (T, error) {
 // Returns an error if the stack is empty
 func (s *Stack[T]) Peek() (T, error) {
 	var zero T
+	if s == nil {
+		return zero, ErrEmptyCollection
+	}
 	if len(s.Data) == 0 {
 		return zero, ErrEmptyCollection
 	}
@@ -117,6 +123,9 @@ func (q *Queue[T]) Enqueue(value T) {
 func (q *Queue[T]) Dequeue() (T, error) {
 	var zero T
 	var res T
+	if q == nil {
+		return zero, ErrEmptyCollection
+	}
 	if len(q.Data) == 0 {
 		return zero, ErrEmptyCollection
 	}
@@ -131,6 +140,9 @@ func (q *Queue[T]) Dequeue() (T, error) {
 func (q *Queue[T]) Front() (T, error) {
 	var zero T
 	var res T
+	if q == nil {
+		return zero, ErrEmptyCollection
+	}
 	if len(q.Data) == 0 {
 		return zero, ErrEmptyCollection
 	}
