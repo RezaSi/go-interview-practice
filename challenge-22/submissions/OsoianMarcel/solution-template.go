@@ -53,6 +53,10 @@ func MinCoins(amount int, denominations []int) int {
 func CoinCombination(amount int, denominations []int) map[int]int {
 	m := make(map[int]int)
 
+	if amount == 0 || len(denominations) == 0 {
+		return m
+	}
+
 	for i := len(denominations) - 1; i >= 0; i-- {
 		d := denominations[i]
 		count := amount / d
