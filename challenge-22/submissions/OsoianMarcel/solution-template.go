@@ -6,10 +6,10 @@ import (
 
 func main() {
 	// Standard U.S. coin denominations in cents
-	denominations := []int{1, 5, 10, 25, 50}
+	denominations := []int{5, 10}
 
 	// Test amounts
-	amounts := []int{87, 42, 99, 33, 7}
+	amounts := []int{7}
 
 	for _, amount := range amounts {
 		// Find minimum number of coins
@@ -61,6 +61,10 @@ func CoinCombination(amount int, denominations []int) map[int]int {
 		}
 		m[d] = count
 		amount -= count * d
+	}
+
+	if amount != 0 {
+		return make(map[int]int)
 	}
 
 	return m
