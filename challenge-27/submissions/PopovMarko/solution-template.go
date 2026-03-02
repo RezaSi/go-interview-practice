@@ -44,6 +44,9 @@ func NewStack[T any]() *Stack[T] {
 
 // Push adds an element to the top of the stack
 func (s *Stack[T]) Push(value T) {
+	if s == nil {
+		return
+	}
 	s.Data = append(s.Data, value)
 }
 
@@ -73,11 +76,17 @@ func (s *Stack[T]) Peek() (T, error) {
 
 // Size returns the number of elements in the stack
 func (s *Stack[T]) Size() int {
+	if s == nil {
+		return 0
+	}
 	return len(s.Data)
 }
 
 // IsEmpty returns true if the stack contains no elements
 func (s *Stack[T]) IsEmpty() bool {
+	if s == nil {
+		return false
+	}
 	return len(s.Data) == 0
 }
 
@@ -97,6 +106,9 @@ func NewQueue[T any]() *Queue[T] {
 
 // Enqueue adds an element to the end of the queue
 func (q *Queue[T]) Enqueue(value T) {
+	if q == nil {
+		return
+	}
 	q.Data = append(q.Data, value)
 }
 
@@ -128,11 +140,17 @@ func (q *Queue[T]) Front() (T, error) {
 
 // Size returns the number of elements in the queue
 func (q *Queue[T]) Size() int {
+	if q == nil {
+		return 0
+	}
 	return len(q.Data)
 }
 
 // IsEmpty returns true if the queue contains no elements
 func (q *Queue[T]) IsEmpty() bool {
+	if q == nil {
+		return false
+	}
 	return len(q.Data) == 0
 }
 
@@ -154,11 +172,20 @@ func NewSet[T comparable]() *Set[T] {
 
 // Add adds an element to the set if it's not already present
 func (s *Set[T]) Add(value T) {
+	if s == nil {
+		return
+	}
+	if s.Data == nil {
+		s.Data = make(map[T]struct{})
+	}
 	s.Data[value] = struct{}{}
 }
 
 // Remove removes an element from the set if it exists
 func (s *Set[T]) Remove(value T) {
+	if s == nil {
+		return
+	}
 	delete(s.Data, value)
 }
 
