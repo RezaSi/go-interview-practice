@@ -213,9 +213,6 @@ func Intersection[T comparable](s1, s2 *Set[T]) *Set[T] {
 	if s1 == nil || s2 == nil {
 		return res
 	}
-	if len(s1.Data) < len(s2.Data) {
-		s1, s2 = s2, s1
-	}
 	for k := range s1.Data {
 		if _, ok := s2.Data[k]; ok {
 			res.Data[k] = struct{}{}
