@@ -3,6 +3,7 @@ package challenge7
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -63,22 +64,15 @@ func (e *ExceedsLimitError) Error() string {
 		e.Amount, MaxTransactionAmount)
 }
 
-type SameAccountTransferError struct {
-	ID string
-}
-
-func (e *SameAccountTransferError) Error() string {
-	return fmt.Sprintf("error while transferring to the same account with ID %s", e.ID)
-}
-
 // NewBankAccount creates a new bank account with the given parameters.
 // It returns an error if any of the parameters are invalid.
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
 	account := &BankAccount{
-		ID:         id,
-		Owner:      owner,
+		ID:         strings.TrimSpace(id),
+		Owner:      strings.TrimSpace(owner),
 		Balance:    initialBalance,
 		MinBalance: minBalance,
+		mu:         sync.Mutex{},
 	}
 	err := account.validate()
 	if err != nil {
@@ -90,13 +84,13 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 // Deposit adds the specified amount to the account balance.
 // It returns an error if the amount is invalid or exceeds the transaction limit.
 func (a *BankAccount) Deposit(amount float64) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	err := validateAmountLimit(amount)
 	if err != nil {
 		return err
 	}
+	a.mu.Lock()
 	a.Balance += amount
+	a.mu.Unlock()
 	return nil
 }
 
@@ -104,12 +98,12 @@ func (a *BankAccount) Deposit(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Withdraw(amount float64) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	err := validateAmountLimit(amount)
 	if err != nil {
 		return err
 	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	err = a.validateMinBalance(amount)
 	if err != nil {
 		return err
@@ -122,31 +116,11 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
-	if a.ID == target.ID {
-		return &SameAccountTransferError{a.ID}
-	}
-	if a.ID < target.ID {
-		a.mu.Lock()
-		defer a.mu.Unlock()
-		target.mu.Lock()
-		defer target.mu.Unlock()
-	} else {
-		target.mu.Lock()
-		defer target.mu.Unlock()
-		a.mu.Lock()
-		defer a.mu.Unlock()
-	}
-	err := validateAmountLimit(amount)
+	err := a.Withdraw(amount)
 	if err != nil {
 		return err
 	}
-	err = a.validateMinBalance(amount)
-	if err != nil {
-		return err
-	}
-	a.Balance -= amount
-	target.Balance += amount
-	return nil
+	return target.Deposit(amount)
 }
 
 func (a *BankAccount) validate() error {
