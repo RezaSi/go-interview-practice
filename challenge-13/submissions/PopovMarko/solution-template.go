@@ -103,13 +103,13 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 	//  Query the database for a product with the given ID
 	row := ps.db.QueryRow("select * from products where id = ?", id)
 	if err := row.Err(); err != nil {
-		_ = ps.db.Close()
 		return nil, err
 	}
 	res := Product{}
+
+	// Get one row from database if exist and map it to Product
 	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Quantity, &res.Category)
 	if err != nil {
-		_ = ps.db.Close()
 		return nil, err
 	}
 	return &res, nil
@@ -131,18 +131,17 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 		product.Category,
 		product.ID)
 	if err != nil {
-		_ = ps.db.Close()
 		return err
 	}
 
 	// Return an error if the product doesn't exist
 	rowN, err := res.RowsAffected()
 	if err != nil {
-		ps.db.Close()
 		return err
 	}
+
+	// Check if 0 rows affected, return error not exist
 	if rowN == 0 {
-		ps.db.Close()
 		return errors.New("product does not exist")
 	}
 	return nil
@@ -153,19 +152,16 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
 	// Delete the product from the database
 	res, err := ps.db.Exec("DELETE FROM products WHERE id = ?", id)
 	if err != nil {
-		ps.db.Close()
 		return err
 	}
 
 	// Return an error if the product doesn't exist
 	rowN, err := res.RowsAffected()
 	if err != nil {
-		ps.db.Close()
 		return err
 	}
 	// Return en error if the product does not exist
 	if rowN == 0 {
-		ps.db.Close()
 		return errors.New("product does not exist")
 	}
 	return nil
@@ -187,7 +183,6 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		rows, err = ps.db.Query("SELECT id, name, price, quantity, category FROM products WHERE category = ?", category)
 	}
 	if err != nil {
-		_ = ps.db.Close()
 		return nil, err
 	}
 
@@ -199,7 +194,6 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		p := Product{}
 		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Quantity, &p.Category)
 		if err != nil {
-			_ = ps.db.Close()
 			return nil, err
 		}
 		res = append(res, &p)
@@ -207,7 +201,6 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 
 	// Check for row error
 	if err := rows.Err(); err != nil {
-		_ = ps.db.Close()
 		return nil, err
 	}
 
@@ -223,6 +216,14 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 		return err
 	}
 
+	// Defer rollback if error occures
+	commited := false
+	defer func() {
+		if !commited {
+			tx.Rollback()
+		}
+	}()
+
 	// For each product ID in the updates map, update its quantity
 	// If any update fails, roll back the transaction
 	// Otherwise, commit the transaction
@@ -236,17 +237,19 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 		if err != nil {
 			return err
 		}
-		r, _ := res.RowsAffected()
+		r, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
 		if r == 0 {
 			return fmt.Errorf("Product with ID %d does not exist", k)
 		}
 	}
 
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
 	err = tx.Commit()
-	return err
+	if err != nil {
+		return err
+	}
+	commited = true
+	return nil
 }
