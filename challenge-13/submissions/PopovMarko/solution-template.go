@@ -48,7 +48,8 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	`
 	_, err = db.Exec(stmt)
 	if err != nil {
-		return nil, fmt.Errorf("%q: %s\n", err, stmt)
+		_ = db.Close()
+		return nil, fmt.Errorf("init products table: %w\n", err)
 	}
 	return db, nil
 }
@@ -60,16 +61,24 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 	if err != nil {
 		return err
 	}
+
+	// Defer rollback if transation not commited
+	commited := false
+	defer func() {
+		if !commited {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Prepare sql statement
 	stmt, err := tx.Prepare("insert into products (name, price, quantity, category) values(?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
+
+	// Defer statement close
 	defer stmt.Close()
 	result, err := stmt.Exec(product.Name, product.Price, product.Quantity, product.Category)
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -79,6 +88,13 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 	if err != nil {
 		return err
 	}
+
+	// Commit transation and set commited flag to true
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	commited = true
 	return nil
 }
 
@@ -87,11 +103,13 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 	//  Query the database for a product with the given ID
 	row := ps.db.QueryRow("select * from products where id = ?", id)
 	if err := row.Err(); err != nil {
+		_ = ps.db.Close()
 		return nil, err
 	}
 	res := Product{}
 	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Quantity, &res.Category)
 	if err != nil {
+		_ = ps.db.Close()
 		return nil, err
 	}
 	return &res, nil
@@ -113,15 +131,18 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 		product.Category,
 		product.ID)
 	if err != nil {
+		_ = ps.db.Close()
 		return err
 	}
 
 	// Return an error if the product doesn't exist
 	rowN, err := res.RowsAffected()
 	if err != nil {
+		ps.db.Close()
 		return err
 	}
 	if rowN == 0 {
+		ps.db.Close()
 		return errors.New("product does not exist")
 	}
 	return nil
@@ -132,15 +153,19 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
 	// Delete the product from the database
 	res, err := ps.db.Exec("DELETE FROM products WHERE id = ?", id)
 	if err != nil {
+		ps.db.Close()
 		return err
 	}
 
 	// Return an error if the product doesn't exist
 	rowN, err := res.RowsAffected()
 	if err != nil {
+		ps.db.Close()
 		return err
 	}
+	// Return en error if the product does not exist
 	if rowN == 0 {
+		ps.db.Close()
 		return errors.New("product does not exist")
 	}
 	return nil
@@ -154,24 +179,38 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		rows *sql.Rows
 		err  error
 	)
+
+	// Query database with filter or not due to category
 	if category == "" {
 		rows, err = ps.db.Query("SELECT id, name, price, quantity, category FROM products")
 	} else {
 		rows, err = ps.db.Query("SELECT id, name, price, quantity, category FROM products WHERE category = ?", category)
 	}
 	if err != nil {
+		_ = ps.db.Close()
 		return nil, err
 	}
+
 	defer rows.Close()
 	res := []*Product{}
+
+	// Map database rows to Product structures
 	for rows.Next() {
 		p := Product{}
-		err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Quantity, &p.Category)
+		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Quantity, &p.Category)
 		if err != nil {
-			return []*Product{}, err
+			_ = ps.db.Close()
+			return nil, err
 		}
 		res = append(res, &p)
 	}
+
+	// Check for row error
+	if err := rows.Err(); err != nil {
+		_ = ps.db.Close()
+		return nil, err
+	}
+
 	// Return a slice of Product pointers
 	return res, nil
 }
@@ -183,11 +222,6 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
-	}()
 
 	// For each product ID in the updates map, update its quantity
 	// If any update fails, roll back the transaction
@@ -207,6 +241,12 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 			return fmt.Errorf("Product with ID %d does not exist", k)
 		}
 	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 	err = tx.Commit()
 	return err
 }
