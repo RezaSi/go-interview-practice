@@ -56,6 +56,11 @@ func InitDB(dbPath string) (*sql.DB, error) {
 
 // CreateProduct adds a new product to the database
 func (ps *ProductStore) CreateProduct(product *Product) error {
+	// Check for nil product pointer
+	if product == nil {
+		return errors.New("product is nil")
+	}
+
 	// Insert the product into the database
 	tx, err := ps.db.Begin()
 	if err != nil {
@@ -84,7 +89,7 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 	}
 
 	//  Update the product.ID with the database-generated ID
-	product.ID, err = result.LastInsertId()
+	id, err := result.LastInsertId()
 	if err != nil {
 		return err
 	}
@@ -95,6 +100,7 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 		return err
 	}
 	commited = true
+	product.ID = id
 	return nil
 }
 
@@ -117,6 +123,11 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 
 // UpdateProduct updates an existing product
 func (ps *ProductStore) UpdateProduct(product *Product) error {
+	// Check for nil product pointer
+	if product == nil {
+		return errors.New("product is nil")
+	}
+
 	// Update the product in the database
 	res, err := ps.db.Exec(`UPDATE products 
 		SET 
