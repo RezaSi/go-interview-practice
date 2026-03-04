@@ -91,7 +91,7 @@ func (s *Stack[T]) Size() int {
 // IsEmpty returns true if the stack contains no elements
 func (s *Stack[T]) IsEmpty() bool {
 	if s == nil {
-		return false
+		return true
 	}
 	return len(s.Data) == 0
 }
@@ -161,7 +161,7 @@ func (q *Queue[T]) Size() int {
 // IsEmpty returns true if the queue contains no elements
 func (q *Queue[T]) IsEmpty() bool {
 	if q == nil {
-		return false
+		return true
 	}
 	return len(q.Data) == 0
 }
