@@ -20,7 +20,7 @@ func (m *Manager) AddEmployee(e Employee) {
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-	filtered := make([]Employee, 0, len(m.Employees)-1)
+	filtered := make([]Employee, 0, len(m.Employees))
 	for _, employee := range m.Employees {
 		if employee.ID != id {
 			filtered = append(filtered, employee)
