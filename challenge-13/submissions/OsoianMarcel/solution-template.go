@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -43,7 +44,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 		)
 	`)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(err, conn.Close())
 	}
 
 	return conn, nil
