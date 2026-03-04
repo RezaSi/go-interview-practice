@@ -54,11 +54,19 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	return db, nil
 }
 
+// EnsureDB is a nil pointer guard for all methods
+func (ps *ProductStore) ensureDB() error {
+	if ps == nil || ps.db == nil {
+		return errors.New("ProductStore is not initialized")
+	}
+	return nil
+}
+
 // CreateProduct adds a new product to the database
 func (ps *ProductStore) CreateProduct(product *Product) error {
 	// Check for nil product pointer
-	if product == nil {
-		return errors.New("product is nil")
+	if err := ps.ensureDB(); err != nil {
+		return err
 	}
 
 	// Insert the product into the database
@@ -106,6 +114,11 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 
 // GetProduct retrieves a product by ID
 func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
+	// Check for nil product pointer
+	if err := ps.ensureDB(); err != nil {
+		return nil, err
+	}
+
 	//  Query the database for a product with the given ID
 	row := ps.db.QueryRow("select * from products where id = ?", id)
 	if err := row.Err(); err != nil {
@@ -124,8 +137,8 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 // UpdateProduct updates an existing product
 func (ps *ProductStore) UpdateProduct(product *Product) error {
 	// Check for nil product pointer
-	if product == nil {
-		return errors.New("product is nil")
+	if err := ps.ensureDB(); err != nil {
+		return err
 	}
 
 	// Update the product in the database
@@ -160,6 +173,11 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 
 // DeleteProduct removes a product by ID
 func (ps *ProductStore) DeleteProduct(id int64) error {
+	// Check for nil product pointer
+	if err := ps.ensureDB(); err != nil {
+		return err
+	}
+
 	// Delete the product from the database
 	res, err := ps.db.Exec("DELETE FROM products WHERE id = ?", id)
 	if err != nil {
@@ -180,6 +198,11 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
 
 // ListProducts returns all products with optional filtering by category
 func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
+	// Check for nil product pointer
+	if err := ps.ensureDB(); err != nil {
+		return nil, err
+	}
+
 	// Query the database for products
 	// If category is not empty, filter by category
 	var (
