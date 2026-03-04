@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	// Add any necessary imports here
 )
 
 // Shape interface defines methods that all shapes must implement
@@ -93,7 +92,11 @@ func NewTriangle(a, b, c float64) (*Triangle, error) {
 // Area calculates the area of the triangle using Heron's formula
 func (t *Triangle) Area() float64 {
 	s := (t.SideA + t.SideB + t.SideC) / 2
-	return math.Sqrt(s * (s - t.SideA) * (s - t.SideB) * (s - t.SideC))
+	radicand := s * (s - t.SideA) * (s - t.SideB) * (s - t.SideC)
+	if radicand < 0 {
+		radicand = 0
+	}
+	return math.Sqrt(radicand)
 }
 
 // Perimeter calculates the perimeter of the triangle
