@@ -136,8 +136,16 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
+	if target == nil {
+		return &AccountError{Message: "target account cannot be nil"}
+	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
+
+	if target.ID == a.ID {
+		return &AccountError{Message: "cannot transfer to the same account"}
+	}
 
 	if amount < 0 {
 		return &NegativeAmountError{Message: "transfer amount cannot be negative"}
@@ -149,10 +157,6 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 
 	if a.Balance-amount < a.MinBalance {
 		return &InsufficientFundsError{Message: "transfer would bring balance below minimum required"}
-	}
-
-	if target == nil {
-		return &AccountError{Message: "target account cannot be nil"}
 	}
 
 	target.mu.Lock()
