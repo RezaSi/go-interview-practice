@@ -4,7 +4,7 @@ package challenge7
 import (
 	"strings"
 	"sync"
-	// Add any other necessary imports
+	"unsafe"
 )
 
 // BankAccount represents a bank account with balance management and minimum balance requirements.
@@ -140,10 +140,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		return &AccountError{Message: "target account cannot be nil"}
 	}
 
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	if target.ID == a.ID {
+	if target == a {
 		return &AccountError{Message: "cannot transfer to the same account"}
 	}
 
@@ -155,15 +152,23 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 		return &ExceedsLimitError{Message: "transfer amount exceeds the maximum limit"}
 	}
 
+	// Lock in consistent order by pointer address to prevent deadlock
+	first, second := a, target
+	if uintptr(unsafe.Pointer(target)) < uintptr(unsafe.Pointer(a)) {
+		first, second = target, a
+	}
+
+	first.mu.Lock()
+	defer first.mu.Unlock()
+	second.mu.Lock()
+	defer second.mu.Unlock()
+
 	if a.Balance-amount < a.MinBalance {
 		return &InsufficientFundsError{Message: "transfer would bring balance below minimum required"}
 	}
 
-	target.mu.Lock()
-	target.Balance += amount
-	target.mu.Unlock()
-
 	a.Balance -= amount
+	target.Balance += amount
 
 	return nil
 }
