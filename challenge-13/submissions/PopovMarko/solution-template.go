@@ -145,7 +145,7 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Quantity, &res.Category)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("product dose not exist")
+			return nil, errors.New("product does not exist")
 		}
 		return nil, err
 	}
@@ -308,6 +308,10 @@ func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
 	}
 	defer stmt.Close()
 	for k, v := range updates {
+		// Check for not negative quantity
+		if v < 0 {
+			return errors.New("quantity can not be negative")
+		}
 		res, err := stmt.Exec(v, k)
 		if err != nil {
 			return err
