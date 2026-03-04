@@ -37,7 +37,7 @@ func SetupServer() http.Handler {
 	mux := http.NewServeMux()
 
 	// Public route: /hello (no auth required)
-	mux.HandleFunc("/hello", helloHandler)
+	mux.HandleFunc("GET /hello", helloHandler)
 
 	// Secure route: /secure
 	// Wrap with AuthMiddleware
