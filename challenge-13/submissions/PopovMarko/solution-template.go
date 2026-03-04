@@ -49,7 +49,7 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	_, err = db.Exec(stmt)
 	if err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("init products table: %w\n", err)
+		return nil, fmt.Errorf("init products table: %w", err)
 	}
 	return db, nil
 }
@@ -72,6 +72,16 @@ func (ps *ProductStore) CreateProduct(product *Product) error {
 	// Check for nil product pointer
 	if product == nil {
 		return errors.New("product is nil")
+	}
+
+	// Check for price not negative
+	if product.Price < 0 {
+		return errors.New("price can not be negative")
+	}
+
+	// Check for quantity not negative
+	if product.Quantity < 0 {
+		return errors.New("Quantity can not be negative")
 	}
 
 	// Insert the product into the database
@@ -134,6 +144,9 @@ func (ps *ProductStore) GetProduct(id int64) (*Product, error) {
 	// Get one row from database if exist and map it to Product
 	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Quantity, &res.Category)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("product dose not exist")
+		}
 		return nil, err
 	}
 	return &res, nil
@@ -149,6 +162,16 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 	// Check for nil product pointer
 	if product == nil {
 		return errors.New("product is nil")
+	}
+
+	// Check for price not negative
+	if product.Price < 0 {
+		return errors.New("price can not be negative")
+	}
+
+	// Check for quantity not negative
+	if product.Quantity < 0 {
+		return errors.New("Quantity can not be negative")
 	}
 
 	// Update the product in the database
@@ -238,6 +261,9 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 		p := Product{}
 		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Quantity, &p.Category)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, errors.New("product dose not exist")
+			}
 			return nil, err
 		}
 		res = append(res, &p)
