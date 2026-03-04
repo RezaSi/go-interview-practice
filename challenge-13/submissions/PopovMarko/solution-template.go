@@ -64,9 +64,14 @@ func (ps *ProductStore) ensureDB() error {
 
 // CreateProduct adds a new product to the database
 func (ps *ProductStore) CreateProduct(product *Product) error {
-	// Check for nil product pointer
+	// Check for nil product store pointer
 	if err := ps.ensureDB(); err != nil {
 		return err
+	}
+
+	// Check for nil product pointer
+	if product == nil {
+		return errors.New("product is nil")
 	}
 
 	// Insert the product into the database
@@ -139,6 +144,11 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
 	// Check for nil product pointer
 	if err := ps.ensureDB(); err != nil {
 		return err
+	}
+
+	// Check for nil product pointer
+	if product == nil {
+		return errors.New("product is nil")
 	}
 
 	// Update the product in the database
@@ -244,6 +254,11 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 
 // BatchUpdateInventory updates the quantity of multiple products in a single transaction
 func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
+	// Check for nil product store pointer
+	if err := ps.ensureDB(); err != nil {
+		return err
+	}
+
 	// Start a transaction
 	tx, err := ps.db.Begin()
 	if err != nil {
