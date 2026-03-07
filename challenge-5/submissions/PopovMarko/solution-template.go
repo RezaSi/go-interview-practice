@@ -15,14 +15,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		// Get token from header
 		token := r.Header.Get("X-Auth-Token")
 		if token != validToken {
-			http.Error(w, "", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-// helloHandler returns "Hello!" on GET /hello
+// helloHandler returns "Hello!" or authenticated requests to /secure.
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello!")
 }
