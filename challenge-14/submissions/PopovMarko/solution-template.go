@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -193,6 +194,7 @@ type CheckInventoryResponse struct {
 
 // OrderService handles order creation
 type OrderService struct {
+	mu            sync.Mutex
 	userClient    UserService
 	productClient ProductService
 	orders        map[int64]*Order
@@ -235,6 +237,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID, productID int64,
 		return nil, status.Errorf(codes.FailedPrecondition, "Product not available")
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	// Make new Order
 	res := Order{
 		ID:        s.nextOrderID,
@@ -252,6 +257,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID, productID int64,
 
 // GetOrder retrieves an order by ID
 func (s *OrderService) GetOrder(orderID int64) (*Order, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	order, exists := s.orders[orderID]
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "order not found")
@@ -288,10 +295,14 @@ func StartUserService(port string) (*grpc.Server, error) {
 	// Register HTTP handlers for gRPC methods
 	mux := http.NewServeMux()
 
-	// Path /user/get?di=1 returns user by ID
+	// Path /user/get?id=1 returns user by ID
 	mux.HandleFunc("/user/get", func(w http.ResponseWriter, r *http.Request) {
 		userIDStr := r.URL.Query().Get("id")
-		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+		userID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
 		user, err := userServer.GetUser(r.Context(), userID)
 		if err != nil {
@@ -310,7 +321,11 @@ func StartUserService(port string) (*grpc.Server, error) {
 	// Path /user/validate?id=1 returns map[string]bool
 	mux.HandleFunc("/user/validate", func(w http.ResponseWriter, r *http.Request) {
 		userIDStr := r.URL.Query().Get("id")
-		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+		userID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 
 		valid, err := userServer.ValidateUser(r.Context(), userID)
 		if err != nil {
@@ -354,7 +369,11 @@ func StartProductService(port string) (*grpc.Server, error) {
 	// Path /product/get?id=1 returns product or not found error
 	mux.HandleFunc("/product/get", func(w http.ResponseWriter, r *http.Request) {
 		productIdStr := r.URL.Query().Get("id")
-		productId, _ := strconv.ParseInt(productIdStr, 10, 64)
+		productId, err := strconv.ParseInt(productIdStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
 		product, err := productServer.GetProduct(r.Context(), productId)
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
@@ -369,12 +388,20 @@ func StartProductService(port string) (*grpc.Server, error) {
 	})
 
 	// Register HTTP handler for gRPC method CheckInventory
-	// Path /product/inventorycheck?id=1&qty=5 returns bool to discribe availability
+	// Path /product/inventorycheck?id=1&qty=5 returns bool to describe availability
 	mux.HandleFunc("/product/inventorycheck", func(w http.ResponseWriter, r *http.Request) {
 		productIdStr := r.URL.Query().Get("id")
 		productQtyStr := r.URL.Query().Get("qty")
-		productId, _ := strconv.ParseInt(productIdStr, 10, 64)
-		productQty, _ := strconv.ParseInt(productQtyStr, 10, 32)
+		productId, err := strconv.ParseInt(productIdStr, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+		productQty, err := strconv.ParseInt(productQtyStr, 10, 32)
+		if err != nil {
+			http.Error(w, "Invalid quantity", http.StatusBadRequest)
+			return
+		}
 		inventoryChecRes, err := productServer.CheckInventory(r.Context(), productId, int32(productQty))
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
@@ -434,7 +461,11 @@ func NewUserServiceClient(conn *grpc.ClientConn) UserService {
 
 // GetUser returns User or error not found
 func (c *UserServiceClient) GetUser(ctx context.Context, userID int64) (*User, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/user/get?id=%d", c.baseURL, userID))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/user/get?id=%d", c.baseURL, userID), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -454,10 +485,11 @@ func (c *UserServiceClient) GetUser(ctx context.Context, userID int64) (*User, e
 
 // ValidateUser returns bool for user validity
 func (c *UserServiceClient) ValidateUser(ctx context.Context, userID int64) (bool, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/user/validate?id=%d", c.baseURL, userID))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/user/validate?id=%d", c.baseURL, userID), nil)
 	if err != nil {
 		return false, err
 	}
+	resp, err := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
@@ -483,7 +515,11 @@ func NewProductServiceClient(conn *grpc.ClientConn) ProductService {
 
 // GetProduct returns product or error if not found
 func (c *ProductServiceClient) GetProduct(ctx context.Context, productID int64) (*Product, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/product/get?id=%d", c.baseURL, productID))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/product/get?id=%d", c.baseURL, productID), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -501,7 +537,11 @@ func (c *ProductServiceClient) GetProduct(ctx context.Context, productID int64) 
 
 // CheckInventory returns bool var for products availability
 func (c *ProductServiceClient) CheckInventory(ctx context.Context, productID int64, quantity int32) (bool, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/product/inventorycheck?id=%d&qty=%d", c.baseURL, productID, quantity))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/product/inventorycheck?id=%d&qty=%d", c.baseURL, productID, quantity), nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return false, err
 	}
