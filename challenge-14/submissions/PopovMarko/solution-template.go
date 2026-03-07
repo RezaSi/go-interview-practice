@@ -456,7 +456,7 @@ type UserServiceClient struct {
 func NewUserServiceClient(conn *grpc.ClientConn) UserService {
 	// Extract address from connection for HTTP calls
 	// In a real gRPC implementation, this would use the connection directly
-	return &UserServiceClient{baseURL: "http://localhost:50051"}
+	return &UserServiceClient{baseURL: fmt.Sprintf("http://%s", conn.Target())}
 }
 
 // GetUser returns User or error not found
@@ -490,6 +490,9 @@ func (c *UserServiceClient) ValidateUser(ctx context.Context, userID int64) (boo
 		return false, err
 	}
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, err
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
@@ -510,7 +513,7 @@ type ProductServiceClient struct {
 }
 
 func NewProductServiceClient(conn *grpc.ClientConn) ProductService {
-	return &ProductServiceClient{conn: conn, baseURL: "http://localhost:50052"}
+	return &ProductServiceClient{conn: conn, baseURL: fmt.Sprintf("http://%s", conn.Target())}
 }
 
 // GetProduct returns product or error if not found
@@ -537,6 +540,9 @@ func (c *ProductServiceClient) GetProduct(ctx context.Context, productID int64) 
 
 // CheckInventory returns bool var for products availability
 func (c *ProductServiceClient) CheckInventory(ctx context.Context, productID int64, quantity int32) (bool, error) {
+	if quantity <= 0 {
+		return false, status.Error(codes.InvalidArgument, "Quantity can not be negative")
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/product/inventorycheck?id=%d&qty=%d", c.baseURL, productID, quantity), nil)
 	if err != nil {
 		return false, err
