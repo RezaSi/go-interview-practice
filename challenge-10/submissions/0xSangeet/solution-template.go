@@ -97,6 +97,10 @@ func NewShapeCalculator() *ShapeCalculator {
 
 // PrintProperties prints the properties of a shape
 func (sc *ShapeCalculator) PrintProperties(s Shape) {
+	if s == nil {
+		fmt.Println("<nil>")
+		return
+	}
 	fmt.Println(s.String())
 }
 
