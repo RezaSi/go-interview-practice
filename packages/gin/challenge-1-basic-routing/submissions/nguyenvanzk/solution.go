@@ -153,22 +153,22 @@ func updateUser(c *gin.Context) {
 	}
 
 	// Find and update user
-	usr, idx := findUserByID(id)
+	_, idx := findUserByID(id)
 	if idx == -1 {
 		c.JSON(404, gin.H{
 			"success": false,
-			"message": "Not found",
+			"message": "user not found",
 		})
 		return
 	}
-	usr.Email = user.Email
-	usr.Name = user.Name
-	usr.Age = user.Age
+	users[idx].Email = user.Email
+	users[idx].Name = user.Name
+	users[idx].Age = user.Age
 
 	// Return updated user
 	c.JSON(200, gin.H{
 		"success": true,
-		"data":    usr,
+		"data":    users[idx],
 	})
 }
 
