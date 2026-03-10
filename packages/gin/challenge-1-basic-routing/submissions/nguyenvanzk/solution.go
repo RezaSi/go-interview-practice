@@ -145,7 +145,7 @@ func updateUser(c *gin.Context) {
 	var user User
 	err = c.ShouldBind(&user)
 	if err != nil {
-		c.JSON(401, gin.H{
+		c.JSON(400, gin.H{
 			"status":  false,
 			"message": "Invalid format",
 		})
