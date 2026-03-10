@@ -147,7 +147,7 @@ func updateUser(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, gin.H{
 			"success": false,
-			"message": "Invalid format",
+			"error":   "Invalid format",
 		})
 		return
 	}
@@ -157,7 +157,7 @@ func updateUser(c *gin.Context) {
 	if idx == -1 {
 		c.JSON(404, gin.H{
 			"success": false,
-			"message": "user not found",
+			"error":   "user not found",
 		})
 		return
 	}
