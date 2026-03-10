@@ -152,6 +152,15 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
+	err = validateUser(user)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
 	// Find and update user
 	_, idx := findUserByID(id)
 	if idx == -1 {
