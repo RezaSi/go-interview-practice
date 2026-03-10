@@ -134,7 +134,7 @@ func updateUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(400, gin.H{
-			"status":  false,
+			"success": false,
 			"message": "Invalid ID",
 		})
 
@@ -146,7 +146,7 @@ func updateUser(c *gin.Context) {
 	err = c.ShouldBind(&user)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"status":  false,
+			"success": false,
 			"message": "Invalid format",
 		})
 		return
@@ -156,7 +156,7 @@ func updateUser(c *gin.Context) {
 	usr, idx := findUserByID(id)
 	if idx == -1 {
 		c.JSON(404, gin.H{
-			"status":  false,
+			"success": false,
 			"message": "Not found",
 		})
 		return
