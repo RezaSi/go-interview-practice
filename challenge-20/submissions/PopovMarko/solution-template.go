@@ -52,7 +52,7 @@ type Config struct {
 
 // CircuitBreaker interface defines the operations for a circuit breaker
 type CircuitBreaker interface {
-	Call(ctx context.Context, operation func() (any, error)) (any, error)
+	Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error)
 	GetState() State
 	GetMetrics() Metrics
 }
@@ -101,7 +101,7 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 }
 
 // Call executes the given operation through the circuit breaker
-func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (any, error)) (any, error) {
+func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error) {
 	// Check ctx cancle
 	select {
 	case <-ctx.Done():
@@ -203,8 +203,9 @@ func (cb *circuitBreakerImpl) recordFailure() {
 	cb.metrics.Requests++
 	cb.metrics.ConsecutiveFailures++
 	cb.metrics.LastFailureTime = time.Now()
+	state := cb.state
 	cb.mutex.Unlock()
-	if cb.shouldTrip() {
+	if state == StateHalfOpen || cb.shouldTrip() {
 		cb.setState(StateOpen)
 	}
 }
@@ -246,13 +247,13 @@ func main() {
 	ctx := context.Background()
 
 	// Successful operation
-	result, err := cb.Call(ctx, func() (any, error) {
+	result, err := cb.Call(ctx, func() (interface{}, error) {
 		return "success", nil
 	})
 	fmt.Printf("Result: %v, Error: %v\n", result, err)
 
 	// Failing operation
-	result, err = cb.Call(ctx, func() (any, error) {
+	result, err = cb.Call(ctx, func() (interface{}, error) {
 		return nil, errors.New("simulated failure")
 	})
 	fmt.Printf("Result: %v, Error: %v\n", result, err)
