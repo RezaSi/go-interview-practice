@@ -179,7 +179,7 @@ func deleteUser(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, gin.H{
 			"success": false,
-			"message": "Invalid ID",
+			"error":   "Invalid ID",
 		})
 
 		return
