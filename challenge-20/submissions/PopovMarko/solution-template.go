@@ -102,7 +102,7 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 
 // Call executes the given operation through the circuit breaker
 func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (interface{}, error)) (interface{}, error) {
-	// Check ctx cancle
+	// Check ctx cancel
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
