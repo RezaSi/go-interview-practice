@@ -133,7 +133,7 @@ func updateUser(c *gin.Context) {
 	// TODO: Get user ID from path
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(200, gin.H{
+		c.JSON(400, gin.H{
 			"status":  false,
 			"message": "Invalid ID",
 		})
