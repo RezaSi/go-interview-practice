@@ -231,7 +231,7 @@ func findUserByID(id int) (*User, int) {
 	// TODO: Implement user lookup
 	for idx, item := range users {
 		if item.ID == id {
-			return &item, idx
+			return &users[idx], idx
 		}
 	}
 	// Return user pointer and index, or nil and -1 if not found
