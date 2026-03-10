@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
-	"errors"
-	"strings"
 	"slices"
+	"strconv"
+	"strings"
 )
 
 // User represents a user in our system
@@ -62,8 +62,8 @@ func main() {
 func getAllUsers(c *gin.Context) {
 	// TODO: Return all users
 	c.JSON(http.StatusOK, gin.H{
-	    "success": true,
-	    "data": users,
+		"success": true,
+		"data":    users,
 	})
 }
 
@@ -73,24 +73,24 @@ func getUserByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	// Handle invalid ID format
 	if err != nil {
-	    c.JSON(400, gin.H{
-	        "success": false,
-	        "error": "Invalid ID format",
-	    })
-	    return
+		c.JSON(400, gin.H{
+			"success": false,
+			"error":   "Invalid ID format",
+		})
+		return
 	}
 	user, index := findUserByID(id)
 	// Return 404 if user not found
 	if index == -1 {
-	    c.JSON(404, gin.H{
-	        "success": false,
-	        "error": "user not found",
-	    })
+		c.JSON(404, gin.H{
+			"success": false,
+			"error":   "user not found",
+		})
 	} else {
-	    c.JSON(200, gin.H{
-	        "success": true,
-	        "data": user,
-	    })
+		c.JSON(200, gin.H{
+			"success": true,
+			"data":    user,
+		})
 	}
 }
 
@@ -100,31 +100,31 @@ func createUser(c *gin.Context) {
 	var user User
 	err := c.ShouldBind(&user)
 	if err != nil {
-	    c.JSON(400, gin.H{
-	       "success": false,
-	       "error": "Invalid data format",
-	    })
-	    return
+		c.JSON(400, gin.H{
+			"success": false,
+			"error":   "Invalid data format",
+		})
+		return
 	}
 	// Validate required fields
 	err = validateUser(user)
 	if err != nil {
-	    c.JSON(400, gin.H {
-	        "success": false,
-	        "error": err.Error(),
-	    })
-	    return
+		c.JSON(400, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
 	}
-	
+
 	// Add user to storage
-	users = append(users, user)
-	nextID += 1
 	user.ID = nextID
-	
+	nextID += 1
+	users = append(users, user)
+
 	// Return created user
 	c.JSON(201, gin.H{
-	    "success": true,
-	    "data": user,
+		"success": true,
+		"data":    user,
 	})
 }
 
@@ -133,42 +133,42 @@ func updateUser(c *gin.Context) {
 	// TODO: Get user ID from path
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-	    c.JSON(200, gin.H{
-	        "status": false,
-	        "message": "Invalid ID",
-	    })
-	    
-	    return
+		c.JSON(200, gin.H{
+			"status":  false,
+			"message": "Invalid ID",
+		})
+
+		return
 	}
-	
+
 	// Parse JSON request body
 	var user User
 	err = c.ShouldBind(&user)
 	if err != nil {
-	    c.JSON(401, gin.H{
-	        "status": false,
-	        "message": "Invalid format",
-	    })
-	    return
+		c.JSON(401, gin.H{
+			"status":  false,
+			"message": "Invalid format",
+		})
+		return
 	}
-	
+
 	// Find and update user
 	usr, idx := findUserByID(id)
 	if idx == -1 {
-	    c.JSON(404, gin.H{
-	        "status": false,
-	        "message": "Not found",
-	    })
-	    return
+		c.JSON(404, gin.H{
+			"status":  false,
+			"message": "Not found",
+		})
+		return
 	}
 	usr.Email = user.Email
 	usr.Name = user.Name
 	usr.Age = user.Age
-	
+
 	// Return updated user
 	c.JSON(200, gin.H{
-	    "success": true,
-	    "data": usr,
+		"success": true,
+		"data":    usr,
 	})
 }
 
@@ -177,27 +177,27 @@ func deleteUser(c *gin.Context) {
 	// TODO: Get user ID from path
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-	    c.JSON(400, gin.H{
-	        "success": false,
-	        "message": "Invalid ID",
-	    })
-	    
-	    return
+		c.JSON(400, gin.H{
+			"success": false,
+			"message": "Invalid ID",
+		})
+
+		return
 	}
 	// Find and remove user
 	_, idx := findUserByID(id)
 	if idx == -1 {
-	    c.JSON(404, gin.H{
-	        "success": false,
-	    })
-	    return 
+		c.JSON(404, gin.H{
+			"success": false,
+		})
+		return
 	} else {
-	    users = slices.Delete(users, idx, idx + 1)
+		users = slices.Delete(users, idx, idx+1)
 	}
-	
+
 	// Return success message
 	c.JSON(200, gin.H{
-	    "success": true,
+		"success": true,
 	})
 }
 
@@ -206,33 +206,33 @@ func searchUsers(c *gin.Context) {
 	// TODO: Get name query parameter
 	name := c.Query("name")
 	if name == "" {
-	    c.JSON(400, gin.H{
-	        "success": false,
-	        "error": "missing params",
-	    })
-	    return
+		c.JSON(400, gin.H{
+			"success": false,
+			"error":   "missing params",
+		})
+		return
 	}
 	// Filter users by name (case-insensitive)
 	filteredUsers := []User{}
 	for _, user := range users {
-	    if strings.Contains(strings.ToLower(user.Name), strings.ToLower(name)) {
-	        filteredUsers = append(filteredUsers, user)
-	    }
+		if strings.Contains(strings.ToLower(user.Name), strings.ToLower(name)) {
+			filteredUsers = append(filteredUsers, user)
+		}
 	}
-	
+
 	c.JSON(200, gin.H{
-	    "success": true,
-	    "data": filteredUsers,
-    })
+		"success": true,
+		"data":    filteredUsers,
+	})
 }
 
 // Helper function to find user by ID
 func findUserByID(id int) (*User, int) {
 	// TODO: Implement user lookup
 	for idx, item := range users {
-	    if item.ID == id {
-	        return &item, idx
-	    }
+		if item.ID == id {
+			return &item, idx
+		}
 	}
 	// Return user pointer and index, or nil and -1 if not found
 	return nil, -1
@@ -243,17 +243,17 @@ func validateUser(user User) error {
 	// TODO: Implement validation
 	// Check required fields: Name, Email
 	if user.Name == "" {
-	    return errors.New("Name is required")
+		return errors.New("Name is required")
 	}
-	
+
 	if user.Email == "" {
-	    return errors.New("Email is required")
+		return errors.New("Email is required")
 	}
-	
+
 	if !strings.Contains(user.Email, "@") {
-	    return errors.New("Invalid email format")
+		return errors.New("Invalid email format")
 	}
-	
+
 	// Validate email format (basic check)
 	return nil
 }
