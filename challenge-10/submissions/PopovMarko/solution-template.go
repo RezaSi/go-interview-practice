@@ -158,7 +158,7 @@ func (sc *ShapeCalculator) TotalArea(shapes []Shape) float64 {
 }
 
 // LargestShape finds the shape with the largest area
-// it returns nil for empty slice. Check resul for nil return
+// it returns nil for empty slice. Check result for nil return
 func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 	var (
 		a   float64
