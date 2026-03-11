@@ -44,6 +44,7 @@ type Metrics struct {
 // Config represents the configuration for the circuit breaker
 // Interval field reserved for future use
 type Config struct {
+	Name          string
 	MaxRequests   uint32                                  // Max requests allowed in half-open state
 	Interval      time.Duration                           // Statistical window for closed state
 	Timeout       time.Duration                           // Time to wait before half-open
@@ -92,9 +93,13 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 			return m.ConsecutiveFailures >= 5
 		}
 	}
+	name := config.Name
+	if name == "" {
+		name = "circuit-breaker"
+	}
 
 	return &circuitBreakerImpl{
-		name:            "circuit-breaker",
+		name:            name,
 		config:          config,
 		state:           StateClosed,
 		lastStateChange: time.Now(),
@@ -214,7 +219,6 @@ func (cb *circuitBreakerImpl) recordSuccess() {
 	cb.metrics.Requests++
 	cb.metrics.ConsecutiveFailures = 0
 	shouldClose := cb.state == StateHalfOpen
-	// && uint32(cb.metrics.Successes) >= cb.config.MaxRequests
 	cb.mutex.Unlock()
 	if shouldClose && cb.GetState() == StateHalfOpen {
 		cb.setState(StateClosed)
@@ -239,14 +243,6 @@ func (cb *circuitBreakerImpl) recordFailure() {
 // shouldTrip determines if the circuit breaker should trip to open state
 func (cb *circuitBreakerImpl) shouldTrip() bool {
 	return cb.config.ReadyToTrip(cb.GetMetrics())
-}
-
-// isReady checks if the circuit breaker is ready to transition from open to half-open
-func (cb *circuitBreakerImpl) isReady() bool {
-	if time.Since(cb.GetMetrics().LastFailureTime) > cb.config.Timeout {
-		return true
-	}
-	return false
 }
 
 // Example usage and testing helper functions
