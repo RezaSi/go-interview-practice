@@ -15,7 +15,7 @@ const PI = math.Pi
 // Custom errors
 var (
 	ErrNegativeParam = errors.New("Negative parameter")
-	ErrInvalidParam  = errors.New("Sum of two sides less then third")
+	ErrInvalidParam  = errors.New("Sum of two sides less than third")
 )
 
 // Shape interface defines methods that all shapes must implement
@@ -137,6 +137,7 @@ func NewShapeCalculator() *ShapeCalculator {
 func (sc *ShapeCalculator) PrintProperties(s Shape) {
 	if s == nil {
 		fmt.Println("No shape - No properties")
+		return
 	}
 	fmt.Println(s.String())
 }
@@ -148,18 +149,25 @@ func (sc *ShapeCalculator) TotalArea(shapes []Shape) float64 {
 	}
 	var res float64
 	for _, s := range shapes {
+		if s == nil {
+			continue
+		}
 		res += s.Area()
 	}
 	return res
 }
 
 // LargestShape finds the shape with the largest area
+// it returns nil for empty slice. Check resul for nil return
 func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 	var (
 		a   float64
 		res Shape
 	)
 	for _, s := range shapes {
+		if s == nil {
+			continue
+		}
 		if a < s.Area() {
 			a = s.Area()
 			res = s
@@ -170,10 +178,12 @@ func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 
 // SortByArea sorts shapes by area in ascending or descending order
 func (sc *ShapeCalculator) SortByArea(shapes []Shape, ascending bool) []Shape {
+	var res []Shape
+	copy(res, shapes)
 	if ascending {
-		slices.SortFunc(shapes, func(a, b Shape) int { return cmp.Compare(a.Area(), b.Area()) })
+		slices.SortFunc(res, func(a, b Shape) int { return cmp.Compare(a.Area(), b.Area()) })
 	} else {
-		slices.SortFunc(shapes, func(a, b Shape) int { return cmp.Compare(b.Area(), a.Area()) })
+		slices.SortFunc(res, func(a, b Shape) int { return cmp.Compare(b.Area(), a.Area()) })
 	}
 	return shapes
 }
