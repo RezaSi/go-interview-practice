@@ -42,7 +42,7 @@ type Metrics struct {
 }
 
 // Config represents the configuration for the circuit breaker
-// Interval field reseved for future use
+// Interval field reserved for future use
 type Config struct {
 	MaxRequests   uint32                                  // Max requests allowed in half-open state
 	Interval      time.Duration                           // Statistical window for closed state
@@ -139,13 +139,13 @@ func (cb *circuitBreakerImpl) GetMetrics() Metrics {
 
 // setState changes the circuit breaker state and triggers callbacks
 func (cb *circuitBreakerImpl) setState(newState State) {
+	// Change the State
+	cb.mutex.Lock()
 	// Check new State not equal old State
-	oldState := cb.GetState()
+	oldState := cb.state
 	if oldState == newState {
 		return
 	}
-	// Change the State
-	cb.mutex.Lock()
 	cb.lastStateChange = time.Now()
 	switch newState {
 	case StateClosed:
@@ -171,18 +171,24 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 // canExecute determines if a request can be executed in the current state
 func (cb *circuitBreakerImpl) canExecute() error {
 	// Check the current state and make design to reject request
-	switch cb.GetState() {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	switch cb.state {
 	case StateClosed:
 		return nil
 	case StateOpen:
-		if cb.isReady() {
-			cb.setState(StateHalfOpen)
+		if time.Since(cb.metrics.LastFailureTime) > cb.config.Timeout {
+			cb.state = StateHalfOpen
+			cb.lastStateChange = time.Now()
+			cb.halfOpenRequests = 1
+			if cb.config.OnStateChange != nil {
+				cb.config.OnStateChange(cb.name, StateOpen, StateHalfOpen)
+			}
 			return nil
 		}
 		return ErrCircuitBreakerOpen
 	case StateHalfOpen:
-		cb.mutex.Lock()
-		defer cb.mutex.Unlock()
 		if cb.halfOpenRequests >= cb.config.MaxRequests {
 			return ErrTooManyRequests
 		}
