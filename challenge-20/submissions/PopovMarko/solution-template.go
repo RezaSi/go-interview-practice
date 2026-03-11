@@ -179,7 +179,8 @@ func (cb *circuitBreakerImpl) canExecute() error {
 	// Check the current state and make design to reject request
 	var onStateChange func(string, State, State)
 	cb.mutex.Lock()
-
+	// Ander this Lock using fields state and halfOpenRequests due to all
+	// manipulation with this data should be under same Lock.
 	switch cb.state {
 	case StateClosed:
 		cb.mutex.Unlock()
@@ -253,7 +254,6 @@ func main() {
 	// Create a circuit breaker configuration
 	config := Config{
 		MaxRequests: 3,
-		Interval:    time.Minute,
 		Timeout:     10 * time.Second,
 		ReadyToTrip: func(m Metrics) bool {
 			return m.ConsecutiveFailures >= 3
