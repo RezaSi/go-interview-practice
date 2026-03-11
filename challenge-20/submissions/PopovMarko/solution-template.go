@@ -144,6 +144,7 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 	// Check new State not equal old State
 	oldState := cb.state
 	if oldState == newState {
+		cb.mutex.Unlock()
 		return
 	}
 	cb.lastStateChange = time.Now()
@@ -171,30 +172,37 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 // canExecute determines if a request can be executed in the current state
 func (cb *circuitBreakerImpl) canExecute() error {
 	// Check the current state and make design to reject request
+	var onStateChange func(string, State, State)
 	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
 
 	switch cb.state {
 	case StateClosed:
+		cb.mutex.Unlock()
 		return nil
 	case StateOpen:
 		if time.Since(cb.metrics.LastFailureTime) > cb.config.Timeout {
 			cb.state = StateHalfOpen
 			cb.lastStateChange = time.Now()
 			cb.halfOpenRequests = 1
-			if cb.config.OnStateChange != nil {
-				cb.config.OnStateChange(cb.name, StateOpen, StateHalfOpen)
+			onStateChange = cb.config.OnStateChange
+			cb.mutex.Unlock()
+			if onStateChange != nil {
+				onStateChange(cb.name, StateOpen, StateHalfOpen)
 			}
 			return nil
 		}
+		cb.mutex.Unlock()
 		return ErrCircuitBreakerOpen
 	case StateHalfOpen:
 		if cb.halfOpenRequests >= cb.config.MaxRequests {
+			cb.mutex.Unlock()
 			return ErrTooManyRequests
 		}
 		cb.halfOpenRequests++
+		cb.mutex.Unlock()
 		return nil
 	}
+	cb.mutex.Unlock()
 	return nil
 }
 
@@ -205,8 +213,10 @@ func (cb *circuitBreakerImpl) recordSuccess() {
 	cb.metrics.Successes++
 	cb.metrics.Requests++
 	cb.metrics.ConsecutiveFailures = 0
+	shouldClose := cb.state == StateHalfOpen
+	// && uint32(cb.metrics.Successes) >= cb.config.MaxRequests
 	cb.mutex.Unlock()
-	if cb.GetState() == StateHalfOpen {
+	if shouldClose && cb.GetState() == StateHalfOpen {
 		cb.setState(StateClosed)
 	}
 }
