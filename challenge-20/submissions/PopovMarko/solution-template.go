@@ -42,6 +42,7 @@ type Metrics struct {
 }
 
 // Config represents the configuration for the circuit breaker
+// Interval field reseved for future use
 type Config struct {
 	MaxRequests   uint32                                  // Max requests allowed in half-open state
 	Interval      time.Duration                           // Statistical window for closed state
@@ -146,7 +147,16 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 	// Change the State
 	cb.mutex.Lock()
 	cb.lastStateChange = time.Now()
-	if oldState == StateHalfOpen {
+	switch newState {
+	case StateClosed:
+		cb.metrics.Failures = 0
+		cb.metrics.Successes = 0
+		cb.metrics.Requests = 0
+	case StateOpen:
+		cb.metrics.Failures = 0
+		cb.metrics.Successes = 0
+		cb.metrics.Requests = 0
+	case StateHalfOpen:
 		cb.halfOpenRequests = 0
 	}
 	cb.state = newState
