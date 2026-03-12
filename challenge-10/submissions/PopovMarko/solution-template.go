@@ -53,7 +53,7 @@ func (r *Rectangle) Perimeter() float64 {
 
 // String returns a string representation of the rectangle
 func (r *Rectangle) String() string {
-	return fmt.Sprintf("Shape type: Rectangle\nProperties:\nWidth: %.2f\nHeight: %.2f\n", r.Width, r.Height)
+	return fmt.Sprintf("Shape type: Rectangle\nProperties:\nWidth: %.2f\nHeight: %.2f", r.Width, r.Height)
 }
 
 // Circle represents a perfectly round shape
@@ -83,7 +83,7 @@ func (c *Circle) Perimeter() float64 {
 
 // String returns a string representation of the circle
 func (c *Circle) String() string {
-	return fmt.Sprintf("Shape type: Circle\nProperties:\nRadius: %.2f\n", c.Radius)
+	return fmt.Sprintf("Shape type: Circle\nProperties:\nRadius: %.2f", c.Radius)
 }
 
 // Triangle represents a three-sided polygon
@@ -121,7 +121,7 @@ func (t *Triangle) Perimeter() float64 {
 
 // String returns a string representation of the triangle
 func (t *Triangle) String() string {
-	return fmt.Sprintf("Shape type: Triangle\nSides:\nSide A: %.2f\nSide B: %.2f\nSide C: %.2f\n", t.SideA, t.SideB, t.SideC)
+	return fmt.Sprintf("Shape type: Triangle\nSides:\nSide A: %.2f\nSide B: %.2f\nSide C: %.2f", t.SideA, t.SideB, t.SideC)
 }
 
 // ShapeCalculator provides utility functions for shapes
