@@ -2,11 +2,10 @@
 package challenge10
 
 import (
-	"cmp"
 	"errors"
 	"fmt"
 	"math"
-	"slices"
+	"sort"
 )
 
 // Constants
@@ -177,13 +176,23 @@ func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 }
 
 // SortByArea sorts shapes by area in ascending or descending order
+// returns nil if shapes == nil in parameters
+// returns nil if any element in shapes == nil
 func (sc *ShapeCalculator) SortByArea(shapes []Shape, ascending bool) []Shape {
+	if shapes == nil {
+		return nil
+	}
+	for _, s := range shapes {
+		if s == nil {
+			return nil
+		}
+	}
 	res := make([]Shape, len(shapes))
 	copy(res, shapes)
 	if ascending {
-		slices.SortFunc(res, func(a, b Shape) int { return cmp.Compare(a.Area(), b.Area()) })
+		sort.Slice(res, func(a, b int) bool { return res[a].Area() < res[b].Area() })
 	} else {
-		slices.SortFunc(res, func(a, b Shape) int { return cmp.Compare(b.Area(), a.Area()) })
+		sort.Slice(res, func(a, b int) bool { return res[a].Area() > res[b].Area() })
 	}
 	return res
 }
