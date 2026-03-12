@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"sort"
 )
 
@@ -22,6 +23,15 @@ type Shape interface {
 	Area() float64
 	Perimeter() float64
 	fmt.Stringer // Includes String() string method
+}
+
+// Helper function to guard against typed nil Shape
+func isNilShape(s Shape) bool {
+	if s == nil {
+		return true
+	}
+	v := reflect.ValueOf(s)
+	return v.IsNil()
 }
 
 // Rectangle represents a four-sided shape with perpendicular sides
@@ -43,11 +53,17 @@ func NewRectangle(width, height float64) (*Rectangle, error) {
 
 // Area calculates the area of the rectangle
 func (r *Rectangle) Area() float64 {
+	if r.Width <= 0 || r.Height <= 0 {
+		return 0
+	}
 	return r.Width * r.Height
 }
 
 // Perimeter calculates the perimeter of the rectangle
 func (r *Rectangle) Perimeter() float64 {
+	if r.Width <= 0 || r.Height <= 0 {
+		return 0
+	}
 	return (r.Width + r.Height) * 2
 }
 
@@ -73,11 +89,17 @@ func NewCircle(radius float64) (*Circle, error) {
 
 // Area calculates the area of the circle
 func (c *Circle) Area() float64 {
+	if c.Radius <= 0 {
+		return 0
+	}
 	return PI * c.Radius * c.Radius
 }
 
 // Perimeter calculates the circumference of the circle
 func (c *Circle) Perimeter() float64 {
+	if c.Radius <= 0 {
+		return 0
+	}
 	return float64(2) * PI * c.Radius
 }
 
@@ -110,12 +132,24 @@ func NewTriangle(a, b, c float64) (*Triangle, error) {
 
 // Area calculates the area of the triangle using Heron's formula
 func (t *Triangle) Area() float64 {
+	if t.SideA <= 0 || t.SideB <= 0 || t.SideC <= 0 {
+		return 0
+	}
+	if t.SideA+t.SideB <= t.SideC || t.SideB+t.SideC <= t.SideA || t.SideC+t.SideA <= t.SideB {
+		return 0
+	}
 	sp := (t.SideA + t.SideB + t.SideC) / float64(2)
 	return math.Sqrt(sp * (sp - t.SideA) * (sp - t.SideB) * (sp - t.SideC))
 }
 
 // Perimeter calculates the perimeter of the triangle
 func (t *Triangle) Perimeter() float64 {
+	if t.SideA <= 0 || t.SideB <= 0 || t.SideC <= 0 {
+		return 0
+	}
+	if t.SideA+t.SideB <= t.SideC || t.SideB+t.SideC <= t.SideA || t.SideC+t.SideA <= t.SideB {
+		return 0
+	}
 	return t.SideA + t.SideB + t.SideC
 }
 
@@ -134,7 +168,7 @@ func NewShapeCalculator() *ShapeCalculator {
 
 // PrintProperties prints the properties of a shape
 func (sc *ShapeCalculator) PrintProperties(s Shape) {
-	if s == nil {
+	if isNilShape(s) {
 		fmt.Println("No shape - No properties")
 		return
 	}
@@ -148,7 +182,7 @@ func (sc *ShapeCalculator) TotalArea(shapes []Shape) float64 {
 	}
 	var res float64
 	for _, s := range shapes {
-		if s == nil {
+		if isNilShape(s) {
 			continue
 		}
 		res += s.Area()
@@ -164,7 +198,7 @@ func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
 		res Shape
 	)
 	for _, s := range shapes {
-		if s == nil {
+		if isNilShape(s) {
 			continue
 		}
 		if a < s.Area() {
@@ -183,7 +217,7 @@ func (sc *ShapeCalculator) SortByArea(shapes []Shape, ascending bool) []Shape {
 		return nil
 	}
 	for _, s := range shapes {
-		if s == nil {
+		if isNilShape(s) {
 			return nil
 		}
 	}
