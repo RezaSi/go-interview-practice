@@ -121,17 +121,26 @@ func HighAllocationSearch(text, substr string) map[int]string {
 
 // OptimizedSearch is your optimized version of HighAllocationSearch
 func OptimizedSearch(text, substr string) map[int]string {
-	// Optimized by one time allocations of the variable outside of the loop.
 	result := make(map[int]string)
-	if text == "" && substr == "" {
-		return result
-	}
+
 	// Convert to lowercase for case-insensitive search
 	lowerText := strings.ToLower(text)
 	lowerSubstr := strings.ToLower(substr)
+
+	// Keep behavior identical to HighAllocationSearch for empty substring
+	if len(lowerSubstr) == 0 {
+		for i := 0; i < len(lowerText); i++ {
+			result[i] = ""
+		}
+		return result
+	}
+	if len(lowerSubstr) > len(lowerText) {
+		return result
+	}
+
 	for i := 0; i <= len(lowerText)-len(lowerSubstr); i++ {
 		if lowerText[i:i+len(lowerSubstr)] == lowerSubstr {
-			result[i] = text[i : i+len(lowerSubstr)]
+			result[i] = text[i : i+len(substr)]
 		}
 	}
 	return result
