@@ -16,6 +16,12 @@ type startOrder struct {
 }
 
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
+	// Check numWorkers non negative
+	if numWorkers <= 0 {
+		numWorkers = 1
+	}
+
+	// Init channels and wait group
 	startP := make(chan int)
 	res := make(chan startOrder)
 	var wg sync.WaitGroup
@@ -23,6 +29,8 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 	// For loop makes workers as numWorkers param
 	for range numWorkers {
 		wg.Add(1)
+
+		// Start worker
 		go func() {
 			defer wg.Done()
 			for s := range startP {
@@ -46,7 +54,7 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 		close(res)
 	}()
 
-	// For loop reads res chanell antil it closed
+	// For loop reads res channel antil it closed
 	result := make(map[int][]int, len(queries))
 	for r := range res {
 		result[r.node] = r.order
@@ -56,16 +64,19 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 
 // bfsOrder makes queue and visited datastructure returns result for one query
 func bfsOrder(g map[int][]int, s int) startOrder {
+	// Init variables and data structure
 	visited := map[int]bool{s: true}
 	queue := []int{s}
 	order := startOrder{}
 	order.node = s
 
+	// Loop antil queue not empty
 	for len(queue) > 0 {
 		curNode := queue[0]
 		queue = queue[1:]
 		order.order = append(order.order, curNode)
 
+		// loop through neighbour and add it to queue
 		for _, n := range g[curNode] {
 			if !visited[n] {
 				visited[n] = true
