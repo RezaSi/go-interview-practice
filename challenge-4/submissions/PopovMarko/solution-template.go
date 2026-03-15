@@ -16,13 +16,7 @@ type startOrder struct {
 }
 
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
-	// startP channel sends queries to gorutines
-	startP := make(chan int, len(queries))
-	for _, s := range queries {
-		startP <- s
-	}
-	close(startP)
-
+	startP := make(chan int)
 	res := make(chan startOrder)
 	var wg sync.WaitGroup
 
@@ -37,6 +31,14 @@ func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) ma
 			}
 		}()
 	}
+
+	// startP channel sends queries to gorutines
+	go func() {
+		defer close(startP)
+		for _, s := range queries {
+			startP <- s
+		}
+	}()
 
 	// Separate gorunine wait for all workers finish ther jobs
 	go func() {
