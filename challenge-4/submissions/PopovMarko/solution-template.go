@@ -17,8 +17,8 @@ type startOrder struct {
 
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
 	// Check numWorkers non negative
-	if numWorkers <= 0 {
-		numWorkers = 1
+	if numWorkers < 0 {
+		numWorkers = 0
 	}
 
 	// Init channels and wait group
