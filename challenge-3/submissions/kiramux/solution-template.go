@@ -1,0 +1,79 @@
+package main
+
+import "fmt"
+
+type Employee struct {
+	ID     int
+	Name   string
+	Age    int
+	Salary float64
+}
+
+type Manager struct {
+	Employees []Employee
+}
+
+// AddEmployee adds a new employee to the manager's list.
+func (m *Manager) AddEmployee(e Employee) {
+	// TODO: Implement this method
+	m.Employees = append(m.Employees, e)
+}
+
+// RemoveEmployee removes an employee by ID from the manager's list.
+func (m *Manager) RemoveEmployee(id int) {
+	// TODO: Implement this method
+	size := len(m.Employees)
+    flag := -1
+	for i := range m.Employees {
+	    if m.Employees[i].ID == id {
+            flag = i
+            break
+	    } 
+	}
+	if flag != -1 {
+        m.Employees[flag] = m.Employees[size-1]
+        m.Employees = m.Employees[:size-1]
+	}
+}
+
+// GetAverageSalary calculates the average salary of all employees.
+func (m *Manager) GetAverageSalary() float64 {
+	// TODO: Implement this method
+	size := len(m.Employees)
+	if size == 0 {
+	    return 0
+	}
+	
+	var sum float64
+	for i := 0; i < size; i++ {
+	    sum += m.Employees[i].Salary
+	}
+	avg := sum / float64(size)
+	return avg
+}
+
+// FindEmployeeByID finds and returns an employee by their ID.
+func (m *Manager) FindEmployeeByID(id int) *Employee {
+	// TODO: Implement this method
+	for i := range m.Employees {
+	    if m.Employees[i].ID == id {
+	        return &(m.Employees[i])
+	    } 
+	}
+	fmt.Println("Cannot find employee by ID: ", id)
+	return nil
+}
+
+func main() {
+	manager := Manager{}
+	manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
+	manager.AddEmployee(Employee{ID: 2, Name: "Bob", Age: 25, Salary: 65000})
+	manager.RemoveEmployee(1)
+	averageSalary := manager.GetAverageSalary()
+	employee := manager.FindEmployeeByID(2)
+
+	fmt.Printf("Average Salary: %f\n", averageSalary)
+	if employee != nil {
+		fmt.Printf("Employee found: %+v\n", *employee)
+	}
+}
