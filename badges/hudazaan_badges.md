@@ -14,10 +14,10 @@
 [![Go Interview Practice](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/hudazaan.json&style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 📊 Static Badges Collection
-[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-2%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Achievement Level](https://img.shields.io/badge/Level-🌱_Beginner-97ca00?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Completion Rate](https://img.shields.io/badge/Completion-6.7%25-97ca00?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-
+[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-12%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Achievement Level](https://img.shields.io/badge/Level-⚡_Advanced-orange?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Completion Rate](https://img.shields.io/badge/Completion-40.0%25-orange?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Package Challenges](https://img.shields.io/badge/Package_Challenges-1_across_1_packages-purple?style=for-the-badge&logo=package&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 🔗 Repository Link Badge
 [![Go Interview Practice Repository](https://img.shields.io/badge/View_Repository-Go_Interview_Practice-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
@@ -27,6 +27,7 @@
 ### 📈 Your Achievement Summary
 
 **👤 Username:** @hudazaan  
-**🏅 Achievement Level:** 🌱 **Beginner Developer**  
-**📊 Classic Challenges:** 2/30 (6.7% complete)  
+**🏅 Achievement Level:** ⚡ **Advanced Developer**  
+**📊 Classic Challenges:** 12/30 (40.0% complete)  
 **🔗 Repository:** [Go Interview Practice](https://github.com/RezaSi/go-interview-practice)  
+**Package Challenges:** 1 across 1 packages
