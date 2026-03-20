@@ -32,7 +32,7 @@ type Book struct {
 }
 
 // BookRepository defines the operations for book data access
-// Service leyer interface. Repository depends on
+// Service layer interface. Repository depends on
 type BookRepository interface {
 	GetAll() ([]*Book, error)
 	GetByID(id string) (*Book, error)
@@ -62,9 +62,11 @@ func (br *InMemoryBookRepository) GetAll() ([]*Book, error) {
 	br.mu.RLock()
 	defer br.mu.RUnlock()
 
+	// Get all books from repository and returns pointer on copy of the book
 	books := make([]*Book, 0, len(br.books))
 	for _, b := range br.books {
-		books = append(books, b)
+		bCopy := *b
+		books = append(books, &bCopy)
 	}
 
 	return books, nil
@@ -87,12 +89,15 @@ func (br *InMemoryBookRepository) GetByID(id string) (*Book, error) {
 		return nil, fmt.Errorf("Get book by id: %w", ErrNotFound)
 	}
 
-	return book, nil
+	// Make a copy of the book to return a pointer on the copy
+	bookC := *book
+
+	return &bookC, nil
 }
 
 // Create creates book in repository or returns error
 func (br *InMemoryBookRepository) Create(book *Book) error {
-	// Parametr validation
+	// Parameter validation
 	if book == nil {
 
 		return fmt.Errorf("Create parametr book: %w", ErrBadParam)
@@ -135,34 +140,41 @@ func (br *InMemoryBookRepository) Update(id string, book *Book) error {
 	br.mu.Lock()
 	defer br.mu.Unlock()
 
+	// temporarily store book befor update
 	oldBook, ok := br.books[id]
 	if !ok {
 
 		return fmt.Errorf("Update book: %w", ErrNotFound)
 	}
-	// Update fields if not blanc
+	// Update fields if not blank
+	// Check the Title
 	if book.Title != "" {
 		oldBook.Title = book.Title
 	}
+	// Check the Author
 	if book.Author != "" {
 		oldBook.Author = book.Author
 	}
+	// Check the PublishedYear
 	if book.PublishedYear != 0 {
 		oldBook.PublishedYear = book.PublishedYear
 	}
+	// Check the ISBN
 	if book.ISBN != "" {
 		oldBook.ISBN = book.ISBN
 	}
+	// Check the Description
 	if book.Description != "" {
 		oldBook.Description = book.Description
 	}
 
+	// Update book in storage
 	br.books[id] = oldBook
 
 	return nil
 }
 
-// Delete delets book from repository or returns error
+// Delete deletes book from repository or returns error
 func (br *InMemoryBookRepository) Delete(id string) error {
 	// Parameter validation
 	if id == "" {
@@ -172,6 +184,7 @@ func (br *InMemoryBookRepository) Delete(id string) error {
 	br.mu.Lock()
 	defer br.mu.Unlock()
 
+	// Search book in storage before delete
 	if _, ok := br.books[id]; !ok {
 		return fmt.Errorf("Delete book: %w", ErrNotFound)
 	}
@@ -180,7 +193,7 @@ func (br *InMemoryBookRepository) Delete(id string) error {
 	return nil
 }
 
-// SearchByAuthor returns slce of pointers of Book or error
+// SearchByAuthor returns slice of pointers of Book or error
 func (br *InMemoryBookRepository) SearchByAuthor(author string) ([]*Book, error) {
 	// Parameter validation
 	if author == "" {
@@ -191,9 +204,12 @@ func (br *InMemoryBookRepository) SearchByAuthor(author string) ([]*Book, error)
 	br.mu.RLock()
 	defer br.mu.RUnlock()
 
+	// Search in storage by loop
 	for _, v := range br.books {
 		if strings.Contains(v.Author, author) {
-			res = append(res, v)
+			// Append a pointer on copy
+			vCopy := *v
+			res = append(res, &vCopy)
 		}
 	}
 
@@ -213,9 +229,11 @@ func (br *InMemoryBookRepository) SearchByTitle(title string) ([]*Book, error) {
 	br.mu.RLock()
 	defer br.mu.RUnlock()
 
+	// Search in storage by loop
 	for _, v := range br.books {
 		if strings.Contains(v.Title, title) {
-			res = append(res, v)
+			vCopy := *v
+			res = append(res, &vCopy)
 		}
 	}
 
@@ -248,11 +266,12 @@ func NewBookService(repo BookRepository) *DefaultBookService {
 	}
 }
 
-// There is no book domain struct in this implimentation of the Service layer
+// There is no book domain struct in this implementation of the Service layer
 // Implement BookService interface methods for DefaultBookService entity
 // Service layer
 // GetAllBooks returns slice of all books domains or error
 func (bs *DefaultBookService) GetAllBooks() ([]*Book, error) {
+	// Call repository layer
 	books, err := bs.repo.GetAll()
 	if err != nil {
 
@@ -269,6 +288,7 @@ func (bs *DefaultBookService) GetBookByID(id string) (*Book, error) {
 
 		return nil, fmt.Errorf("GetBookByID id: %w", ErrBadParam)
 	}
+	// Call repository layer
 	book, err := bs.repo.GetByID(id)
 	if err != nil {
 
@@ -286,6 +306,7 @@ func (bs *DefaultBookService) CreateBook(book *Book) error {
 		return fmt.Errorf("CreateBook book: %w", ErrBadParam)
 	}
 
+	// Call repository layer
 	if err := bs.repo.Create(book); err != nil {
 
 		return fmt.Errorf("CreateBook: %w", err)
@@ -306,6 +327,7 @@ func (bs *DefaultBookService) UpdateBook(id string, book *Book) error {
 		return fmt.Errorf("UpdateBook book: %w", ErrBadParam)
 	}
 
+	// Call repository layer
 	if err := bs.repo.Update(id, book); err != nil {
 		return fmt.Errorf("UpdateBook: %w", err)
 	}
@@ -321,6 +343,7 @@ func (bs *DefaultBookService) DeleteBook(id string) error {
 		return fmt.Errorf("DeleteBook id: %w", ErrBadParam)
 	}
 
+	// Call repository layer
 	if err := bs.repo.Delete(id); err != nil {
 
 		return fmt.Errorf("DeleteBook: %w", err)
@@ -336,6 +359,7 @@ func (bs *DefaultBookService) SearchBooksByAuthor(author string) ([]*Book, error
 	if author == "" {
 		return nil, fmt.Errorf("SearchBooksByAuthor author: %w", ErrBadParam)
 	}
+	// Call repository layer
 	books, err := bs.repo.SearchByAuthor(author)
 	if err != nil {
 
@@ -353,6 +377,7 @@ func (bs *DefaultBookService) SearchBooksByTitle(title string) ([]*Book, error) 
 
 		return nil, fmt.Errorf("SearchBooksByTitle title: %w", ErrBadParam)
 	}
+	// Call repository layer
 	books, err := bs.repo.SearchByTitle(title)
 	if err != nil {
 
@@ -385,6 +410,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 	// for Requests with id
 	if hasID {
 		id := parts[3]
+		// Separate requests by methods
 		switch r.Method {
 		case http.MethodGet:
 
@@ -411,7 +437,15 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 
 				return
 			}
-			writeJson(w, http.StatusOK, book)
+			updatedBook, err := h.Service.GetBookByID(id)
+			if err != nil {
+				writeError(w, fmt.Errorf("GetBookByID after update: %w", err))
+
+				return
+			}
+			writeJson(w, http.StatusOK, updatedBook)
+
+			return
 
 		case http.MethodDelete:
 			if err := h.Service.DeleteBook(id); err != nil {
@@ -428,7 +462,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 	}
 	// for requests with query
 	if hasQuery {
-		//search implimentation
+		//search implementation
 		switch r.Method {
 		case http.MethodGet:
 			query := r.URL.Query()
@@ -438,19 +472,25 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 				books, err := h.Service.SearchBooksByAuthor(author[0])
 				if err != nil {
 					writeError(w, fmt.Errorf("SearchBooksByAuthor: %w", err))
+
+					return
 				}
 				writeJson(w, http.StatusOK, books)
+				return
 			}
 			if len(title) > 0 {
 				books, err := h.Service.SearchBooksByTitle(title[0])
 				if err != nil {
 					writeError(w, fmt.Errorf("SearchBooksByTitle: %w", err))
+					return
 				}
 				writeJson(w, http.StatusOK, books)
+				return
 			}
 
 		default:
 			writeError(w, fmt.Errorf("HTTP with param method: %w", ErrNotAllowed))
+			return
 		}
 	}
 
@@ -471,16 +511,20 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 
 		if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
 			writeError(w, err)
+			return
 		}
 		defer r.Body.Close()
 
 		if err := h.Service.CreateBook(&book); err != nil {
 			writeError(w, err)
+			return
 		}
 		writeJson(w, http.StatusCreated, book)
+		return
 
 	default:
 		writeError(w, fmt.Errorf("HTTP without param method: %w", ErrNotAllowed))
+		return
 	}
 
 }
@@ -513,13 +557,14 @@ func writeError(w http.ResponseWriter, err error) {
 	default:
 		resp = newErrorResponse(http.StatusInternalServerError, err.Error())
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	json.NewEncoder(w).Encode(resp)
 }
 
 // writeJson writes ResponseWriter with encoded json response
 func writeJson(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Cotnent-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(body); err != nil {
 		writeError(w, err)
@@ -535,7 +580,7 @@ func main() {
 	// Create a new router and register endpoints
 	http.HandleFunc("/api/books", handler.HandleBooks)
 	http.HandleFunc("/api/books/{id}", handler.HandleBooks)
-	http.HandleFunc("/api/books/{id}", handler.HandleBooks)
+	http.HandleFunc("/api/books/search", handler.HandleBooks)
 
 	// Start the server
 	log.Println("Server starting on :8080")
