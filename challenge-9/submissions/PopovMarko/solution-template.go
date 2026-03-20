@@ -116,11 +116,14 @@ func (br *InMemoryBookRepository) Create(book *Book) error {
 	// Set new UUID for new book
 	book.ID = id.String()
 
+	// Make a copy of book
+	bookCopy := *book
+
 	// Store new book with new UUID under mutex
 	br.mu.Lock()
 	defer br.mu.Unlock()
 
-	br.books[book.ID] = book
+	br.books[bookCopy.ID] = &bookCopy
 
 	return nil
 }
@@ -454,6 +457,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			writeJson(w, http.StatusOK, nil)
+			return
 		default:
 			writeError(w, fmt.Errorf("HTTP with param method: %w", ErrNotAllowed))
 
@@ -567,7 +571,7 @@ func writeJson(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(body); err != nil {
-		writeError(w, err)
+		log.Printf("writeJson encode error: %v", err)
 	}
 }
 
