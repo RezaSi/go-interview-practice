@@ -96,7 +96,6 @@ func FilterEven(numbers []int) []int {
 	// New slice to store even elements
 	res := make([]int, 0)
 
-	// Loop numbers and check for even
 	for _, n := range numbers {
 		if n%2 == 0 {
 			res = append(res, n)
