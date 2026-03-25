@@ -36,12 +36,7 @@ func (c *Client) Send(message string) {
 		return
 	}
 	// Unblocking send to inbox channel
-	select {
-	case c.inbox <- message:
-	// Drop message silently due to func signature
-	default:
-		return
-	}
+	c.inbox <- message
 }
 
 // Receive returns the next message for the client (blocking)
@@ -85,7 +80,7 @@ func (s *ChatServer) Disconnect(client *Client) {
 	// Check if user exist
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.isConnected(client.username) {
+	if s.isCurrentClient(client) {
 		// Gracefull disconnection set flag, close channel, delete user
 		client.mu.Lock()
 		client.disconnected = true
@@ -100,7 +95,7 @@ func (s *ChatServer) Broadcast(sender *Client, message string) {
 	// Check if sender exist
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.isConnected(sender.username) || message == "" {
+	if !s.isCurrentClient(sender) || message == "" {
 		return
 	}
 	// Formating message
@@ -119,7 +114,7 @@ func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message st
 	// Check if sender exist
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.isConnected(sender.username) {
+	if !s.isCurrentClient(sender) {
 		return ErrClientDisconnected
 	}
 	// Check if recipient exist
@@ -143,6 +138,15 @@ func (s *ChatServer) isConnected(username string) bool {
 		return true
 	}
 	return false
+}
+
+// isCurrentClient returns true if Client not nil and equal to client in storage
+func (s *ChatServer) isCurrentClient(client *Client) bool {
+	if client == nil {
+		return false
+	}
+	current, ok := s.users[client.username]
+	return ok && client == current
 }
 
 // Common errors that can be returned by the Chat Server
