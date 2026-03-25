@@ -35,7 +35,7 @@ func (c *Client) Send(message string) {
 	if c.disconnected {
 		return
 	}
-	// Unblocking send to inbox channel
+	// blocking send to inbox channel
 	c.inbox <- message
 }
 
@@ -94,18 +94,23 @@ func (s *ChatServer) Disconnect(client *Client) {
 func (s *ChatServer) Broadcast(sender *Client, message string) {
 	// Check if sender exist
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if !s.isCurrentClient(sender) || message == "" {
+		s.mu.Unlock()
 		return
 	}
-	// Formating message
-	fstring := fmt.Sprintf("{%s}: %s", sender.username, message)
 	// Send formatted message to all users exept sender
+	recipients := make([]*Client, 0, len(s.users)-1)
 	for name, user := range s.users {
 		if name != sender.username {
-			//Non brocking send to user (drop if channel full)
-			user.Send(fstring)
+			recipients = append(recipients, user)
 		}
+	}
+	s.mu.Unlock()
+	// Formating message
+	fstring := fmt.Sprintf("{%s}: %s", sender.username, message)
+	// Send Broadcast message to users
+	for _, user := range recipients {
+		user.Send(fstring)
 	}
 }
 
@@ -113,22 +118,26 @@ func (s *ChatServer) Broadcast(sender *Client, message string) {
 func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message string) error {
 	// Check if sender exist
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if !s.isCurrentClient(sender) {
+		s.mu.Unlock()
 		return ErrClientDisconnected
 	}
 	// Check if recipient exist
 	if !s.isConnected(recipient) {
+		s.mu.Unlock()
 		return ErrRecipientNotFound
 	}
 	// Check if message not empty
 	if message == "" {
+		s.mu.Unlock()
 		return ErrBadParam
 	}
-	// Formet the message
+	// Format the message
 	fstring := fmt.Sprintf("{%s}->{%s}:%s", sender.username, recipient, message)
 	// Send the formatted string
-	s.users[recipient].Send(fstring)
+	target := s.users[recipient]
+	s.mu.Unlock()
+	target.Send(fstring)
 	return nil
 }
 
