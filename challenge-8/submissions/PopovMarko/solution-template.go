@@ -31,12 +31,17 @@ func newClient(username string) *Client {
 func (c *Client) Send(message string) {
 	// Check if user disconnected under users mutex
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.disconnected {
+		c.mu.Unlock()
 		return
 	}
-	// blocking send to inbox channel
-	c.inbox <- message
+	inbox := c.inbox
+	c.mu.Unlock()
+	defer func() {
+		// Recover if channel was closed between check and close
+		recover()
+	}()
+	inbox <- message
 }
 
 // Receive returns the next message for the client (blocking)
