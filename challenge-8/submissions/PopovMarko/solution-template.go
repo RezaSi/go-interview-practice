@@ -61,7 +61,6 @@ type ChatServer struct {
 
 // NewChatServer creates a new chat server instance
 func NewChatServer() *ChatServer {
-	// TODO: Implement this function
 	return &ChatServer{
 		users: make(map[string]*Client),
 	}
@@ -87,9 +86,11 @@ func (s *ChatServer) Disconnect(client *Client) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.isConnected(client.username) {
-		// Gracefull disconnection set flag, close channel, dellete user
+		// Gracefull disconnection set flag, close channel, delete user
+		client.mu.Lock()
 		client.disconnected = true
 		close(client.inbox)
+		client.mu.Unlock()
 		delete(s.users, client.username)
 	}
 }
@@ -107,12 +108,8 @@ func (s *ChatServer) Broadcast(sender *Client, message string) {
 	// Send formatted message to all users exept sender
 	for name, user := range s.users {
 		if name != sender.username {
-			// Unblocking writes to channal if users channel full
-			select {
-			case user.inbox <- fstring:
-			default:
-				continue
-			}
+			//Non brocking send to user (drop if channel full)
+			user.Send(fstring)
 		}
 	}
 }
