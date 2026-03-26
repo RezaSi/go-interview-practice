@@ -142,18 +142,14 @@ func NewPipeline(r Reader, v []Validator, t []Transformer, w Writer) *Pipeline {
 }
 
 // Process runs the complete pipeline
-func (p *Pipeline) Process(ctx context.Context) (err error) {
+func (p *Pipeline) Process(ctx context.Context) error {
 	// Clean up the resources before exit
-	defer func() {
-		if err != nil {
-			p.CleanUp()
-		}
-	}()
+	defer p.CleanUp()
 	// Read the data
 	data, err := p.Reader.Read(ctx)
 	if err != nil {
 		return &PipelineError{
-			Stage: "read source",
+			Stage: "read",
 			Err:   err,
 		}
 	}
@@ -180,7 +176,7 @@ func (p *Pipeline) Process(ctx context.Context) (err error) {
 	// Write the data
 	if err := p.Writer.Write(ctx, data); err != nil {
 		return &PipelineError{
-			Stage: "write data",
+			Stage: "write",
 			Err:   err,
 		}
 	}
