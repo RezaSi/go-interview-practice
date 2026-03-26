@@ -32,7 +32,7 @@ type Writer interface {
 	Write(ctx context.Context, data []byte) error
 }
 
-// Custom pipline Errors
+// Custom pipeline Errors
 // ValidationError represents an error during data validation
 // ==========================================================
 type ValidationError struct {
@@ -43,11 +43,10 @@ type ValidationError struct {
 
 // Error returns a string representation of the ValidationError
 func (e *ValidationError) Error() string {
-	strErr := ""
 	if e.Err != nil {
-		strErr = e.Err.Error()
+		return fmt.Sprintf("invalid: %s: %s: %s", e.Field, e.Message, e.Err.Error())
 	}
-	return fmt.Sprintf("invalid: %s: %s: %s", e.Field, e.Message, strErr)
+	return fmt.Sprintf("invalid: %s: %s", e.Field, e.Message)
 }
 
 // Unwrap returns the underlying error
@@ -69,9 +68,9 @@ type TransformError struct {
 func (e *TransformError) Error() string {
 	strErr := ""
 	if e.Err != nil {
-		strErr = e.Err.Error()
+		return fmt.Sprintf("transformation stage: %s error: %s", e.Stage, strErr)
 	}
-	return fmt.Sprintf("transformation stage: %s error: %s", e.Stage, strErr)
+	return fmt.Sprintf("transformation stage: %s", e.Stage)
 }
 
 // Unwrap returns the underlying error
@@ -93,9 +92,9 @@ type PipelineError struct {
 func (e *PipelineError) Error() string {
 	strErr := ""
 	if e.Err != nil {
-		strErr = e.Err.Error()
+		return fmt.Sprintf("pipeline stage: %s error: %s", e.Stage, strErr)
 	}
-	return fmt.Sprintf("pipeline stage: %s error: %s", e.Stage, strErr)
+	return fmt.Sprintf("pipeline stage: %s", e.Stage)
 }
 
 // Unwrap returns the underlying error
@@ -144,7 +143,7 @@ func NewPipeline(r Reader, v []Validator, t []Transformer, w Writer) *Pipeline {
 
 // Process runs the complete pipeline
 func (p *Pipeline) Process(ctx context.Context) (err error) {
-	// Clean up the resorces before exit
+	// Clean up the resources before exit
 	defer func() {
 		if err != nil {
 			p.CleanUp()
@@ -185,10 +184,10 @@ func (p *Pipeline) Process(ctx context.Context) (err error) {
 			Err:   err,
 		}
 	}
-	err = nil
-	return err
+	return nil
 }
 
+// TODO method implemented for future use in concurrent operation
 // handleErrors consolidates errors from concurrent operations
 func (p *Pipeline) handleErrors(ctx context.Context, errs <-chan error) error {
 	select {
@@ -392,8 +391,8 @@ func (fw *FileWriter) Write(ctx context.Context, data []byte) error {
 	}
 }
 
-// CleanUp clean the resorces
+// CleanUp clean the resources
 func (p *Pipeline) CleanUp() {
-
+	// TODO implement this method in case concurrent operation
 }
 
