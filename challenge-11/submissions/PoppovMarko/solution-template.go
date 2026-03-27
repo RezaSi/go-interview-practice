@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 	// Add any necessary imports here
+	"golang.org/x/time/rate"
 )
 
 // Interfaces
@@ -82,12 +83,15 @@ func (ca *ContentAggregator) FetchAndProcess(
 	urls []string,
 ) ([]ProcessedData, error) {
 	// TODO: Implement concurrent fetching and processing with proper error handling
+	// TODO
+	// ca.fetcher.limiter = rate.NewLimiter()
 	return nil, nil
 }
 
 // Shutdown performs cleanup and ensures all resources are properly released
 func (ca *ContentAggregator) Shutdown() error {
 	// TODO: Implement proper shutdown logic
+
 	return nil
 }
 
@@ -114,10 +118,11 @@ func (ca *ContentAggregator) fanOut(
 // ========
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
 type HTTPFetcher struct {
-	Client *http.Client
+	Client  *http.Client
+	Limiter *rate.Limiter
 }
 
-// Fetch retrieves content from a URL via HTTP
+// Fetch retrieves content from a URL via HTTP not exccided rate limit
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// Validation input parameters
 	if hf == nil {
@@ -131,6 +136,9 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 
 	// Send the requst
+	if err := hf.Limiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("fetcher rate limiter: %w", err)
+	}
 	resp, err := hf.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("get request: %w", err)
