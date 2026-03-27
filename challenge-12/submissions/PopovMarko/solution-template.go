@@ -310,7 +310,7 @@ func (sv *SchemaValidator) Validate(data []byte) error {
 	return nil
 }
 
-// Transformers implemetation
+// Transformers implementation
 // ==========================
 // FieldTransformer implements the Transformer interface for field transformations
 type FieldTransformer struct {
@@ -407,4 +407,3 @@ func (fw *FileWriter) Write(ctx context.Context, data []byte) error {
 func (p *Pipeline) CleanUp() {
 	// TODO implement this method in case concurrent operation
 }
-
