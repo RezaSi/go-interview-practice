@@ -66,9 +66,8 @@ type TransformError struct {
 
 // Error returns a string representation of the TransformError
 func (e *TransformError) Error() string {
-	strErr := ""
 	if e.Err != nil {
-		return fmt.Sprintf("transformation stage: %s error: %s", e.Stage, strErr)
+		return fmt.Sprintf("transformation stage: %s error: %s", e.Stage, e.Err.Error())
 	}
 	return fmt.Sprintf("transformation stage: %s", e.Stage)
 }
@@ -90,9 +89,8 @@ type PipelineError struct {
 
 // Error returns a string representation of the PipelineError
 func (e *PipelineError) Error() string {
-	strErr := ""
 	if e.Err != nil {
-		return fmt.Sprintf("pipeline stage: %s error: %s", e.Stage, strErr)
+		return fmt.Sprintf("pipeline stage: %s error: %s", e.Stage, e.Err.Error())
 	}
 	return fmt.Sprintf("pipeline stage: %s", e.Stage)
 }
@@ -143,6 +141,12 @@ func NewPipeline(r Reader, v []Validator, t []Transformer, w Writer) *Pipeline {
 
 // Process runs the complete pipeline
 func (p *Pipeline) Process(ctx context.Context) error {
+	if p == nil {
+		return &PipelineError{
+			Stage: "pipeline",
+			Err:   ErrNilReceiver,
+		}
+	}
 	// Clean up the resources before exit
 	defer p.CleanUp()
 	// Read the data
@@ -155,6 +159,12 @@ func (p *Pipeline) Process(ctx context.Context) error {
 	}
 	// Validate the data
 	for _, v := range p.Validators {
+		if v == nil {
+			return &PipelineError{
+				Stage: "validation",
+				Err:   ErrNilReceiver,
+			}
+		}
 		if err := v.Validate(data); err != nil {
 			return &PipelineError{
 				Stage: "validation",
@@ -165,6 +175,12 @@ func (p *Pipeline) Process(ctx context.Context) error {
 	// Transform the data
 
 	for _, t := range p.Transformers {
+		if t == nil {
+			return &PipelineError{
+				Stage: "transformation",
+				Err:   ErrNilReceiver,
+			}
+		}
 		data, err = t.Transform(data)
 		if err != nil {
 			return &PipelineError{
