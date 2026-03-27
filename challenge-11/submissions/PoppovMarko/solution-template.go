@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 	// Add any necessary imports here
@@ -25,7 +26,9 @@ type ContentProcessor interface {
 // Custom errors
 // =============
 var (
-	ErrBadParam = errors.New("bad parameter")
+	ErrBadParam    = errors.New("bad parameter")
+	ErrNilReceiver = errors.New("nil receiver")
+	ErrBadUrl      = errors.New("bad or empty url")
 )
 
 // ProcessedData represents structured data extracted from raw content
@@ -71,6 +74,8 @@ func NewContentAggregator(
 	}
 }
 
+// Aggregator methods
+// ==================
 // FetchAndProcess concurrently fetches and processes content from multiple URLs
 func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
@@ -110,25 +115,72 @@ func (ca *ContentAggregator) fanOut(
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
 type HTTPFetcher struct {
 	Client *http.Client
-	// TODO: Add fields for rate limiting, etc.
 }
 
 // Fetch retrieves content from a URL via HTTP
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
-	// TODO: Implement HTTP-based content fetching with context support
-	return nil, nil
+	// Validation input parameters
+	if hf == nil {
+		return nil, fmt.Errorf("fetcher error: %w", ErrNilReceiver)
+	}
+	if url == "" {
+		return nil, fmt.Errorf("fetcher error: %w", ErrBadUrl)
+	}
+
+	// New request with context added
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+
+	// Send the requst
+	resp, err := hf.Client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get request: %w", err)
+	}
+
+	// Request body gefer close
+	defer resp.Body.Close()
+
+	// Read the body of request
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("response body: %w", err)
+	}
+
+	//Return body as []byte
+	return body, nil
 }
 
 // processor
 // =========
 // HTMLProcessor is a basic implementation of ContentProcessor for HTML content
 type HTMLProcessor struct {
-	// TODO: Add any fields needed for HTML processing
+	name       string
+	procesFunc func(data []byte) (ProcessedData, error)
 }
 
 // Process extracts structured data from HTML content
 func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (ProcessedData, error) {
-	// TODO: Implement HTML processing logic
-	return ProcessedData{}, nil
+	// Input parameter validation
+	if hp == nil {
+		return ProcessedData{}, fmt.Errorf("processor error: %w", ErrNilReceiver)
+	}
+	if len(content) == 0 {
+		return ProcessedData{}, fmt.Errorf("processor error: %w", ErrBadParam)
+	}
+
+	// Data processing
+	processedData, err := hp.procesFunc(content)
+	if err != nil {
+		return ProcessedData{}, fmt.Errorf("processor error: %w", err)
+	}
+	// Data return
+	return processedData, nil
 }
+
+// Raite limiter
+
+// Retrier
+
+// Circuit breaker
+
+// Cache
 
