@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
+
 	// Add any necessary imports here
 	"golang.org/x/time/rate"
 )
@@ -27,9 +29,10 @@ type ContentProcessor interface {
 // Custom errors
 // =============
 var (
-	ErrBadParam    = errors.New("bad parameter")
-	ErrNilReceiver = errors.New("nil receiver")
-	ErrBadUrl      = errors.New("bad or empty url")
+	ErrBadParam        = errors.New("bad parameter")
+	ErrNilReceiver     = errors.New("nil receiver")
+	ErrBadUrl          = errors.New("bad or empty url")
+	ErrTooManyFailures = errors.New("too many failures")
 )
 
 // ProcessedData represents structured data extracted from raw content
@@ -85,6 +88,8 @@ func (ca *ContentAggregator) FetchAndProcess(
 	// TODO: Implement concurrent fetching and processing with proper error handling
 	// TODO
 	// ca.fetcher.limiter = rate.NewLimiter()
+	cb := NewCircuitBreaker(3, 3*time.Second)
+	cb.Exexute(ca.fetcher.Fetch(ctx, url))
 	return nil, nil
 }
 
@@ -184,11 +189,63 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	return processedData, nil
 }
 
-// Raite limiter
-
 // Retrier
 
 // Circuit breaker
+// ===============
+// CircuitBreaker struct represents simple circuit breaker
+type CircuitBreaker struct {
+	failMax      int           // Max failes to open breaker
+	failCount    int           // fail counter
+	resetTime    time.Duration // Time before breaker close
+	lastFailTime time.Time     // Time to start resetTime
+	mu           sync.Mutex    // Mutex
+}
+
+func NewCircuitBreaker(failMax int, resetTime time.Duration) *CircuitBreaker {
+	if failMax <= 0 {
+		failMax = 3
+	}
+	if resetTime <= 0 {
+		resetTime = 1 * time.Second
+	}
+	return &CircuitBreaker{
+		failMax:   failMax,
+		resetTime: resetTime,
+	}
+}
+
+// Execute check circuit braker state and execute callback func
+func (cb *CircuitBreaker) Exexute(
+	ctx context.Context,
+	url string,
+	operate func(context.Context, string) ([]byte, error),
+) (
+	[]byte, error) {
+	cb.mu.Lock()
+	// Check for circuit braker state
+	if cb.failCount >= cb.failMax {
+		if time.Since(cb.lastFailTime) > cb.resetTime {
+			cb.failCount = 0
+		} else {
+			// If open returns error
+			cb.mu.Unlock()
+			return nil, fmt.Errorf("circuit braker: %w", ErrTooManyFailures)
+		}
+	}
+	// If closd execute callback
+	cb.mu.Unlock()
+	res, err := operate(ctx, url)
+	// If operate returns error renew fail counter and time of last fail
+	if err != nil {
+		cb.mu.Lock()
+		cb.failCount++
+		cb.lastFailTime = time.Now()
+		cb.mu.Unlock()
+	}
+	// Returns result of callback
+	return res, err
+}
 
 // Cache
 
