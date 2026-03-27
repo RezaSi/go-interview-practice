@@ -88,8 +88,7 @@ func (ca *ContentAggregator) FetchAndProcess(
 	// TODO: Implement concurrent fetching and processing with proper error handling
 	// TODO
 	// ca.fetcher.limiter = rate.NewLimiter()
-	cb := NewCircuitBreaker(3, 3*time.Second)
-	cb.Exexute(ca.fetcher.Fetch(ctx, url))
+
 	return nil, nil
 }
 
