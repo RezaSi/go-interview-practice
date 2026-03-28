@@ -88,8 +88,26 @@ func (ca *ContentAggregator) FetchAndProcess(
 	// TODO: Implement concurrent fetching and processing with proper error handling
 	// TODO
 	// ca.fetcher.limiter = rate.NewLimiter()
+	jobs := make(chan string)
+	results := make(chan ProcessedData)
+	errors := make(chan error)
 
-	return nil, nil
+	// Write jobs (URLs) into jobs channel
+	go func() {
+		for _, url := range urls {
+			jobs <- url
+		}
+		close(jobs)
+	}()
+
+	ca.workerPool(ctx, jobs, results, errors)
+
+	var result []ProcessedData
+	for res := range results {
+		result = append(result, res)
+	}
+
+	return result, nil
 }
 
 // Shutdown performs cleanup and ensures all resources are properly released
@@ -123,9 +141,11 @@ func (ca *ContentAggregator) workerPool(
 			}
 		}()
 	}
-	ca.wg.Wait()
-	close(results)
-	close(errors)
+	go func() {
+		ca.wg.Wait()
+		close(results)
+		close(errors)
+	}()
 }
 
 // fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
