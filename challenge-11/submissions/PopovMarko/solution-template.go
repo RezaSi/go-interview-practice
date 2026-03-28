@@ -3,15 +3,16 @@ package challenge11
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	// Add any necessary imports here
+	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/time/rate"
 )
 
@@ -107,13 +108,24 @@ func (ca *ContentAggregator) FetchAndProcess(
 		result = append(result, res)
 	}
 
-	return result, nil
+	for {
+		select {
+		case res, ok := <-results:
+			if !ok {
+				return result, nil
+			}
+			result = append(result, res)
+		case <-errors:
+		case <-ctx.Done():
+			err := ca.Shutdown()
+			return nil, err
+		}
+	}
 }
 
 // Shutdown performs cleanup and ensures all resources are properly released
 func (ca *ContentAggregator) Shutdown() error {
 	// TODO: Implement proper shutdown logic
-
 	return nil
 }
 
@@ -132,10 +144,12 @@ func (ca *ContentAggregator) workerPool(
 				content, err := ca.fetcher.Fetch(ctx, job)
 				if err != nil {
 					errors <- err
+					return
 				}
 				processedContent, err := ca.processor.Process(ctx, content)
 				if err != nil {
 					errors <- err
+					return
 				}
 				results <- processedContent
 			}
@@ -208,8 +222,6 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 // =========
 // HTMLProcessor is a basic implementation of ContentProcessor for HTML content
 type HTMLProcessor struct {
-	name       string
-	procesFunc func(data []byte) (ProcessedData, error)
 }
 
 // Process extracts structured data from HTML content
@@ -223,20 +235,26 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	}
 
 	// Data processing
-	// TODO refactoring
-	hp.procesFunc = func(data []byte) (ProcessedData, error) {
-		var res ProcessedData
-		if err := json.Unmarshal(data, &res); err != nil {
-			return ProcessedData{}, err
-		}
-		return ProcessedData{}, nil
-	}
-	processedData, err := hp.procesFunc(content)
+	var res ProcessedData
+	r := strings.NewReader(string(content))
+	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
-		return ProcessedData{}, fmt.Errorf("processor error: %w", err)
+		return ProcessedData{}, err
 	}
-	// Data return
-	return processedData, nil
+	title, err := doc.Find("Title").Text()
+	res.Title = title
+	doc.Find("meta").Each(func(i int, s *goquery.Selection) {
+		name := s.Attr("name")
+		content := s.Attr("content")
+		switch {
+		case name == "description":
+			res.Description = content
+		case name == "keywords":
+			res.Keywords = content
+		}
+	})
+	return res, nil
+
 }
 
 // Retrier
