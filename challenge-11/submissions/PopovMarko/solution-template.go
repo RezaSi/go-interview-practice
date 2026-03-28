@@ -3,6 +3,7 @@ package challenge11
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -37,11 +38,11 @@ var (
 
 // ProcessedData represents structured data extracted from raw content
 type ProcessedData struct {
-	Title       string
-	Description string
-	Keywords    []string
-	Timestamp   time.Time
-	Source      string
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Keywords    []string  `json:"keywords"`
+	Timestamp   time.Time `json:"timestamp"`
+	Source      string    `json:"source"`
 }
 
 // Aggregator - the main orchestrator
@@ -52,6 +53,7 @@ type ContentAggregator struct {
 	processor         ContentProcessor
 	workerCount       int
 	requestsPerSecond int
+	wg                sync.WaitGroup
 }
 
 // NewContentAggregator creates a new ContentAggregator with the specified configuration
@@ -64,12 +66,10 @@ func NewContentAggregator(
 	if fetcher == nil || processor == nil {
 		return nil
 	}
-	if workerCount <= 0 {
-		workerCount = 1
+	if workerCount <= 0 || requestsPerSecond <= 0 {
+		return nil
 	}
-	if requestsPerSecond <= 0 {
-		requestsPerSecond = 500
-	}
+
 	return &ContentAggregator{
 		fetcher:           fetcher,
 		processor:         processor,
@@ -106,7 +106,26 @@ func (ca *ContentAggregator) workerPool(
 	results chan<- ProcessedData,
 	errors chan<- error,
 ) {
-	// TODO: Implement worker pool logic
+	for i := 0; i < ca.workerCount; i++ {
+		ca.wg.Add(1)
+		go func() {
+			defer ca.wg.Done()
+			for job := range jobs {
+				content, err := ca.fetcher.Fetch(ctx, job)
+				if err != nil {
+					errors <- err
+				}
+				processedContent, err := ca.processor.Process(ctx, content)
+				if err != nil {
+					errors <- err
+				}
+				results <- processedContent
+			}
+		}()
+	}
+	ca.wg.Wait()
+	close(results)
+	close(errors)
 }
 
 // fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
@@ -139,7 +158,11 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// New request with context added
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 
-	// Send the requst
+	// Limiter init
+	// TODO refactoring
+	limiter := rate.NewLimiter(rate.Limit(1), 5)
+	hf.Limiter = limiter
+	// Send the requst throug the limiter
 	if err := hf.Limiter.Wait(ctx); err != nil {
 		return nil, fmt.Errorf("fetcher rate limiter: %w", err)
 	}
@@ -180,6 +203,14 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	}
 
 	// Data processing
+	// TODO refactoring
+	hp.procesFunc = func(data []byte) (ProcessedData, error) {
+		var res ProcessedData
+		if err := json.Unmarshal(data, &res); err != nil {
+			return ProcessedData{}, err
+		}
+		return ProcessedData{}, nil
+	}
 	processedData, err := hp.procesFunc(content)
 	if err != nil {
 		return ProcessedData{}, fmt.Errorf("processor error: %w", err)
@@ -247,4 +278,3 @@ func (cb *CircuitBreaker) Exexute(
 }
 
 // Cache
-
