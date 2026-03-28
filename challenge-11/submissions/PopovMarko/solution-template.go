@@ -241,16 +241,16 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	if err != nil {
 		return ProcessedData{}, err
 	}
-	title, err := doc.Find("Title").Text()
+	title := doc.Find("Title").Text()
 	res.Title = title
 	doc.Find("meta").Each(func(i int, s *goquery.Selection) {
-		name := s.Attr("name")
-		content := s.Attr("content")
+		name, _ := s.Attr("name")
+		content, _ := s.Attr("content")
 		switch {
 		case name == "description":
 			res.Description = content
 		case name == "keywords":
-			res.Keywords = content
+			res.Keywords = append(res.Keywords, content)
 		}
 	})
 	return res, nil
