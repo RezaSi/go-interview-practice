@@ -104,9 +104,9 @@ func (ca *ContentAggregator) FetchAndProcess(
 	ca.workerPool(ctx, jobs, results, errors)
 
 	var result []ProcessedData
-	for res := range results {
-		result = append(result, res)
-	}
+	// for res := range results {
+	// 	result = append(result, res)
+	// }
 
 	for {
 		select {
@@ -115,7 +115,10 @@ func (ca *ContentAggregator) FetchAndProcess(
 				return result, nil
 			}
 			result = append(result, res)
-		case <-errors:
+		case _, ok := <-errors:
+			if !ok {
+				return result, nil
+			}
 		case <-ctx.Done():
 			err := ca.Shutdown()
 			return nil, err
