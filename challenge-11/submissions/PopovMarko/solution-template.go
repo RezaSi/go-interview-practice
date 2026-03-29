@@ -144,12 +144,12 @@ func (ca *ContentAggregator) workerPool(
 				content, err := ca.fetcher.Fetch(ctx, job)
 				if err != nil {
 					errors <- err
-					return
+					continue
 				}
 				processedContent, err := ca.processor.Process(ctx, content)
 				if err != nil {
 					errors <- err
-					return
+					continue
 				}
 				results <- processedContent
 			}
@@ -167,8 +167,40 @@ func (ca *ContentAggregator) fanOut(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, []error) {
+	resChan := make(chan ProcessedData)
+	errs := make(chan error)
 	// TODO: Implement fan-out, fan-in pattern
-	return nil, nil
+	wg := sync.WaitGroup{}
+	for _, url := range urls {
+		url := url
+		wg.Add(1)
+		go func(url string) {
+			defer wg.Done()
+			content, err := ca.fetcher.Fetch(ctx, url)
+			if err != nil {
+				errs <- err
+				return
+			}
+			processedContent, err := ca.processor.Process(ctx, content)
+			if err != nil {
+				errs <- err
+				return
+			}
+			resChan <- processedContent
+			close(resChan)
+		}(url)
+	}
+	wg.Wait()
+	close(errs)
+	var processedData []ProcessedData
+	for res := range resChan {
+		processedData = append(processedData, res)
+	}
+	var errList []error
+	for err := range errs {
+		errList = append(errList, err)
+	}
+	return processedData, errList
 }
 
 // Fetcher
