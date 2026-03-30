@@ -397,15 +397,10 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 
 	// New request with context added
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-
-	// Limiter init
-	// TODO refactoring
-	limiter := rate.NewLimiter(rate.Limit(1), 5)
-	hf.Limiter = limiter
-	// Send the requst throug the limiter
-	if err := hf.Limiter.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("fetcher rate limiter: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
 	}
+
 	resp, err := hf.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("get request: %w", err)
@@ -561,7 +556,7 @@ func NewCircuitBreaker(failMax int, resetTime time.Duration) *CircuitBreaker {
 }
 
 // Execute check circuit braker state and execute callback func
-func (cb *CircuitBreaker) Exexute(
+func (cb *CircuitBreaker) Execute(
 	ctx context.Context,
 	url string,
 	operate func(context.Context, string) ([]byte, error),
@@ -586,6 +581,10 @@ func (cb *CircuitBreaker) Exexute(
 		cb.mu.Lock()
 		cb.failCount++
 		cb.lastFailTime = time.Now()
+		cb.mu.Unlock()
+	} else {
+		cb.mu.Lock()
+		cb.failCount = 0
 		cb.mu.Unlock()
 	}
 	// Returns result of callback
