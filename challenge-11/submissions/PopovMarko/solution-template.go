@@ -13,6 +13,7 @@ import (
 
 	// Add any necessary imports here
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
 	"golang.org/x/time/rate"
 )
 
@@ -34,16 +35,57 @@ var (
 	ErrBadParam        = errors.New("bad parameter")
 	ErrNilReceiver     = errors.New("nil receiver")
 	ErrBadUrl          = errors.New("bad or empty url")
+	ErrShutdown        = errors.New("aggregator is shut down")
 	ErrTooManyFailures = errors.New("too many failures")
 )
 
+// HTTPStatusError reports a non-success HTTP response code.
+type HTTPStatusError struct {
+	StatusCode int
+	URL        string
+}
+
+func (e *HTTPStatusError) Error() string {
+	return fmt.Sprintf("unexpected status code %d for %s", e.StatusCode, e.URL)
+}
+
 // ProcessedData represents structured data extracted from raw content
 type ProcessedData struct {
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Keywords    []string  `json:"keywords"`
-	Timestamp   time.Time `json:"timestamp"`
-	Source      string    `json:"source"`
+	Title       string
+	Description string
+	Keywords    []string
+	Timestamp   time.Time
+	Source      string
+}
+
+// MultiError preserves all errors produced during concurrent processing.
+type MultiError struct {
+	errs []error
+}
+
+func (m MultiError) Error() string {
+	if len(m.errs) == 0 {
+		return ""
+	}
+	if len(m.errs) == 1 {
+		return m.errs[0].Error()
+	}
+
+	var b strings.Builder
+	b.WriteString("multiple errors:")
+	for _, err := range m.errs {
+		if err == nil {
+			continue
+		}
+		b.WriteString("\n- ")
+		b.WriteString(err.Error())
+	}
+
+	return b.String()
+}
+
+func (m MultiError) HasErrors() bool {
+	return len(m.errs) > 0
 }
 
 // Aggregator - the main orchestrator
@@ -54,7 +96,12 @@ type ContentAggregator struct {
 	processor         ContentProcessor
 	workerCount       int
 	requestsPerSecond int
-	wg                sync.WaitGroup
+	limiter           *rate.Limiter
+	activeRuns        sync.WaitGroup
+	mu                sync.RWMutex
+	shutdown          bool
+	shutdownCh        chan struct{}
+	closeOnce         sync.Once
 }
 
 // NewContentAggregator creates a new ContentAggregator with the specified configuration
@@ -76,6 +123,8 @@ func NewContentAggregator(
 		processor:         processor,
 		workerCount:       workerCount,
 		requestsPerSecond: requestsPerSecond,
+		limiter:           rate.NewLimiter(rate.Limit(requestsPerSecond), requestsPerSecond),
+		shutdownCh:        make(chan struct{}),
 	}
 }
 
@@ -86,49 +135,101 @@ func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, error) {
-	// TODO: Implement concurrent fetching and processing with proper error handling
-	// TODO
-	// ca.fetcher.limiter = rate.NewLimiter()
+	if ca == nil {
+		return nil, fmt.Errorf("aggregator error: %w", ErrNilReceiver)
+	}
+
+	if len(urls) == 0 {
+		return []ProcessedData{}, nil
+	}
+
+	ca.mu.RLock()
+	if ca.shutdown {
+		ca.mu.RUnlock()
+		return nil, fmt.Errorf("aggregator error: %w", ErrShutdown)
+	}
+	ca.activeRuns.Add(1)
+	ca.mu.RUnlock()
+	defer ca.activeRuns.Done()
+
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go func() {
+		select {
+		case <-ca.shutdownCh:
+			cancel()
+		case <-runCtx.Done():
+		}
+	}()
+
 	jobs := make(chan string)
 	results := make(chan ProcessedData)
-	errors := make(chan error)
+	errCh := make(chan error)
 
 	// Write jobs (URLs) into jobs channel
 	go func() {
 		for _, url := range urls {
-			jobs <- url
+			select {
+			case <-runCtx.Done():
+				close(jobs)
+				return
+			case jobs <- url:
+			}
 		}
 		close(jobs)
 	}()
 
-	ca.workerPool(ctx, jobs, results, errors)
+	ca.workerPool(runCtx, jobs, results, errCh)
 
-	var result []ProcessedData
-	// for res := range results {
-	// 	result = append(result, res)
-	// }
+	collected := make([]ProcessedData, 0, len(urls))
+	var allErrs MultiError
 
 	for {
+		if results == nil && errCh == nil {
+			if allErrs.HasErrors() {
+				return collected, allErrs
+			}
+			return collected, nil
+		}
+
 		select {
 		case res, ok := <-results:
 			if !ok {
-				return result, nil
+				results = nil
+				continue
 			}
-			result = append(result, res)
-		case _, ok := <-errors:
+			collected = append(collected, res)
+		case err, ok := <-errCh:
 			if !ok {
-				return result, nil
+				errCh = nil
+				continue
 			}
-		case <-ctx.Done():
-			err := ca.Shutdown()
-			return nil, err
+			if err != nil {
+				allErrs.errs = append(allErrs.errs, err)
+			}
+		case <-runCtx.Done():
+			if allErrs.HasErrors() {
+				allErrs.errs = append(allErrs.errs, runCtx.Err())
+				return collected, allErrs
+			}
+			return collected, runCtx.Err()
 		}
 	}
 }
 
 // Shutdown performs cleanup and ensures all resources are properly released
 func (ca *ContentAggregator) Shutdown() error {
-	// TODO: Implement proper shutdown logic
+	if ca == nil {
+		return fmt.Errorf("aggregator error: %w", ErrNilReceiver)
+	}
+
+	ca.closeOnce.Do(func() {
+		ca.mu.Lock()
+		ca.shutdown = true
+		close(ca.shutdownCh)
+		ca.mu.Unlock()
+	})
+	ca.activeRuns.Wait()
 	return nil
 }
 
@@ -139,27 +240,62 @@ func (ca *ContentAggregator) workerPool(
 	results chan<- ProcessedData,
 	errors chan<- error,
 ) {
+	var wg sync.WaitGroup
 	for i := 0; i < ca.workerCount; i++ {
-		ca.wg.Add(1)
+		wg.Add(1)
 		go func() {
-			defer ca.wg.Done()
-			for job := range jobs {
+			defer wg.Done()
+			for {
+				var job string
+				var ok bool
+				select {
+				case <-ctx.Done():
+					return
+				case job, ok = <-jobs:
+					if !ok {
+						return
+					}
+				}
+
+				if ca.limiter != nil {
+					if err := ca.limiter.Wait(ctx); err != nil {
+						select {
+						case <-ctx.Done():
+							return
+						case errors <- err:
+						}
+						return
+					}
+				}
+
 				content, err := ca.fetcher.Fetch(ctx, job)
 				if err != nil {
-					errors <- err
+					select {
+					case <-ctx.Done():
+						return
+					case errors <- err:
+					}
 					continue
 				}
 				processedContent, err := ca.processor.Process(ctx, content)
 				if err != nil {
-					errors <- err
+					select {
+					case <-ctx.Done():
+						return
+					case errors <- err:
+					}
 					continue
 				}
-				results <- processedContent
+				select {
+				case <-ctx.Done():
+					return
+				case results <- processedContent:
+				}
 			}
 		}()
 	}
 	go func() {
-		ca.wg.Wait()
+		wg.Wait()
 		close(results)
 		close(errors)
 	}()
@@ -170,39 +306,74 @@ func (ca *ContentAggregator) fanOut(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, []error) {
-	resChan := make(chan ProcessedData)
-	errs := make(chan error)
-	// TODO: Implement fan-out, fan-in pattern
-	wg := sync.WaitGroup{}
+	if ca == nil {
+		return nil, []error{fmt.Errorf("aggregator error: %w", ErrNilReceiver)}
+	}
+	if len(urls) == 0 {
+		return []ProcessedData{}, nil
+	}
+
+	resChan := make(chan ProcessedData, len(urls))
+	errs := make(chan error, len(urls))
+	var wg sync.WaitGroup
+
 	for _, url := range urls {
 		url := url
 		wg.Add(1)
-		go func(url string) {
+		go func() {
 			defer wg.Done()
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			content, err := ca.fetcher.Fetch(ctx, url)
 			if err != nil {
-				errs <- err
+				select {
+				case <-ctx.Done():
+				case errs <- err:
+				}
 				return
 			}
+
 			processedContent, err := ca.processor.Process(ctx, content)
 			if err != nil {
-				errs <- err
+				select {
+				case <-ctx.Done():
+				case errs <- err:
+				}
 				return
 			}
-			resChan <- processedContent
-			close(resChan)
-		}(url)
+
+			select {
+			case <-ctx.Done():
+			case resChan <- processedContent:
+			}
+		}()
 	}
-	wg.Wait()
-	close(errs)
-	var processedData []ProcessedData
+
+	go func() {
+		wg.Wait()
+		close(resChan)
+		close(errs)
+	}()
+
+	processedData := make([]ProcessedData, 0, len(urls))
 	for res := range resChan {
 		processedData = append(processedData, res)
 	}
-	var errList []error
+
+	errList := make([]error, 0)
 	for err := range errs {
 		errList = append(errList, err)
 	}
+
+	if ctx.Err() != nil {
+		errList = append(errList, ctx.Err())
+	}
+
 	return processedData, errList
 }
 
@@ -243,6 +414,13 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// Request body gefer close
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, &HTTPStatusError{
+			StatusCode: resp.StatusCode,
+			URL:        url,
+		}
+	}
+
 	// Read the body of request
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -259,6 +437,23 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 type HTMLProcessor struct {
 }
 
+var voidHTMLElements = map[string]struct{}{
+	"area":   {},
+	"base":   {},
+	"br":     {},
+	"col":    {},
+	"embed":  {},
+	"hr":     {},
+	"img":    {},
+	"input":  {},
+	"link":   {},
+	"meta":   {},
+	"param":  {},
+	"source": {},
+	"track":  {},
+	"wbr":    {},
+}
+
 // Process extracts structured data from HTML content
 func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (ProcessedData, error) {
 	// Input parameter validation
@@ -268,6 +463,9 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	if len(content) == 0 {
 		return ProcessedData{}, fmt.Errorf("processor error: %w", ErrBadParam)
 	}
+	if err := validateHTML(content); err != nil {
+		return ProcessedData{}, fmt.Errorf("processor error: %w", err)
+	}
 
 	// Data processing
 	var res ProcessedData
@@ -276,7 +474,7 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	if err != nil {
 		return ProcessedData{}, err
 	}
-	title := doc.Find("Title").Text()
+	title := doc.Find("title").Text()
 	res.Title = title
 	doc.Find("meta").Each(func(i int, s *goquery.Selection) {
 		name, _ := s.Attr("name")
@@ -285,11 +483,55 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 		case name == "description":
 			res.Description = content
 		case name == "keywords":
-			res.Keywords = append(res.Keywords, content)
+			temp := strings.Split(content, ",")
+			res.Keywords = append(res.Keywords, temp...)
 		}
 	})
 	return res, nil
 
+}
+
+func validateHTML(content []byte) error {
+	tokenizer := html.NewTokenizer(strings.NewReader(string(content)))
+	stack := make([]string, 0)
+	foundMarkup := false
+
+	for {
+		switch tokenizer.Next() {
+		case html.ErrorToken:
+			err := tokenizer.Err()
+			if errors.Is(err, io.EOF) {
+				if !foundMarkup {
+					return ErrBadParam
+				}
+				if len(stack) != 0 {
+					return fmt.Errorf("unclosed html tag: %s", stack[len(stack)-1])
+				}
+				return nil
+			}
+			return err
+		case html.StartTagToken:
+			token := tokenizer.Token()
+			foundMarkup = true
+			if _, isVoid := voidHTMLElements[token.Data]; isVoid {
+				continue
+			}
+			stack = append(stack, token.Data)
+		case html.SelfClosingTagToken:
+			foundMarkup = true
+		case html.EndTagToken:
+			token := tokenizer.Token()
+			foundMarkup = true
+			if len(stack) == 0 {
+				return fmt.Errorf("unexpected closing html tag: %s", token.Data)
+			}
+			last := stack[len(stack)-1]
+			if last != token.Data {
+				return fmt.Errorf("mismatched html tag: expected </%s>, got </%s>", last, token.Data)
+			}
+			stack = stack[:len(stack)-1]
+		}
+	}
 }
 
 // Retrier
