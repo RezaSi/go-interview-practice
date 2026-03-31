@@ -286,6 +286,12 @@ func (ca *ContentAggregator) workerPool(
 					}
 					continue
 				}
+				if processedContent.Source == "" {
+					processedContent.Source = job
+				}
+				if processedContent.Timestamp.IsZero() {
+					processedContent.Timestamp = time.Now().UTC()
+				}
 				select {
 				case <-ctx.Done():
 					return
@@ -346,7 +352,12 @@ func (ca *ContentAggregator) fanOut(
 				}
 				return
 			}
-
+			if processedContent.Source == "" {
+				processedContent.Source = url
+			}
+			if processedContent.Timestamp.IsZero() {
+				processedContent.Timestamp = time.Now().UTC()
+			}
 			select {
 			case <-ctx.Done():
 			case resChan <- processedContent:
@@ -394,14 +405,18 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	if url == "" {
 		return nil, fmt.Errorf("fetcher error: %w", ErrBadUrl)
 	}
-
-	// New request with context added
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+	client := hf.Client
+	if client == nil {
+		client = http.DefaultClient
 	}
 
-	resp, err := hf.Client.Do(req)
+	// New request with context added
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetcher error: %w: %v", ErrBadUrl, err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("get request: %w", err)
 	}
@@ -478,8 +493,13 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 		case name == "description":
 			res.Description = content
 		case name == "keywords":
-			temp := strings.Split(content, ",")
-			res.Keywords = append(res.Keywords, temp...)
+			for _, keyword := range strings.Split(content, ",") {
+				keyword = strings.TrimSpace(keyword)
+				if keyword != "" {
+					res.Keywords = append(res.Keywords, keyword)
+
+				}
+			}
 		}
 	})
 	return res, nil
@@ -529,8 +549,6 @@ func validateHTML(content []byte) error {
 	}
 }
 
-// Retrier
-
 // Circuit breaker
 // ===============
 // CircuitBreaker struct represents simple circuit breaker
@@ -562,6 +580,13 @@ func (cb *CircuitBreaker) Execute(
 	operate func(context.Context, string) ([]byte, error),
 ) (
 	[]byte, error) {
+	if cb == nil {
+		return nil, fmt.Errorf("circuit breaker error: %w", ErrNilReceiver)
+	}
+	if operate == nil {
+		return nil, fmt.Errorf("circuit breader error: %w", ErrBadParam)
+	}
+
 	cb.mu.Lock()
 	// Check for circuit braker state
 	if cb.failCount >= cb.failMax {
