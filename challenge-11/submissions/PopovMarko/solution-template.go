@@ -84,6 +84,10 @@ func (m MultiError) Error() string {
 	return b.String()
 }
 
+func (m MultiError) Unwrap() []error {
+	return m.errs
+
+}
 func (m MultiError) HasErrors() bool {
 	return len(m.errs) > 0
 }
@@ -308,6 +312,7 @@ func (ca *ContentAggregator) workerPool(
 }
 
 // fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
+// The method is not used in the main flow but can be used for testing or as an alternative approach to workerPool
 func (ca *ContentAggregator) fanOut(
 	ctx context.Context,
 	urls []string,
@@ -402,11 +407,10 @@ func (ca *ContentAggregator) validate() error {
 // ========
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
 type HTTPFetcher struct {
-	Client  *http.Client
-	Limiter *rate.Limiter
+	Client *http.Client
 }
 
-// Fetch retrieves content from a URL via HTTP not exccided rate limit
+// Fetch retrieves content from a URL via HTTP not exceeding rate limit
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// Validation input parameters
 	if hf == nil {
@@ -431,7 +435,7 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 		return nil, fmt.Errorf("get request: %w", err)
 	}
 
-	// Request body gefer close
+	// Request body defer close
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
