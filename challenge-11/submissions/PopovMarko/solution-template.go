@@ -699,7 +699,7 @@ func (cb *CircuitBreaker) Execute(
 		return nil, fmt.Errorf("circuit breaker error: %w", ErrNilReceiver)
 	}
 	if operate == nil {
-		return nil, fmt.Errorf("circuit breader error: %w", ErrBadParam)
+		return nil, fmt.Errorf("circuit breaker error: %w", ErrBadParam)
 	}
 
 	cb.mu.Lock()
@@ -710,10 +710,10 @@ func (cb *CircuitBreaker) Execute(
 		} else {
 			// If open returns error
 			cb.mu.Unlock()
-			return nil, fmt.Errorf("circuit braker: %w", ErrTooManyFailures)
+			return nil, fmt.Errorf("circuit breaker: %w", ErrTooManyFailures)
 		}
 	}
-	// If closd execute callback
+	// If closed, execute callback
 	cb.mu.Unlock()
 	res, err := operate(ctx, url)
 	// If operate returns error renew fail counter and time of last fail
@@ -732,5 +732,3 @@ func (cb *CircuitBreaker) Execute(
 	// Returns result of callback
 	return res, err
 }
-
-// Cache
