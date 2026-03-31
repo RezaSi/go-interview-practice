@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	// Add any necessary imports here
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 	"golang.org/x/time/rate"
@@ -187,9 +186,14 @@ func (ca *ContentAggregator) FetchAndProcess(
 
 	collected := make([]ProcessedData, 0, len(urls))
 	var allErrs MultiError
+	doneCh := runCtx.Done()
+	var cancelErr error
 
 	for {
 		if results == nil && errCh == nil {
+			if cancelErr != nil {
+				allErrs.errs = append(allErrs.errs, cancelErr)
+			}
 			if allErrs.HasErrors() {
 				return collected, allErrs
 			}
@@ -211,12 +215,9 @@ func (ca *ContentAggregator) FetchAndProcess(
 			if err != nil {
 				allErrs.errs = append(allErrs.errs, err)
 			}
-		case <-runCtx.Done():
-			if allErrs.HasErrors() {
-				allErrs.errs = append(allErrs.errs, runCtx.Err())
-				return collected, allErrs
-			}
-			return collected, runCtx.Err()
+		case <-doneCh:
+			cancelErr = runCtx.Err()
+			doneCh = nil
 		}
 	}
 }
@@ -244,6 +245,14 @@ func (ca *ContentAggregator) workerPool(
 	results chan<- ProcessedData,
 	errors chan<- error,
 ) {
+	if err := ca.validate(); err != nil {
+		select {
+		case <-ctx.Done():
+			return
+		case errors <- err:
+			return
+		}
+	}
 	var wg sync.WaitGroup
 	for i := 0; i < ca.workerCount; i++ {
 		wg.Add(1)
@@ -312,12 +321,13 @@ func (ca *ContentAggregator) workerPool(
 }
 
 // fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
+// workerCount ignored in this method due to the worker number defined by the number of URLs.
 // The method is not used in the main flow but can be used for testing or as an alternative approach to workerPool
 func (ca *ContentAggregator) fanOut(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, []error) {
-	if ca == nil {
+	if err := ca.validate(); err != nil {
 		return nil, []error{fmt.Errorf("aggregator error: %w", ErrNilReceiver)}
 	}
 	if len(urls) == 0 {
@@ -340,6 +350,17 @@ func (ca *ContentAggregator) fanOut(
 			default:
 			}
 
+			if ca.limiter != nil {
+				if err := ca.limiter.Wait(ctx); err != nil {
+					select {
+					case <-ctx.Done():
+						return
+					case errs <- err:
+						return
+					}
+				}
+				return
+			}
 			content, err := ca.fetcher.Fetch(ctx, url)
 			if err != nil {
 				select {
@@ -407,7 +428,8 @@ func (ca *ContentAggregator) validate() error {
 // ========
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
 type HTTPFetcher struct {
-	Client *http.Client
+	Client      *http.Client
+	MaxBuffSize int64
 }
 
 // Fetch retrieves content from a URL via HTTP not exceeding rate limit
@@ -446,9 +468,15 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	}
 
 	// Read the body of request
-	body, err := io.ReadAll(resp.Body)
+	if hf.MaxBuffSize <= 0 {
+		hf.MaxBuffSize = 4 << 20
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, hf.MaxBuffSize))
 	if err != nil {
 		return nil, fmt.Errorf("response body: %w", err)
+	}
+	if len(body) > int(hf.MaxBuffSize) {
+		return nil, fmt.Errorf("response body too large")
 	}
 
 	//Return body as []byte
