@@ -135,8 +135,8 @@ func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, error) {
-	if ca == nil {
-		return nil, fmt.Errorf("aggregator error: %w", ErrNilReceiver)
+	if err := ca.validate(); err != nil {
+		return nil, err
 	}
 
 	if len(urls) == 0 {
@@ -219,8 +219,8 @@ func (ca *ContentAggregator) FetchAndProcess(
 
 // Shutdown performs cleanup and ensures all resources are properly released
 func (ca *ContentAggregator) Shutdown() error {
-	if ca == nil {
-		return fmt.Errorf("aggregator error: %w", ErrNilReceiver)
+	if err := ca.validate(); err != nil {
+		return err
 	}
 
 	ca.closeOnce.Do(func() {
@@ -388,6 +388,16 @@ func (ca *ContentAggregator) fanOut(
 	return processedData, errList
 }
 
+func (ca *ContentAggregator) validate() error {
+	if ca == nil {
+		return fmt.Errorf("aggregator error: %w", ErrNilReceiver)
+	}
+	if ca.fetcher == nil || ca.processor == nil || ca.workerCount <= 0 || ca.requestsPerSecond <= 0 || ca.shutdownCh == nil {
+		return fmt.Errorf("aggregator error: %w", ErrBadParam)
+	}
+	return nil
+}
+
 // Fetcher
 // ========
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
@@ -447,21 +457,118 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 type HTMLProcessor struct {
 }
 
-var voidHTMLElements = map[string]struct{}{
-	"area":   {},
-	"base":   {},
-	"br":     {},
-	"col":    {},
-	"embed":  {},
-	"hr":     {},
-	"img":    {},
-	"input":  {},
-	"link":   {},
-	"meta":   {},
-	"param":  {},
-	"source": {},
-	"track":  {},
-	"wbr":    {},
+var standardHTMLElements = map[string]struct{}{
+	"a":          {},
+	"abbr":       {},
+	"address":    {},
+	"area":       {},
+	"article":    {},
+	"aside":      {},
+	"audio":      {},
+	"b":          {},
+	"base":       {},
+	"bdi":        {},
+	"bdo":        {},
+	"blockquote": {},
+	"body":       {},
+	"br":         {},
+	"button":     {},
+	"canvas":     {},
+	"caption":    {},
+	"cite":       {},
+	"code":       {},
+	"col":        {},
+	"colgroup":   {},
+	"data":       {},
+	"datalist":   {},
+	"dd":         {},
+	"del":        {},
+	"details":    {},
+	"dfn":        {},
+	"dialog":     {},
+	"div":        {},
+	"dl":         {},
+	"dt":         {},
+	"em":         {},
+	"embed":      {},
+	"fieldset":   {},
+	"figcaption": {},
+	"figure":     {},
+	"footer":     {},
+	"form":       {},
+	"h1":         {},
+	"h2":         {},
+	"h3":         {},
+	"h4":         {},
+	"h5":         {},
+	"h6":         {},
+	"head":       {},
+	"header":     {},
+	"hgroup":     {},
+	"hr":         {},
+	"html":       {},
+	"i":          {},
+	"iframe":     {},
+	"img":        {},
+	"input":      {},
+	"ins":        {},
+	"kbd":        {},
+	"label":      {},
+	"legend":     {},
+	"li":         {},
+	"link":       {},
+	"main":       {},
+	"map":        {},
+	"mark":       {},
+	"meta":       {},
+	"meter":      {},
+	"nav":        {},
+	"noscript":   {},
+	"object":     {},
+	"ol":         {},
+	"optgroup":   {},
+	"option":     {},
+	"output":     {},
+	"p":          {},
+	"picture":    {},
+	"pre":        {},
+	"progress":   {},
+	"q":          {},
+	"rp":         {},
+	"rt":         {},
+	"ruby":       {},
+	"s":          {},
+	"samp":       {},
+	"script":     {},
+	"search":     {},
+	"section":    {},
+	"select":     {},
+	"slot":       {},
+	"small":      {},
+	"source":     {},
+	"span":       {},
+	"strong":     {},
+	"style":      {},
+	"sub":        {},
+	"summary":    {},
+	"sup":        {},
+	"table":      {},
+	"tbody":      {},
+	"td":         {},
+	"template":   {},
+	"textarea":   {},
+	"tfoot":      {},
+	"th":         {},
+	"thead":      {},
+	"time":       {},
+	"title":      {},
+	"tr":         {},
+	"track":      {},
+	"u":          {},
+	"ul":         {},
+	"var":        {},
+	"video":      {},
+	"wbr":        {},
 }
 
 // Process extracts structured data from HTML content
@@ -507,46 +614,50 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 }
 
 func validateHTML(content []byte) error {
+	if len(strings.TrimSpace(string(content))) == 0 {
+		return ErrBadParam
+	}
+
+	if _, err := html.Parse(strings.NewReader(string(content))); err != nil {
+		return err
+	}
+
 	tokenizer := html.NewTokenizer(strings.NewReader(string(content)))
-	stack := make([]string, 0)
-	foundMarkup := false
+	foundRecognizedElement := false
 
 	for {
 		switch tokenizer.Next() {
 		case html.ErrorToken:
 			err := tokenizer.Err()
 			if errors.Is(err, io.EOF) {
-				if !foundMarkup {
+				if !foundRecognizedElement {
 					return ErrBadParam
-				}
-				if len(stack) != 0 {
-					return fmt.Errorf("unclosed html tag: %s", stack[len(stack)-1])
 				}
 				return nil
 			}
 			return err
 		case html.StartTagToken:
 			token := tokenizer.Token()
-			foundMarkup = true
-			if _, isVoid := voidHTMLElements[token.Data]; isVoid {
-				continue
+			if isRecognizedHTMLElement(token.Data) {
+				foundRecognizedElement = true
 			}
-			stack = append(stack, token.Data)
 		case html.SelfClosingTagToken:
-			foundMarkup = true
-		case html.EndTagToken:
 			token := tokenizer.Token()
-			foundMarkup = true
-			if len(stack) == 0 {
-				return fmt.Errorf("unexpected closing html tag: %s", token.Data)
+			if isRecognizedHTMLElement(token.Data) {
+				foundRecognizedElement = true
 			}
-			last := stack[len(stack)-1]
-			if last != token.Data {
-				return fmt.Errorf("mismatched html tag: expected </%s>, got </%s>", last, token.Data)
-			}
-			stack = stack[:len(stack)-1]
 		}
 	}
+}
+
+func isRecognizedHTMLElement(tag string) bool {
+	tag = strings.ToLower(tag)
+	if _, ok := standardHTMLElements[tag]; ok {
+		return true
+	}
+
+	// Custom elements must contain a hyphen by HTML spec.
+	return strings.Contains(tag, "-")
 }
 
 // Circuit breaker
@@ -603,10 +714,12 @@ func (cb *CircuitBreaker) Execute(
 	res, err := operate(ctx, url)
 	// If operate returns error renew fail counter and time of last fail
 	if err != nil {
-		cb.mu.Lock()
-		cb.failCount++
-		cb.lastFailTime = time.Now()
-		cb.mu.Unlock()
+		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			cb.mu.Lock()
+			cb.failCount++
+			cb.lastFailTime = time.Now()
+			cb.mu.Unlock()
+		}
 	} else {
 		cb.mu.Lock()
 		cb.failCount = 0
