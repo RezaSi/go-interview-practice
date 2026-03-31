@@ -151,13 +151,13 @@ func (ca *ContentAggregator) FetchAndProcess(
 		ca.mu.RUnlock()
 		return nil, fmt.Errorf("aggregator error: %w", ErrShutdown)
 	}
-	ca.activeRuns.Add(1)
 	ca.mu.RUnlock()
-	defer ca.activeRuns.Done()
 
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	ca.activeRuns.Add(1)
 	go func() {
+		defer ca.activeRuns.Done()
 		select {
 		case <-ca.shutdownCh:
 			cancel()
@@ -170,7 +170,9 @@ func (ca *ContentAggregator) FetchAndProcess(
 	errCh := make(chan error)
 
 	// Write jobs (URLs) into jobs channel
+	ca.activeRuns.Add(1)
 	go func() {
+		defer ca.activeRuns.Done()
 		for _, url := range urls {
 			select {
 			case <-runCtx.Done():
@@ -359,7 +361,6 @@ func (ca *ContentAggregator) fanOut(
 						return
 					}
 				}
-				return
 			}
 			content, err := ca.fetcher.Fetch(ctx, url)
 			if err != nil {
@@ -471,7 +472,7 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	if hf.MaxBuffSize <= 0 {
 		hf.MaxBuffSize = 4 << 20
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, hf.MaxBuffSize))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, hf.MaxBuffSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("response body: %w", err)
 	}
@@ -716,7 +717,7 @@ func NewCircuitBreaker(failMax int, resetTime time.Duration) *CircuitBreaker {
 	}
 }
 
-// Execute check circuit braker state and execute callback func
+// Execute check circuit breaker state and execute callback func
 func (cb *CircuitBreaker) Execute(
 	ctx context.Context,
 	url string,
