@@ -93,7 +93,7 @@ func NewTriangle(a, b, c float64) (*Triangle, error) {
         return nil, ErrNegativeDimension
     }
     
-    if a + b <= c {
+    if a+b <= c || a+c <= b || b+c <= a {
         return nil, ErrInavlidDemension
     }
     
@@ -142,10 +142,14 @@ func (sc *ShapeCalculator) TotalArea(shapes []Shape) float64 {
 
 // LargestShape finds the shape with the largest area
 func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
-    var max float64
-    var maxShape Shape
+    if shapes == nil || len(shapes) == 0 {
+        return nil
+    }
     
-    for _, s := range shapes {
+    max := shapes[0].Area()
+    maxShape := shapes[0]
+    
+    for _, s := range shapes[1:] {
         if max < s.Area() {
             max = s.Area()
             maxShape = s
