@@ -45,7 +45,7 @@ type NegativeAmountError struct {
 }
 
 func (e NegativeAmountError) Error() string {
-	return ""
+	return "amount cannot be negative"
 }
 
 // ExceedsLimitError occurs when a deposit or withdrawal amount exceeds the defined limit.
@@ -53,7 +53,7 @@ type ExceedsLimitError struct {
 }
 
 func (e ExceedsLimitError) Error() string {
-	return ""
+	return "exceeds maximum transaction limit"
 }
 
 // NewBankAccount creates a new bank account with the given parameters.
@@ -90,7 +90,10 @@ func (a *BankAccount) Deposit(amount float64) error {
         return ExceedsLimitError{}
     }
     
-    a.addToBalance(amount)
+    a.mu.Lock()
+    defer a.mu.Unlock()
+    
+    a.Balance += amount
     
 	return nil
 }
@@ -107,11 +110,14 @@ func (a *BankAccount) Withdraw(amount float64) error {
         return ExceedsLimitError{}
     }
     
+    a.mu.Lock()
+    defer a.mu.Unlock()
+    
     if a.Balance - amount < a.MinBalance {
         return InsufficientFundsError{minBalance: a.MinBalance}
     }
     
-    a.addToBalance(-amount)
+    a.Balance -= amount
     
 	return nil
 }
@@ -129,11 +135,4 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
     }
     
 	return nil
-}
-
-func (a *BankAccount) addToBalance(amount float64) {
-    a.mu.Lock()
-    defer a.mu.Unlock()
-    
-    a.Balance += amount
 }
