@@ -43,6 +43,7 @@ type TokenBucketLimiter struct {
 	lastRefill time.Time // last token refill time
 	metrics    RateLimiterMetrics
 	waitQueue  []chan struct{} // queue for waiting requests
+	maxQueue   int
 }
 
 // NewTokenBucketLimiter creates a new token bucket rate limiter
@@ -58,19 +59,17 @@ func NewTokenBucketLimiter(rate int, burst int) RateLimiter {
 		lastRefill: time.Now(),
 		metrics:    RateLimiterMetrics{},
 		waitQueue:  make([]chan struct{}, 0),
+		maxQueue:   1000,
 	}
 }
 
-// Allow checks if a request cat be allowed immediately without blocking
+// Allow checks if a request can be allowed immediately without blocking
+// Call thir method under lock in concurrent scenarios
 func (tb *TokenBucketLimiter) Allow() bool {
 	// Nil receiver check po prevent panics
 	if tb == nil {
 		return false
 	}
-
-	// Lock TokenBucketLimiter states for thread safety
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
 
 	// Generate new tokens based on elapsed time since last refill
 	now := time.Now()
@@ -106,6 +105,8 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 }
 
 // Wait blocks untill a request can be allowed or context is canceled or deadline is exceeded
+// if the context is cancelled or deadline is exceeeded Wait closes the channel in TokenBucketLimiter.waitQueue
+// always check the channel for closure !
 func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	// Nil reciever cheack to prevent panics
 	if tb == nil {
@@ -116,26 +117,35 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	// otherwise calculate wait time
 
 	// Returns immediately if request allowed
+	tb.mu.Lock()
 	if tb.Allow() {
+		tb.mu.Unlock()
 		return nil
 	}
 	ch := make(chan struct{})
-	tb.mu.Lock()
 
 	// Add a nnew channel to the wait queue for this request
+	if len(tb.waitQueue) >= tb.maxQueue {
+		tb.mu.Unlock()
+		return fmt.Errorf("token bucher limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
+	}
 	tb.waitQueue = append(tb.waitQueue, ch)
 
-	// Calculate token dificit and correspondeng wait time
-	tokenDef := len(tb.waitQueue) + 1 - int(tb.tokens)
-	waitTime := time.Duration(float64(tokenDef) / float64(tb.rate) * float64(time.Second))
+	// Calculate token dificit and correspondeng wait and average wait time
+	tokenDef := float64(len(tb.waitQueue)+1) - tb.tokens
+	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
+	averageWaitTime := tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
+		waitTime/time.Duration(float64(tb.metrics.AllowedRequests+1))
 
 	// Update metrics with average wait time
 	// TODO Change this calculation to be more accuarate
-	tb.metrics.AverageWaitTime = waitTime
+	tb.metrics.AverageWaitTime = averageWaitTime
+
 	tb.mu.Unlock()
 
 	select {
 	case <-ctx.Done():
+		close(ch) // Clean up the wait queue channel
 		return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
 	case <-ch:
 		return nil
