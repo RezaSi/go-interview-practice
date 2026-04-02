@@ -38,7 +38,7 @@ type InsufficientFundsError struct {
 }
 
 func (e InsufficientFundsError) Error() string {
-	return fmt.Sprintf("unable to perform withdrawal as balance would go below minimum allowed (%v)", e.minBalance)
+	return fmt.Sprintf("unable to perform action would result in a balance under minimum (%v)", e.minBalance)
 }
 
 // NegativeAmountError occurs when an amount for deposit, withdrawal, or transfer is negative.
@@ -154,13 +154,8 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
     if withdrawalErr := a.Withdraw(amount); withdrawalErr != nil {
         return withdrawalErr
     }
-    
-    if depositErr := target.Deposit(amount); depositErr != nil {
-        a.mu.Lock()
-        a.Balance += amount
-        a.mu.Unlock()
-        return depositErr
-    }
+
+    target.Deposit(amount) // if Widthdrawal succeeds, Deposit is guaranteed to succeed
     
 	return nil
 }
