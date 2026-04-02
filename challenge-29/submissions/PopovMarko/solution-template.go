@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+// Custom errors
+var (
+	ErrNilReceiver     = fmt.Errorf("nil receiver")
+	ErrTooManyRequests = fmt.Errorf("too many requests")
+)
+
 // Core Rate Limiter Interface
 type RateLimiter interface {
 	Allow() bool
@@ -99,13 +105,34 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	return false
 }
 
+// Wait blocks untill a request can bi allowed or context is canceled or deadline is exceeded
 func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
-	// TODO: Implement blocking Wait method
-	// 1. If Allow() returns true, return immediately
-	// 2. Calculate wait time based on token deficit
-	// 3. Use context timeout and cancellation
-	// 4. Update average wait time metrics
-	return nil
+	// Nil reciever cheack to prevent panics
+	if tb == nil {
+		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
+	}
+
+	// Check for context cancellation. Default check if Allow returns true return immediately,
+	// otherwise calculate wait time
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
+	default:
+		if tb.Allow() {
+			return nil
+		}
+
+		// Calculate wait time based on token deficit
+		tb.mu.Lock()
+		defer tb.mu.Unlock()
+		tokenDef := len(tb.waitQueue) + 1 - int(tb.tokens)
+		waitTime := time.Duration(float64(tokenDef) / float64(tb.rate) * float64(time.Second))
+
+		// Update metrics with average wait time
+		// TODO Change this calculation to be more accuarate
+		tb.metrics.AverageWaitTime = waitTime
+		return fmt.Errorf("token bucket limiter method Wait: %w", ErrTooManyRequests)
+	}
 }
 
 func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
