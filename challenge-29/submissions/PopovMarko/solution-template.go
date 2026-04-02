@@ -105,7 +105,7 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	return false
 }
 
-// Wait blocks untill a request can bi allowed or context is canceled or deadline is exceeded
+// Wait blocks untill a request can be allowed or context is canceled or deadline is exceeded
 func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	// Nil reciever cheack to prevent panics
 	if tb == nil {
@@ -114,24 +114,31 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 
 	// Check for context cancellation. Default check if Allow returns true return immediately,
 	// otherwise calculate wait time
+
+	// Returns immediately if request allowed
+	if tb.Allow() {
+		return nil
+	}
+	ch := make(chan struct{})
+	tb.mu.Lock()
+
+	// Add a nnew channel to the wait queue for this request
+	tb.waitQueue = append(tb.waitQueue, ch)
+
+	// Calculate token dificit and correspondeng wait time
+	tokenDef := len(tb.waitQueue) + 1 - int(tb.tokens)
+	waitTime := time.Duration(float64(tokenDef) / float64(tb.rate) * float64(time.Second))
+
+	// Update metrics with average wait time
+	// TODO Change this calculation to be more accuarate
+	tb.metrics.AverageWaitTime = waitTime
+	tb.mu.Unlock()
+
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
-	default:
-		if tb.Allow() {
-			return nil
-		}
-
-		// Calculate wait time based on token deficit
-		tb.mu.Lock()
-		defer tb.mu.Unlock()
-		tokenDef := len(tb.waitQueue) + 1 - int(tb.tokens)
-		waitTime := time.Duration(float64(tokenDef) / float64(tb.rate) * float64(time.Second))
-
-		// Update metrics with average wait time
-		// TODO Change this calculation to be more accuarate
-		tb.metrics.AverageWaitTime = waitTime
-		return fmt.Errorf("token bucket limiter method Wait: %w", ErrTooManyRequests)
+	case <-ch:
+		return nil
 	}
 }
 
