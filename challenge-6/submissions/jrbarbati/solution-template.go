@@ -32,7 +32,7 @@ func CountWordFrequency(text string) map[string]int {
     text = string(splitRegex.ReplaceAll([]byte(text), []byte(" ")))
     text = string(alphaNumeric.ReplaceAll([]byte(text), []byte("")))
     
-    words := splitRegex.Split(strings.Trim(strings.ToLower(text), " "), -1)
+    words := strings.Fields(strings.ToLower(text))
     
     for _, w := range words {
         if _, ok := counts[w]; !ok {
