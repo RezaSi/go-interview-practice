@@ -64,7 +64,7 @@ func NewTokenBucketLimiter(rate int, burst int) RateLimiter {
 }
 
 // Allow checks if a request can be allowed immediately without blocking
-// Call thir method under lock in concurrent scenarios
+// Call this method under lock in concurrent scenarios
 func (tb *TokenBucketLimiter) Allow() bool {
 	// Nil receiver check po prevent panics
 	if tb == nil {
@@ -98,9 +98,39 @@ func (tb *TokenBucketLimiter) Allow() bool {
 	return false
 }
 
+// Allow checks if a n requests can be allowed immediately without blocking
+// Call this method under lock in concurrent scenarios
 func (tb *TokenBucketLimiter) AllowN(n int) bool {
-	// TODO: Implement AllowN method for token bucket
-	// Similar to Allow() but check for n tokens availability
+	// Nil receiver check po prevent panics
+	if tb == nil {
+		return false
+	}
+
+	// Generate new tokens based on elapsed time since last refill
+	now := time.Now()
+	elasped := now.Sub(tb.lastRefill).Seconds()
+	tb.tokens += float64(elasped) * float64(tb.rate)
+	tb.lastRefill = now
+
+	// Cap tokens at bust capasity
+	if tb.tokens > float64(tb.burst) {
+		tb.tokens = float64(tb.burst)
+	}
+
+	// Check if at least 1 token is avaliable for the request
+	if tb.tokens >= float64(n) {
+		tb.tokens -= float64(n)
+
+		// Update metrics
+		tb.metrics.TotalRequests += int64(n)
+		tb.metrics.AllowedRequests += int64(n)
+
+		return true
+	}
+
+	// Update metrics
+	tb.metrics.TotalRequests += int64(n)
+	tb.metrics.DeniedRequests += int64(n)
 	return false
 }
 
