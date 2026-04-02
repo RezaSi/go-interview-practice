@@ -158,7 +158,6 @@ func (ca *ContentAggregator) FetchAndProcess(
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
-		defer ca.activeRuns.Done()
 		select {
 		case <-ca.shutdownCh:
 			cancel()
@@ -472,15 +471,15 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// Read the body of request
 	maxBuffSize := hf.MaxBuffSize
 	if maxBuffSize <= 0 {
-		maxBuffSize = 4 << 20
+		maxBuffSize = 4 << 10
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, hf.MaxBuffSize+1))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBuffSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("response body: %w", err)
 	}
-	if int64(len(body)) > hf.MaxBuffSize {
-		return nil, fmt.Errorf("response body too large")
-	}
+	// if int64(len(body)) > hf.MaxBuffSize {
+	// 	return nil, fmt.Errorf("response body too large")
+	// }
 
 	//Return body as []byte
 	return body, nil
