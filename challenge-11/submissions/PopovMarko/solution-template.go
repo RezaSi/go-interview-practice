@@ -151,11 +151,12 @@ func (ca *ContentAggregator) FetchAndProcess(
 		ca.mu.RUnlock()
 		return nil, fmt.Errorf("aggregator error: %w", ErrShutdown)
 	}
+	ca.activeRuns.Add(1)
 	ca.mu.RUnlock()
+	defer ca.activeRuns.Done()
 
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	ca.activeRuns.Add(1)
 	go func() {
 		defer ca.activeRuns.Done()
 		select {
@@ -330,7 +331,7 @@ func (ca *ContentAggregator) fanOut(
 	urls []string,
 ) ([]ProcessedData, []error) {
 	if err := ca.validate(); err != nil {
-		return nil, []error{fmt.Errorf("aggregator error: %w", ErrNilReceiver)}
+		return nil, []error{err}
 	}
 	if len(urls) == 0 {
 		return []ProcessedData{}, nil
@@ -469,14 +470,15 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	}
 
 	// Read the body of request
-	if hf.MaxBuffSize <= 0 {
-		hf.MaxBuffSize = 4 << 20
+	maxBuffSize := hf.MaxBuffSize
+	if maxBuffSize <= 0 {
+		maxBuffSize = 4 << 20
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, hf.MaxBuffSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("response body: %w", err)
 	}
-	if len(body) > int(hf.MaxBuffSize) {
+	if int64(len(body)) > hf.MaxBuffSize {
 		return nil, fmt.Errorf("response body too large")
 	}
 
