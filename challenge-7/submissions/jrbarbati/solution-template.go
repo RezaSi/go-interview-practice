@@ -143,6 +143,9 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
     }
     
     if depositErr := target.Deposit(amount); depositErr != nil {
+        a.mu.Lock()
+        a.Balance += amount
+        a.mu.Unlock()
         return depositErr
     }
     
