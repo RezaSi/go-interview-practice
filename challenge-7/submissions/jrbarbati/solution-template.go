@@ -3,6 +3,7 @@ package challenge7
 
 import (
     "fmt"
+    "math"
 	"sync"
 )
 
@@ -63,6 +64,10 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
         return nil, AccountError{message: "Account needs both an ID and an Owner"}
     }
     
+    if !isFinite(initialBalance) || !isFinite(minBalance) {
+        return nil, AccountError{message: "inputs are invalid"}
+    }
+    
     if initialBalance < 0 || minBalance < 0 {
         return nil, NegativeAmountError{}
     }
@@ -84,6 +89,10 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 func (a *BankAccount) Deposit(amount float64) error {
     if a == nil {
         return AccountError{message: "account cannot be nil"}
+    }
+    
+    if !isFinite(amount) {
+        return ExceedsLimitError{}
     }
     
     if amount < 0 {
@@ -108,6 +117,10 @@ func (a *BankAccount) Deposit(amount float64) error {
 func (a *BankAccount) Withdraw(amount float64) error {
     if a == nil {
         return AccountError{message: "account cannot be nil"}
+    }
+    
+    if !isFinite(amount) {
+        return ExceedsLimitError{}
     }
     
     if amount < 0 {
@@ -150,4 +163,8 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
     }
     
 	return nil
+}
+
+func isFinite(value float64) bool {
+    return !math.IsNaN(value) && !math.IsInf(value, 0)
 }
