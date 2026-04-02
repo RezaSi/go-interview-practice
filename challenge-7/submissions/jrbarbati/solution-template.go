@@ -82,6 +82,10 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 // Deposit adds the specified amount to the account balance.
 // It returns an error if the amount is invalid or exceeds the transaction limit.
 func (a *BankAccount) Deposit(amount float64) error {
+    if a == nil {
+        return AccountError{message: "account cannot be nil"}
+    }
+    
     if amount < 0 {
         return NegativeAmountError{}
     }
@@ -102,6 +106,10 @@ func (a *BankAccount) Deposit(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Withdraw(amount float64) error {
+    if a == nil {
+        return AccountError{message: "account cannot be nil"}
+    }
+    
     if amount < 0 {
         return NegativeAmountError{}
     }
@@ -126,6 +134,10 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
+    if a == nil || target == nil {
+        return AccountError{message: "invalid source or target account"}
+    }
+    
     if withdrawalErr := a.Withdraw(amount); withdrawalErr != nil {
         return withdrawalErr
     }
