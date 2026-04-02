@@ -141,17 +141,22 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	return nil
 }
 
+// Limit returns the configured rate limit
 func (tb *TokenBucketLimiter) Limit() int {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
 	return tb.rate
 }
 
+// Burst returns the configured burst capacity
 func (tb *TokenBucketLimiter) Burst() int {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
 	return tb.burst
 }
 
+// Reset set tokens to burst capacity, reset metrics, clear wait queue
 func (tb *TokenBucketLimiter) Reset() {
-	// TODO: Reset the rate limiter state
-	// Set tokens to burst capacity, reset metrics, clear wait queue
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 	tb.tokens = float64(tb.burst)
@@ -160,12 +165,14 @@ func (tb *TokenBucketLimiter) Reset() {
 	tb.waitQueue = make([]chan struct{}, 0)
 }
 
+// GetMetrics returns current rate limiter metrics
 func (tb *TokenBucketLimiter) GetMetrics() RateLimiterMetrics {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 	return tb.metrics
 }
 
+// ===========================
 // Sliding Window Rate Limiter
 type SlidingWindowLimiter struct {
 	mu         sync.Mutex
