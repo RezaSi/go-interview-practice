@@ -12,6 +12,7 @@ import (
 var (
 	ErrNilReceiver     = fmt.Errorf("nil receiver")
 	ErrTooManyRequests = fmt.Errorf("too many requests")
+	ErrBadParam        = fmt.Errorf("bad parameter")
 )
 
 // Core Rate Limiter Interface
@@ -71,6 +72,9 @@ func (tb *TokenBucketLimiter) Allow() bool {
 		return false
 	}
 
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
 	// Generate new tokens based on elapsed time since last refill
 	now := time.Now()
 	elasped := now.Sub(tb.lastRefill).Seconds()
@@ -103,6 +107,9 @@ func (tb *TokenBucketLimiter) Allow() bool {
 func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	// Nil receiver check po prevent panics
 	if tb == nil {
+		return false
+	}
+	if n <= 0 {
 		return false
 	}
 
@@ -143,18 +150,10 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
 	}
 
-	// Check for context cancellation. Default check if Allow returns true return immediately,
-	// otherwise calculate wait time
-
-	// Returns immediately if request allowed
-	tb.mu.Lock()
-	if tb.Allow() {
-		tb.mu.Unlock()
-		return nil
-	}
 	ch := make(chan struct{})
 
 	// Add a new channel to the wait queue for this request
+	tb.mu.Lock()
 	if len(tb.waitQueue) >= tb.maxQueue {
 		tb.mu.Unlock()
 		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
@@ -173,19 +172,43 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 
 	tb.mu.Unlock()
 
-	select {
-	case <-ctx.Done():
-		close(ch) // Clean up the wait queue channel
-		return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
-	case <-ch:
-		return nil
+	for {
+		select {
+		case <-ctx.Done():
+			tb.removeCh(ch)
+			close(ch) // Clean up the wait queue channel
+			return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
+		case <-time.After(waitTime):
+			if tb.Allow() {
+				// Remove the channel from the wait queue
+				tb.removeCh(ch)
+				return nil
+			}
+		}
 	}
 }
 
+func (tb *TokenBucketLimiter) removeCh(ch chan struct{}) {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	for i, c := range tb.waitQueue {
+		if c == ch {
+			tb.waitQueue = append(tb.waitQueue[:i], tb.waitQueue[i+1:]...)
+			break
+		}
+	}
+}
+
+// WaitN blocks untill n requests can be allowed or context is canceled or deadline is exceeded
+// if the context is cancelled or deadline is exceeeded Wait closes the channel in TokenBucketLimiter.waitQueue
+// always check the channel for closure !
 func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	// Nil reciever cheack to prevent panics
 	if tb == nil {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
+	}
+	if n <= 0 {
+		return fmt.Errorf("token bucket limiter method Wait: %w", ErrBadParam)
 	}
 
 	// Check for context cancellation. Default check if Allow returns true return immediately,
@@ -212,7 +235,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	tb.waitQueue = append(tb.waitQueue, chans...)
 
 	// Calculate token dificit and correspondeng wait and average wait time
-	tokenDef := float64(len(tb.waitQueue)+1) - tb.tokens
+	tokenDef := float64(len(tb.waitQueue)+n) - tb.tokens
 	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
 	averageWaitTime := tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
 		waitTime/time.Duration(float64(tb.metrics.AllowedRequests+1))
@@ -223,8 +246,11 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 
 	tb.mu.Unlock()
 
+	var wg sync.WaitGroup
 	for _, ch := range chans {
+		wg.Add(1)
 		go func(ch chan struct{}) {
+			defer wg.Done()
 			select {
 			case <-ctx.Done():
 				close(ch) // Clean up the wait queue channel
@@ -234,9 +260,9 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 				// return nil
 				return
 			}
-
 		}(ch)
 	}
+	wg.Wait()
 	return nil
 }
 
