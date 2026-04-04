@@ -65,7 +65,6 @@ func NewTokenBucketLimiter(rate int, burst int) RateLimiter {
 }
 
 // Allow checks if a request can be allowed immediately without blocking
-// Call this method under lock in concurrent scenarios
 func (tb *TokenBucketLimiter) Allow() bool {
 	// Nil receiver check po prevent panics
 	if tb == nil {
@@ -160,17 +159,10 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	}
 	tb.waitQueue = append(tb.waitQueue, ch)
 
-	// Calculate token dificit and correspondeng wait and average wait time
-	tokenDef := float64(len(tb.waitQueue)+1) - tb.tokens
-	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
-	averageWaitTime := tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
-		waitTime/time.Duration(float64(tb.metrics.AllowedRequests+1))
+	tb.mu.Unlock()
 
 	// Update metrics with average wait time
 	// TODO Change this calculation to be more accuarate
-	tb.metrics.AverageWaitTime = averageWaitTime
-
-	tb.mu.Unlock()
 
 	for {
 		select {
@@ -178,10 +170,16 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 			tb.removeCh(ch)
 			close(ch) // Clean up the wait queue channel
 			return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
-		case <-time.After(waitTime):
+		case <-time.After(tb.calculateWaitTime()):
 			if tb.Allow() {
+				tb.caltulateAverageWaitTime(tb.calculateWaitTime())
+				tb.mu.Lock()
+				ch = tb.waitQueue[0]
+				tb.waitQueue = tb.waitQueue[1:]
+				tb.mu.Unlock()
 				// Remove the channel from the wait queue
 				tb.removeCh(ch)
+				close(ch)
 				return nil
 			}
 		}
@@ -197,6 +195,21 @@ func (tb *TokenBucketLimiter) removeCh(ch chan struct{}) {
 			break
 		}
 	}
+}
+
+// Calculate token dificit and correspondeng wait and average wait time
+func (tb *TokenBucketLimiter) calculateWaitTime() time.Duration {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tokenDef := float64(len(tb.waitQueue)) - tb.tokens
+	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
+	return waitTime
+}
+
+func (tb *TokenBucketLimiter) caltulateAverageWaitTime(waitTime time.Duration) {
+	averageWaitTime := (tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
+		waitTime) / time.Duration(float64(tb.metrics.AllowedRequests+1))
+	tb.metrics.AverageWaitTime = averageWaitTime
 }
 
 // WaitN blocks untill n requests can be allowed or context is canceled or deadline is exceeded
