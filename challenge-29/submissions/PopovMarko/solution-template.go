@@ -154,10 +154,10 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	}
 	ch := make(chan struct{})
 
-	// Add a nnew channel to the wait queue for this request
+	// Add a new channel to the wait queue for this request
 	if len(tb.waitQueue) >= tb.maxQueue {
 		tb.mu.Unlock()
-		return fmt.Errorf("token bucher limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
+		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
 	}
 	tb.waitQueue = append(tb.waitQueue, ch)
 
@@ -183,8 +183,60 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 }
 
 func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
-	// TODO: Implement blocking WaitN method
-	// Similar to Wait() but for n tokens
+	// Nil reciever cheack to prevent panics
+	if tb == nil {
+		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
+	}
+
+	// Check for context cancellation. Default check if Allow returns true return immediately,
+	// otherwise calculate wait time
+
+	// Returns immediately if request allowed
+	tb.mu.Lock()
+	if tb.AllowN(n) {
+		tb.mu.Unlock()
+		return nil
+	}
+
+	chans := make([]chan struct{}, n)
+	for i := 0; i < n; i++ {
+		chans[i] = make(chan struct{})
+
+	}
+
+	// Add a new channel to the wait queue for this request
+	if len(tb.waitQueue)+n >= tb.maxQueue {
+		tb.mu.Unlock()
+		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
+	}
+	tb.waitQueue = append(tb.waitQueue, chans...)
+
+	// Calculate token dificit and correspondeng wait and average wait time
+	tokenDef := float64(len(tb.waitQueue)+1) - tb.tokens
+	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
+	averageWaitTime := tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
+		waitTime/time.Duration(float64(tb.metrics.AllowedRequests+1))
+
+	// Update metrics with average wait time
+	// TODO Change this calculation to be more accuarate
+	tb.metrics.AverageWaitTime = averageWaitTime
+
+	tb.mu.Unlock()
+
+	for _, ch := range chans {
+		go func(ch chan struct{}) {
+			select {
+			case <-ctx.Done():
+				close(ch) // Clean up the wait queue channel
+				// return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
+				return
+			case <-ch:
+				// return nil
+				return
+			}
+
+		}(ch)
+	}
 	return nil
 }
 
