@@ -13,17 +13,15 @@ func main() {
 	index := BinarySearch(arr, target)
 	fmt.Printf("BinarySearch: %d found at index %d\n", target, index)
 
-	// Test recursive binary search
 	recursiveIndex := BinarySearchRecursive(arr, target, 0, len(arr)-1)
 	fmt.Printf("BinarySearchRecursive: %d found at index %d\n", target, recursiveIndex)
 
-	// Test find insert position
 	insertTarget := 8
 	insertPos := FindInsertPosition(arr, insertTarget)
 	fmt.Printf("FindInsertPosition: %d should be inserted at index %d\n", insertTarget, insertPos)
 }
 
-// BinarySearch performs a standard binary search to find the target in the sorted array.
+// BinarySearch performs a standard binary search in the sorted array.
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearch(arr []int, target int) int {
 	left := 0
@@ -44,26 +42,24 @@ func BinarySearch(arr []int, target int) int {
 			right = mid - 1
 		}
 	}
-	return -1 // if we get here we didn't hit above so return -1
+	return -1
 }
 
 // BinarySearchRecursive performs binary search using recursion.
 // Returns the index of the target if found, or -1 if not found.
 func BinarySearchRecursive(arr []int, target int, left int, right int) int {
-		// Use recursion to perform binary search instead
 	if left > right {
-		return -1 // Base case: target not found
+		return -1
 	}
 
 	mid := left + (right-left)/2
 
 	if arr[mid] == target {
-		return mid // Target found, return index
+		return mid
 	} else if arr[mid] < target {
-		// So instead of using a `for {...}` loop we just call the function again with the new left and right values
-		return BinarySearchRecursive(arr, target, mid+1, right) // Search in the right half
+		return BinarySearchRecursive(arr, target, mid+1, right)
 	} else {
-		return BinarySearchRecursive(arr, target, left, mid-1) // Search in the left half
+		return BinarySearchRecursive(arr, target, left, mid-1)
 	}
 
 	return -1
@@ -72,20 +68,19 @@ func BinarySearchRecursive(arr []int, target int, left int, right int) int {
 // FindInsertPosition returns the index where the target should be inserted
 // to maintain the sorted order of the array.
 func FindInsertPosition(arr []int, target int) int {
-		left := 0
+	left := 0
 	right := len(arr) - 1
 
 	for left <= right {
 		mid := left + (right-left)/2
 
 		if arr[mid] == target {
-			return mid // Target found, return index
+			return mid
 		} else if arr[mid] < target {
-			left = mid + 1 // Search in the right half
+			left = mid + 1
 		} else {
-			right = mid - 1 // Search in the left half
+			right = mid - 1
 		}
 	}
 	return left // Return the insertion point
-	return -1
 }
