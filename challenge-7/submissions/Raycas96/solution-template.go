@@ -65,11 +65,11 @@ func (e *ExceedsLimitError) Error() string {
 // It returns an error if any of the parameters are invalid.
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
     if id == ""{
-        return nil, &AccountError{Message: "id coult not be empty"}
+        return nil, &AccountError{Message: "id could not be empty"}
     }
     
     if owner == ""{
-        return nil, &AccountError{Message: "owner coult not be empty"}
+        return nil, &AccountError{Message: "owner could not be empty"}
     }
     
     if minBalance < 0 {
