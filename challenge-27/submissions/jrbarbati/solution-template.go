@@ -114,13 +114,15 @@ func (q *Queue[T]) Enqueue(value T) {
 // Dequeue removes and returns the front element from the queue
 // Returns an error if the queue is empty
 func (q *Queue[T]) Dequeue() (T, error) {
+	var zero T
+	
     if len(q.items) > 0 {
         front := q.items[0]
+        q.items[0] = zero
         q.items = q.items[1:]
         return front, nil
     }
     
-	var zero T
 	return zero, ErrEmptyCollection
 }
 
@@ -163,6 +165,10 @@ func NewSet[T comparable]() *Set[T] {
 
 // Add adds an element to the set if it's not already present
 func (s *Set[T]) Add(value T) {
+    if s.items == nil {
+        s.items = make(map[T]struct{})
+    }
+    
     s.items[value] = struct{}{}
 }
 
