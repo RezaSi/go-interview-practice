@@ -456,7 +456,10 @@ type FixedWindowLimiter struct {
 
 // NewFixedWindowLimiter creates a new fixed window rate limiter
 func NewFixedWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
-	// TODO: Implement fixed window rate limiter constructor
+	if rate <= 0 || windowSize <= 0 {
+		panic("rate and window size must be positive")
+	}
+
 	return &FixedWindowLimiter{
 		rate:         rate,
 		windowSize:   windowSize,
@@ -467,11 +470,28 @@ func NewFixedWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 }
 
 func (fw *FixedWindowLimiter) Allow() bool {
-	// TODO: Implement Allow method for fixed window
-	// 1. Check if current time is in a new window
-	// 2. If new window, reset counter and window start time
-	// 3. If request count < rate, increment and allow
-	// 4. Update metrics
+	if fw == nil {
+		return false
+	}
+
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	now := time.Now()
+	if now.Sub(fw.windowStart) >= fw.windowSize {
+		fw.windowStart = now
+		fw.requestCount = 0
+	}
+
+	if fw.requestCount < fw.rate {
+		fw.requestCount++
+		fw.metrics.TotalRequests++
+		fw.metrics.AllowedRequests++
+		return true
+	}
+
+	fw.metrics.TotalRequests++
+	fw.metrics.DeniedRequests++
 	return false
 }
 
