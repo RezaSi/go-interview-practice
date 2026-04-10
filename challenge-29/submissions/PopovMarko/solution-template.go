@@ -152,8 +152,12 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
 	}
 
+	start := time.Now()
 	if tb.Allow() {
-		tb.calculateAverageWaitTime(tb.calculateWaitTime())
+		tb.mu.Lock()
+		awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+		tb.metrics.AverageWaitTime = awt
+		tb.mu.Unlock()
 		return nil
 	}
 
@@ -167,25 +171,33 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	}
 	tb.waitQueue = append(tb.waitQueue, ch)
 
+	waitTime := tb.calculateWaitTimeLocked()
+
 	tb.mu.Unlock()
 
 	// Update metrics with average wait time
 	// TODO Change this calculation to be more accuarate
-
 	for {
 		select {
 		case <-ctx.Done():
 			tb.removeCh(ch)
 			close(ch) // Clean up the wait queue channel
 			return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
-		case <-time.After(tb.calculateWaitTime()):
+		case <-time.After(waitTime):
 			if tb.Allow() {
-				tb.calculateAverageWaitTime(tb.calculateWaitTime())
+				tb.mu.Lock()
+				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+				tb.metrics.AverageWaitTime = awt
+				tb.mu.Unlock()
 				// Remove the channel from the wait queue
 				tb.removeCh(ch)
 				close(ch)
 				return nil
 			}
+			tb.mu.Lock()
+			awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+			tb.metrics.AverageWaitTime = awt
+			tb.mu.Unlock()
 		}
 	}
 }
@@ -202,18 +214,15 @@ func (tb *TokenBucketLimiter) removeCh(ch chan struct{}) {
 }
 
 // Calculate token dificit and correspondeng wait and average wait time
-func (tb *TokenBucketLimiter) calculateWaitTime() time.Duration {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
+func (tb *TokenBucketLimiter) calculateWaitTimeLocked() time.Duration {
 	tokenDef := float64(len(tb.waitQueue)) - tb.tokens
 	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
 	return waitTime
 }
 
-func (tb *TokenBucketLimiter) calculateAverageWaitTime(waitTime time.Duration) {
-	averageWaitTime := (tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
+func (tb *TokenBucketLimiter) calculateAverageWaitTimeLocked(waitTime time.Duration) time.Duration {
+	return (tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
 		waitTime) / time.Duration(float64(tb.metrics.AllowedRequests+1))
-	tb.metrics.AverageWaitTime = averageWaitTime
 }
 
 // WaitN blocks untill n requests can be allowed or context is canceled or deadline is exceeded
@@ -238,8 +247,13 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		chans[i] = make(chan struct{})
 
 	}
+
+	start := time.Now()
 	if tb.AllowN(n) {
-		tb.calculateAverageWaitTime(tb.calculateWaitTime())
+		tb.mu.Lock()
+		awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+		tb.metrics.AverageWaitTime = awt
+		tb.mu.Unlock()
 		return nil
 	}
 	// Add a new channel to the wait queue for this request
@@ -249,6 +263,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
 	}
 	tb.waitQueue = append(tb.waitQueue, chans...)
+	waitTime := tb.calculateWaitTimeLocked()
 	tb.mu.Unlock()
 
 	for {
@@ -259,15 +274,22 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 				close(ch)
 			}
 			return fmt.Errorf("token bucket limiter method WaitN: %w", ctx.Err())
-		case <-time.After(tb.calculateWaitTime()):
+		case <-time.After(waitTime):
 			if tb.AllowN(n) {
-				tb.calculateAverageWaitTime(tb.calculateWaitTime())
+				tb.mu.Lock()
+				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+				tb.metrics.AverageWaitTime = awt
+				tb.mu.Unlock()
 				for _, ch := range chans {
 					tb.removeCh(ch)
 					close(ch)
 				}
 				return nil
 			}
+			tb.mu.Lock()
+			awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
+			tb.metrics.AverageWaitTime = awt
+			tb.mu.Unlock()
 		}
 	}
 }
@@ -375,27 +397,32 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 	if sw.Allow() {
 		// Update metrics withe average wiait time
 		sw.mu.Lock()
-		awt := sw.calculateAverageWaitTime(sw.calculateWaitTime())
+		awt := sw.calculateAverageWaitTimeLocked(sw.calculateWaitTimeLocked())
 		sw.metrics.AverageWaitTime = awt
 		sw.mu.Unlock()
 		return nil
 	}
 
+	start := time.Now()
+	sw.mu.Lock()
+	waitTime := sw.calculateWaitTimeLocked()
+	sw.mu.Unlock()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
-		case <-time.After(sw.calculateWaitTime()):
+		case <-time.After(waitTime):
 			if sw.Allow() {
 				sw.mu.Lock()
 				// Update metrics with average wait time
-				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTime(sw.calculateWaitTime())
+				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 				sw.mu.Unlock()
 				return nil
 			}
 			// Update metrics withe average wait time
 			sw.mu.Lock()
-			sw.metrics.AverageWaitTime = sw.calculateAverageWaitTime(sw.calculateWaitTime())
+			sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 			sw.mu.Unlock()
 		}
 	}
@@ -428,7 +455,7 @@ func (sw *SlidingWindowLimiter) GetMetrics() RateLimiterMetrics {
 	return sw.metrics
 }
 
-func (sw *SlidingWindowLimiter) calculateWaitTime() time.Duration {
+func (sw *SlidingWindowLimiter) calculateWaitTimeLocked() time.Duration {
 	if len(sw.requests) == 0 {
 		return 0
 	}
@@ -440,7 +467,7 @@ func (sw *SlidingWindowLimiter) calculateWaitTime() time.Duration {
 	return waitTime
 }
 
-func (sw *SlidingWindowLimiter) calculateAverageWaitTime(wt time.Duration) time.Duration {
+func (sw *SlidingWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
 	return (sw.metrics.AverageWaitTime*time.Duration(sw.metrics.AllowedRequests) + wt) / time.Duration(float64(sw.metrics.AllowedRequests+1))
 }
 
@@ -511,31 +538,36 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 		return fmt.Errorf("fixed window limiter method Wait: %w", ErrNilReceiver)
 	}
 
+	start := time.Now()
 	if fw.Allow() {
 		// Update metrics with avearage wiait time
 		fw.mu.Lock()
-		awt := fw.calculateAverageWaitTime(fw.calculateWaitTime())
+		awt := fw.calculateAverageWaitTimeLocked(time.Since(start))
 		fw.metrics.AverageWaitTime = awt
 		fw.mu.Unlock()
 
 		return nil
 	}
 
+	fw.mu.Lock()
+	waitTime := fw.calculateWaitTimeLocked()
+	fw.mu.Unlock()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
-		case <-time.After(fw.calculateWaitTime()):
+		case <-time.After(waitTime):
 			if fw.Allow() {
 				fw.mu.Lock()
 				// Update metrics with avaerage wait time
-				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTime(fw.calculateWaitTime())
+				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 				fw.mu.Unlock()
 				return nil
 			}
 			// Update metrics withe average wait time
 			fw.mu.Lock()
-			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTime(fw.calculateWaitTime())
+			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 			fw.mu.Unlock()
 		}
 	}
@@ -569,7 +601,7 @@ func (fw *FixedWindowLimiter) GetMetrics() RateLimiterMetrics {
 	return fw.metrics
 }
 
-func (fw *FixedWindowLimiter) calculateWaitTime() time.Duration {
+func (fw *FixedWindowLimiter) calculateWaitTimeLocked() time.Duration {
 	now := time.Now()
 	if now.Sub(fw.windowStart) >= fw.windowSize {
 		return 0
@@ -581,7 +613,7 @@ func (fw *FixedWindowLimiter) calculateWaitTime() time.Duration {
 	return waitTime
 }
 
-func (fw *FixedWindowLimiter) calculateAverageWaitTime(wt time.Duration) time.Duration {
+func (fw *FixedWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
 	return (fw.metrics.AverageWaitTime*time.Duration(fw.metrics.AllowedRequests) + wt) / time.Duration(float64(fw.metrics.AllowedRequests+1))
 }
 
