@@ -496,13 +496,49 @@ func (fw *FixedWindowLimiter) Allow() bool {
 }
 
 func (fw *FixedWindowLimiter) AllowN(n int) bool {
-	// TODO: Implement AllowN method for fixed window
+	if fw == nil || n <= 0 {
+		return false
+	}
+
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
 	return false
 }
 
 func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
-	// TODO: Implement blocking Wait method for fixed window
-	return nil
+	if fw == nil {
+		return fmt.Errorf("fixed window limiter method Wait: %w", ErrNilReceiver)
+	}
+
+	if fw.Allow() {
+		// Update metrics with avearage wiait time
+		fw.mu.Lock()
+		awt := fw.calculateAverageWaitTime(fw.calculateWaitTime())
+		fw.metrics.AverageWaitTime = awt
+		fw.mu.Unlock()
+
+		return nil
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
+		case <-time.After(fw.calculateWaitTime()):
+			if fw.Allow() {
+				fw.mu.Lock()
+				// Update metrics with avaerage wait time
+				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTime(fw.calculateWaitTime())
+				fw.mu.Unlock()
+				return nil
+			}
+			// Update metrics withe average wait time
+			fw.mu.Lock()
+			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTime(fw.calculateWaitTime())
+			fw.mu.Unlock()
+		}
+	}
 }
 
 func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
@@ -531,6 +567,22 @@ func (fw *FixedWindowLimiter) GetMetrics() RateLimiterMetrics {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 	return fw.metrics
+}
+
+func (fw *FixedWindowLimiter) calculateWaitTime() time.Duration {
+	now := time.Now()
+	if now.Sub(fw.windowStart) >= fw.windowSize {
+		return 0
+	}
+	waitTime := time.Until(fw.windowStart.Add(fw.windowSize))
+	if waitTime <= 0 {
+		return 0
+	}
+	return waitTime
+}
+
+func (fw *FixedWindowLimiter) calculateAverageWaitTime(wt time.Duration) time.Duration {
+	return (fw.metrics.AverageWaitTime*time.Duration(fw.metrics.AllowedRequests) + wt) / time.Duration(float64(fw.metrics.AllowedRequests+1))
 }
 
 // Rate Limiter Factory
