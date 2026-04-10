@@ -112,6 +112,9 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 		return false
 	}
 
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
 	// Generate new tokens based on elapsed time since last refill
 	now := time.Now()
 	elasped := now.Sub(tb.lastRefill).Seconds()
@@ -149,6 +152,11 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
 	}
 
+	if tb.Allow() {
+		tb.caltulateAverageWaitTime(tb.calculateWaitTime())
+		return nil
+	}
+
 	ch := make(chan struct{})
 
 	// Add a new channel to the wait queue for this request
@@ -173,10 +181,6 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 		case <-time.After(tb.calculateWaitTime()):
 			if tb.Allow() {
 				tb.caltulateAverageWaitTime(tb.calculateWaitTime())
-				tb.mu.Lock()
-				ch = tb.waitQueue[0]
-				tb.waitQueue = tb.waitQueue[1:]
-				tb.mu.Unlock()
 				// Remove the channel from the wait queue
 				tb.removeCh(ch)
 				close(ch)
@@ -228,55 +232,44 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	// otherwise calculate wait time
 
 	// Returns immediately if request allowed
-	tb.mu.Lock()
-	if tb.AllowN(n) {
-		tb.mu.Unlock()
-		return nil
-	}
 
 	chans := make([]chan struct{}, n)
 	for i := 0; i < n; i++ {
 		chans[i] = make(chan struct{})
 
 	}
-
+	if tb.AllowN(n) {
+		tb.caltulateAverageWaitTime(tb.calculateWaitTime())
+		return nil
+	}
 	// Add a new channel to the wait queue for this request
-	if len(tb.waitQueue)+n >= tb.maxQueue {
+	tb.mu.Lock()
+	if len(tb.waitQueue)+n > tb.maxQueue {
 		tb.mu.Unlock()
 		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
 	}
 	tb.waitQueue = append(tb.waitQueue, chans...)
-
-	// Calculate token dificit and correspondeng wait and average wait time
-	tokenDef := float64(len(tb.waitQueue)+n) - tb.tokens
-	waitTime := time.Duration(tokenDef / float64(tb.rate) * float64(time.Second))
-	averageWaitTime := tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
-		waitTime/time.Duration(float64(tb.metrics.AllowedRequests+1))
-
-	// Update metrics with average wait time
-	// TODO Change this calculation to be more accuarate
-	tb.metrics.AverageWaitTime = averageWaitTime
-
 	tb.mu.Unlock()
 
-	var wg sync.WaitGroup
-	for _, ch := range chans {
-		wg.Add(1)
-		go func(ch chan struct{}) {
-			defer wg.Done()
-			select {
-			case <-ctx.Done():
-				close(ch) // Clean up the wait queue channel
-				// return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
-				return
-			case <-ch:
-				// return nil
-				return
+	for {
+		select {
+		case <-ctx.Done():
+			for _, ch := range chans {
+				tb.removeCh(ch)
+				close(ch)
 			}
-		}(ch)
+			return fmt.Errorf("token bucket limiter method WaitN: %w", ctx.Err())
+		case <-time.After(tb.calculateWaitTime()):
+			if tb.AllowN(n) {
+				tb.caltulateAverageWaitTime(tb.calculateWaitTime())
+				for _, ch := range chans {
+					tb.removeCh(ch)
+					close(ch)
+				}
+				return nil
+			}
+		}
 	}
-	wg.Wait()
-	return nil
 }
 
 // Limit returns the configured rate limit
@@ -322,7 +315,9 @@ type SlidingWindowLimiter struct {
 
 // NewSlidingWindowLimiter creates a new sliding window rate limiter
 func NewSlidingWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
-	// TODO: Implement sliding window rate limiter constructor
+	if rate <= 0 || windowSize <= 0 {
+		panic("rate and window size must be positive")
+	}
 	return &SlidingWindowLimiter{
 		rate:       rate,
 		windowSize: windowSize,
@@ -332,11 +327,35 @@ func NewSlidingWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 }
 
 func (sw *SlidingWindowLimiter) Allow() bool {
-	// TODO: Implement Allow method for sliding window
-	// 1. Remove old requests outside the window
-	// 2. Check if current request count < rate
-	// 3. If allowed, add current timestamp to requests
-	// 4. Update metrics
+
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+
+	now := time.Now()
+	validRequests := make([]time.Time, 0)
+
+	// Remove old ruequests outside the window
+	cutoff := now.Add(-sw.windowSize)
+	for _, req := range sw.requests {
+		if req.After(cutoff) {
+			validRequests = append(validRequests, req)
+		}
+	}
+
+	sw.requests = validRequests
+
+	// Cheack if current request allowed
+	if len(sw.requests) < sw.rate {
+		sw.requests = append(sw.requests, now)
+		// Update metrics witth alowed request
+		sw.metrics.TotalRequests++
+		sw.metrics.AllowedRequests++
+		return true
+	}
+
+	// Update metrics withe denied request
+	sw.metrics.TotalRequests++
+	sw.metrics.DeniedRequests++
 	return false
 }
 
