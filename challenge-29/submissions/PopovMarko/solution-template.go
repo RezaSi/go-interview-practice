@@ -171,13 +171,14 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	}
 	tb.waitQueue = append(tb.waitQueue, ch)
 
-	waitTime := tb.calculateWaitTimeLocked()
-
 	tb.mu.Unlock()
 
 	// Update metrics with average wait time
 	// TODO Change this calculation to be more accuarate
 	for {
+		tb.mu.Lock()
+		waitTime := tb.calculateWaitTimeLocked()
+		tb.mu.Unlock()
 		select {
 		case <-ctx.Done():
 			tb.removeCh(ch)
@@ -263,10 +264,12 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		return fmt.Errorf("token bucket limiter metod Wait: bucket is full: %w", ErrTooManyRequests)
 	}
 	tb.waitQueue = append(tb.waitQueue, chans...)
-	waitTime := tb.calculateWaitTimeLocked()
 	tb.mu.Unlock()
 
 	for {
+		tb.mu.Lock()
+		waitTime := tb.calculateWaitTimeLocked()
+		tb.mu.Unlock()
 		select {
 		case <-ctx.Done():
 			for _, ch := range chans {
@@ -386,6 +389,43 @@ func (sw *SlidingWindowLimiter) Allow() bool {
 
 func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 	// TODO: Implement AllowN method for sliding window
+	if sw == nil {
+		return false
+	}
+	if n <= 0 {
+		return false
+	}
+
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+
+	now := time.Now()
+	validRequests := make([]time.Time, 0)
+
+	// Remove old ruequests outside the window
+	cutoff := now.Add(-sw.windowSize)
+	for _, req := range sw.requests {
+		if req.After(cutoff) {
+			validRequests = append(validRequests, req)
+		}
+	}
+
+	sw.requests = validRequests
+
+	// Cheack if current number of requests allowed
+	if len(sw.requests)+n <= sw.rate {
+		for i := 0; i < n; i++ {
+			sw.requests = append(sw.requests, now)
+		}
+		// Update metrics witth alowed request
+		sw.metrics.TotalRequests += int64(n)
+		sw.metrics.AllowedRequests += int64(n)
+		return true
+	}
+
+	// Update metrics withe denied request
+	sw.metrics.TotalRequests += int64(n)
+	sw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -394,21 +434,20 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 		return fmt.Errorf("sliding window limiter method Wait: %w", ErrNilReceiver)
 	}
 
+	start := time.Now()
 	if sw.Allow() {
-		// Update metrics withe average wiait time
+		// Update metrics with average wiait time
 		sw.mu.Lock()
-		awt := sw.calculateAverageWaitTimeLocked(sw.calculateWaitTimeLocked())
+		awt := sw.calculateAverageWaitTimeLocked(time.Since(start))
 		sw.metrics.AverageWaitTime = awt
 		sw.mu.Unlock()
 		return nil
 	}
 
-	start := time.Now()
-	sw.mu.Lock()
-	waitTime := sw.calculateWaitTimeLocked()
-	sw.mu.Unlock()
-
 	for {
+		sw.mu.Lock()
+		waitTime := sw.calculateWaitTimeLocked()
+		sw.mu.Unlock()
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
@@ -429,8 +468,44 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 }
 
 func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
-	// TODO: Implement blocking WaitN method for sliding window
-	return nil
+	if sw == nil {
+		return fmt.Errorf("sliding window limiter method Wait: %w", ErrNilReceiver)
+	}
+	if n <= 0 {
+		return fmt.Errorf("sliding window limiter method WaitN: %w", ErrBadParam)
+	}
+
+	start := time.Now()
+	if sw.AllowN(n) {
+		// Update metrics with average wiait time
+		sw.mu.Lock()
+		awt := sw.calculateAverageWaitTimeLocked(time.Since(start))
+		sw.metrics.AverageWaitTime = awt
+		sw.mu.Unlock()
+		return nil
+	}
+
+	for {
+		sw.mu.Lock()
+		waitTime := sw.calculateWaitTimeLocked()
+		sw.mu.Unlock()
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
+		case <-time.After(waitTime):
+			if sw.AllowN(n) {
+				sw.mu.Lock()
+				// Update metrics with average wait time
+				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
+				sw.mu.Unlock()
+				return nil
+			}
+			// Update metrics withe average wait time
+			sw.mu.Lock()
+			sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
+			sw.mu.Unlock()
+		}
+	}
 }
 
 func (sw *SlidingWindowLimiter) Limit() int {
@@ -523,13 +598,31 @@ func (fw *FixedWindowLimiter) Allow() bool {
 }
 
 func (fw *FixedWindowLimiter) AllowN(n int) bool {
-	if fw == nil || n <= 0 {
+	if fw == nil {
+		return false
+	}
+	if n <= 0 {
 		return false
 	}
 
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
+	now := time.Now()
+	if now.Sub(fw.windowStart) >= fw.windowSize {
+		fw.windowStart = now
+		fw.requestCount = 0
+	}
+
+	if fw.requestCount+n <= fw.rate {
+		fw.requestCount += n
+		fw.metrics.TotalRequests += int64(n)
+		fw.metrics.AllowedRequests += int64(n)
+		return true
+	}
+
+	fw.metrics.TotalRequests += int64(n)
+	fw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -549,11 +642,10 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 		return nil
 	}
 
-	fw.mu.Lock()
-	waitTime := fw.calculateWaitTimeLocked()
-	fw.mu.Unlock()
-
 	for {
+		fw.mu.Lock()
+		waitTime := fw.calculateWaitTimeLocked()
+		fw.mu.Unlock()
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
@@ -575,7 +667,45 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 
 func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	// TODO: Implement blocking WaitN method for fixed window
-	return nil
+	if fw == nil {
+		return fmt.Errorf("fixed window limiter method Wait: %w", ErrNilReceiver)
+	}
+	if n <= 0 {
+		return fmt.Errorf("fixed window limiter method WaitN: %w", ErrBadParam)
+	}
+
+	start := time.Now()
+	if fw.AllowN(n) {
+		// Update metrics with avearage wiait time
+		fw.mu.Lock()
+		awt := fw.calculateAverageWaitTimeLocked(time.Since(start))
+		fw.metrics.AverageWaitTime = awt
+		fw.mu.Unlock()
+
+		return nil
+	}
+
+	for {
+		fw.mu.Lock()
+		waitTime := fw.calculateWaitTimeLocked()
+		fw.mu.Unlock()
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
+		case <-time.After(waitTime):
+			if fw.AllowN(n) {
+				fw.mu.Lock()
+				// Update metrics with avaerage wait time
+				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
+				fw.mu.Unlock()
+				return nil
+			}
+			// Update metrics withe average wait time
+			fw.mu.Lock()
+			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
+			fw.mu.Unlock()
+		}
+	}
 }
 
 func (fw *FixedWindowLimiter) Limit() int {
@@ -635,20 +765,21 @@ func NewRateLimiterFactory() *RateLimiterFactory {
 func (f *RateLimiterFactory) CreateLimiter(config RateLimiterConfig) (RateLimiter, error) {
 	// TODO: Implement factory method to create different types of rate limiters
 	// Validate configuration and create appropriate limiter type
+
 	switch config.Algorithm {
 	case "token_bucket":
 		if config.Rate <= 0 || config.Burst <= 0 {
-			return nil, fmt.Errorf("invalid token bucket configuration: rate and burst must be positive")
+			return nil, fmt.Errorf("invalid token bucket configuration: rate and burst must be positive %w", ErrBadParam)
 		}
 		return NewTokenBucketLimiter(config.Rate, config.Burst), nil
 	case "sliding_window":
 		if config.Rate <= 0 || config.WindowSize <= 0 {
-			return nil, fmt.Errorf("invalid sliding window configuration: rate and window size must be positive")
+			return nil, fmt.Errorf("Invalid sliding window configuration: rate and window size must be positive %w", ErrBadParam)
 		}
 		return NewSlidingWindowLimiter(config.Rate, config.WindowSize), nil
 	case "fixed_window":
 		if config.Rate <= 0 || config.WindowSize <= 0 {
-			return nil, fmt.Errorf("invalid fixed window configuration: rate and window size must be positive")
+			return nil, fmt.Errorf("Invalid fixed window configuration: rate and window size must be positive %w", ErrBadParam)
 		}
 		return NewFixedWindowLimiter(config.Rate, config.WindowSize), nil
 	default:
