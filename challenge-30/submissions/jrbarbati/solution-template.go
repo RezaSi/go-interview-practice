@@ -61,7 +61,7 @@ func (cm *simpleContextManager) GetValue(ctx context.Context, key interface{}) (
 
 // ExecuteWithContext executes a task that can be cancelled via context
 func (cm *simpleContextManager) ExecuteWithContext(ctx context.Context, task func() error) error {
-    ch := make(chan error)
+    ch := make(chan error, 1)
     
 	go func() {
 	    ch <- task()
@@ -87,9 +87,6 @@ func (cm *simpleContextManager) WaitForCompletion(ctx context.Context, duration 
 
 // Helper function - simulate work that can be cancelled
 func SimulateWork(ctx context.Context, workDuration time.Duration, description string) error {
-	// TODO: Implement cancellable work simulation
-	// Hint: Use select with ctx.Done() and time.After(workDuration)
-	// Print progress messages and respect cancellation
 	cm := NewContextManager()
 	
     fmt.Println(description)
@@ -104,11 +101,11 @@ func ProcessItems(ctx context.Context, items []string) ([]string, error) {
 	processed := make([]string, 0)
 	
 	for _, item := range items {
-        processed = append(processed, "processed_" + item)
-        
         if err = cm.WaitForCompletion(ctx, 30*time.Millisecond); err != nil {
             return processed, err
         }
+        
+        processed = append(processed, "processed_" + item)
 	}
 	
 	return processed, nil
