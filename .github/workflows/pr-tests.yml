@@ -372,7 +372,7 @@ jobs:
   add-auto-merge-label:
     runs-on: ubuntu-latest
     needs: pr-status
-    if: needs.pr-status.result == 'success'
+    if: always() && needs.pr-status.result == 'success'
     
     steps:
       - name: Add ready-to-merge label
