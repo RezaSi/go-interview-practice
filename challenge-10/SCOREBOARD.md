@@ -1,6 +1,7 @@
 # Scoreboard for challenge-10
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 110Aakif | 54 | 54 |
 | Ali-Fartoot | 54 | 54 |
 | BroQi | 54 | 54 |
 | Cpoing | 54 | 54 |
@@ -10,6 +11,7 @@
 | Johrespi | 54 | 54 |
 | Kosench | 54 | 54 |
 | PolinaSvet | 54 | 54 |
+| PopovMarko | 54 | 54 |
 | RezaSi | 54 | 54 |
 | ahmedpyarali2 | 54 | 54 |
 | ashwinipatankar | 54 | 54 |
