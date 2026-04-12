@@ -324,12 +324,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate-submission-security, manual-approval-status, no-challenges-changed, test-submissions]
     if: always()
-    outputs:
-      can_merge: ${{ steps.check-results.outputs.can_merge }}
     
     steps:
       - name: Check all job results
-        id: check-results
         run: |
           echo "Checking results of all jobs..."
           echo ""
@@ -342,7 +339,6 @@ jobs:
           # Check if security validation failed
           if [ "${{ needs.validate-submission-security.result }}" == "failure" ]; then
             echo "❌ Security validation failed"
-            echo "can_merge=false" >> $GITHUB_OUTPUT
             exit 1
           fi
           
@@ -350,14 +346,12 @@ jobs:
           if [ "${{ needs.manual-approval-status.result }}" == "failure" ]; then
             echo "❌ Manual approval is required for this PR"
             echo "Add the 'manual-approval-granted' label and re-run the workflow"
-            echo "can_merge=false" >> $GITHUB_OUTPUT
             exit 1
           fi
           
           # Check if tests failed
           if [ "${{ needs.test-submissions.result }}" == "failure" ]; then
             echo "❌ Tests failed"
-            echo "can_merge=false" >> $GITHUB_OUTPUT
             exit 1
           fi
           
@@ -368,19 +362,17 @@ jobs:
             # This could happen if validation_passed is false
             if [ "${{ needs.validate-submission-security.outputs.validation_passed }}" != "true" ]; then
               echo "❌ Validation did not pass"
-              echo "can_merge=false" >> $GITHUB_OUTPUT
               exit 1
             fi
           fi
           
           echo "✅ All checks passed - PR is ready for merge"
-          echo "can_merge=true" >> $GITHUB_OUTPUT
 
   # Add auto-merge label when all checks pass
   add-auto-merge-label:
     runs-on: ubuntu-latest
     needs: pr-status
-    if: needs.pr-status.outputs.can_merge == 'true'
+    if: needs.pr-status.result == 'success'
     
     steps:
       - name: Add ready-to-merge label
