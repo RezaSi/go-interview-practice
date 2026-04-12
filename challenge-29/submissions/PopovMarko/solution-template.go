@@ -38,14 +38,15 @@ type RateLimiterMetrics struct {
 // TokenBucketLimiter implements the token bucket algorithm.
 // Tokens are refilled over time up to the configured burst capacity.
 type TokenBucketLimiter struct {
-	mu         sync.Mutex
-	rate       int       // tokens per second
-	burst      int       // maximum burst capacity
-	tokens     float64   // current token count
-	lastRefill time.Time // last token refill time
-	metrics    RateLimiterMetrics
-	waitQueue  []chan struct{} // queue for waiting requests
-	maxQueue   int
+	mu          sync.Mutex
+	rate        int       // tokens per second, imutable after creation
+	burst       int       // maximum burst capacity, imutable after creation
+	tokens      float64   // current token count
+	lastRefill  time.Time // last token refill time
+	metrics     RateLimiterMetrics
+	waitQueue   []chan struct{} // queue for waiting requests
+	maxQueue    int
+	waitSamples int64 // count of wait saples for average wait time calculation
 }
 
 // NewTokenBucketLimiter creates a token bucket limiter with the given rate and burst.
@@ -55,13 +56,14 @@ func NewTokenBucketLimiter(rate int, burst int) RateLimiter {
 	}
 
 	return &TokenBucketLimiter{
-		rate:       rate,
-		burst:      burst,
-		tokens:     float64(burst),
-		lastRefill: time.Now(),
-		metrics:    RateLimiterMetrics{},
-		waitQueue:  make([]chan struct{}, 0),
-		maxQueue:   1000,
+		rate:        rate,
+		burst:       burst,
+		tokens:      float64(burst),
+		lastRefill:  time.Now(),
+		metrics:     RateLimiterMetrics{},
+		waitQueue:   make([]chan struct{}, 0),
+		maxQueue:    1000,
+		waitSamples: 0,
 	}
 }
 
@@ -75,6 +77,20 @@ func (tb *TokenBucketLimiter) Allow() bool {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
+	if tb.isAllowedLocked() {
+		// Record a successful request.
+		tb.metrics.TotalRequests++
+		tb.metrics.AllowedRequests++
+		return true
+	}
+
+	// Record a rejected request when the bucket is empty.
+	tb.metrics.TotalRequests++
+	tb.metrics.DeniedRequests++
+	return false
+}
+
+func (tb *TokenBucketLimiter) isAllowedLocked() bool {
 	// Refill the bucket according to time elapsed since the last update.
 	now := time.Now()
 	elasped := now.Sub(tb.lastRefill).Seconds()
@@ -89,16 +105,9 @@ func (tb *TokenBucketLimiter) Allow() bool {
 	// Consume one token when capacity is available.
 	if tb.tokens >= 1 {
 		tb.tokens -= 1
-
-		// Record a successful request.
-		tb.metrics.TotalRequests++
-		tb.metrics.AllowedRequests++
 		return true
 	}
 
-	// Record a rejected request when the bucket is empty.
-	tb.metrics.TotalRequests++
-	tb.metrics.DeniedRequests++
 	return false
 }
 
@@ -115,6 +124,21 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
+	if tb.isAllowedNLocked(n) {
+		// Count each request in the batch as allowed.
+		tb.metrics.TotalRequests += int64(n)
+		tb.metrics.AllowedRequests += int64(n)
+
+		return true
+	}
+
+	// Count each request in the batch as denied.
+	tb.metrics.TotalRequests += int64(n)
+	tb.metrics.DeniedRequests += int64(n)
+	return false
+}
+
+func (tb *TokenBucketLimiter) isAllowedNLocked(n int) bool {
 	// Refill the bucket before checking current capacity.
 	now := time.Now()
 	elasped := now.Sub(tb.lastRefill).Seconds()
@@ -130,16 +154,9 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	if tb.tokens >= float64(n) {
 		tb.tokens -= float64(n)
 
-		// Count each request in the batch as allowed.
-		tb.metrics.TotalRequests += int64(n)
-		tb.metrics.AllowedRequests += int64(n)
-
 		return true
 	}
 
-	// Count each request in the batch as denied.
-	tb.metrics.TotalRequests += int64(n)
-	tb.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -152,11 +169,6 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 
 	start := time.Now()
 	if tb.Allow() {
-		// A zero or near-zero wait still contributes to the moving average.
-		tb.mu.Lock()
-		awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
-		tb.metrics.AverageWaitTime = awt
-		tb.mu.Unlock()
 		return nil
 	}
 
@@ -184,8 +196,8 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 			close(ch) // Clean up the wait queue channel
 			return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if tb.Allow() {
-				tb.mu.Lock()
+			tb.mu.Lock()
+			if tb.isAllowedLocked() {
 				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
 				tb.metrics.AverageWaitTime = awt
 				tb.mu.Unlock()
@@ -194,9 +206,6 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 				close(ch)
 				return nil
 			}
-			tb.mu.Lock()
-			awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
-			tb.metrics.AverageWaitTime = awt
 			tb.mu.Unlock()
 		}
 	}
@@ -225,8 +234,10 @@ func (tb *TokenBucketLimiter) calculateWaitTimeLocked() time.Duration {
 // calculateAverageWaitTimeLocked updates the rolling average wait duration.
 // The caller must hold tb.mu.
 func (tb *TokenBucketLimiter) calculateAverageWaitTimeLocked(waitTime time.Duration) time.Duration {
-	return (tb.metrics.AverageWaitTime*time.Duration(tb.metrics.AllowedRequests) +
-		waitTime) / time.Duration(float64(tb.metrics.AllowedRequests+1))
+	awt := (tb.metrics.AverageWaitTime*time.Duration(tb.waitSamples) +
+		waitTime) / time.Duration(float64(tb.waitSamples+1))
+	tb.waitSamples++
+	return awt
 }
 
 // WaitN blocks until capacity for n requests is available or the context ends.
@@ -235,7 +246,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	if tb == nil {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrNilReceiver)
 	}
-	if n <= 0 {
+	if n <= 0 || n > tb.burst {
 		return fmt.Errorf("token bucket limiter method Wait: %w", ErrBadParam)
 	}
 
@@ -248,11 +259,6 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 
 	start := time.Now()
 	if tb.AllowN(n) {
-		// Successful immediate acquisition still updates wait metrics.
-		tb.mu.Lock()
-		awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
-		tb.metrics.AverageWaitTime = awt
-		tb.mu.Unlock()
 		return nil
 	}
 	// Enqueue all requested slots so wait time reflects total demand.
@@ -277,8 +283,8 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 			}
 			return fmt.Errorf("token bucket limiter method WaitN: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if tb.AllowN(n) {
-				tb.mu.Lock()
+			tb.mu.Lock()
+			if tb.isAllowedNLocked(n) {
 				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
 				tb.metrics.AverageWaitTime = awt
 				tb.mu.Unlock()
@@ -288,9 +294,6 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 				}
 				return nil
 			}
-			tb.mu.Lock()
-			awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
-			tb.metrics.AverageWaitTime = awt
 			tb.mu.Unlock()
 		}
 	}
@@ -318,6 +321,7 @@ func (tb *TokenBucketLimiter) Reset() {
 	tb.lastRefill = time.Now()
 	tb.metrics = RateLimiterMetrics{}
 	tb.waitQueue = make([]chan struct{}, 0)
+	tb.waitSamples = 0
 }
 
 // GetMetrics returns a snapshot of the current token bucket metrics.
@@ -329,11 +333,12 @@ func (tb *TokenBucketLimiter) GetMetrics() RateLimiterMetrics {
 
 // SlidingWindowLimiter tracks requests within a moving time window.
 type SlidingWindowLimiter struct {
-	mu         sync.Mutex
-	rate       int
-	windowSize time.Duration
-	requests   []time.Time // timestamps of recent requests
-	metrics    RateLimiterMetrics
+	mu          sync.Mutex
+	rate        int // requests per window, imutable after creation
+	windowSize  time.Duration
+	requests    []time.Time // timestamps of recent requests
+	metrics     RateLimiterMetrics
+	waitSamples int64 // count of wait samples for average wait time calculation
 }
 
 // NewSlidingWindowLimiter creates a sliding window limiter.
@@ -342,10 +347,11 @@ func NewSlidingWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 		panic("rate and window size must be positive")
 	}
 	return &SlidingWindowLimiter{
-		rate:       rate,
-		windowSize: windowSize,
-		requests:   make([]time.Time, 0),
-		metrics:    RateLimiterMetrics{},
+		rate:        rate,
+		windowSize:  windowSize,
+		requests:    make([]time.Time, 0),
+		metrics:     RateLimiterMetrics{},
+		waitSamples: 0,
 	}
 }
 
@@ -358,6 +364,22 @@ func (sw *SlidingWindowLimiter) Allow() bool {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
 
+	if sw.isAllowedLocked() {
+		// Record a successful request.
+		sw.metrics.TotalRequests++
+		sw.metrics.AllowedRequests++
+
+		return true
+	}
+
+	// Record a rejected request when the window is full.
+	sw.metrics.TotalRequests++
+	sw.metrics.DeniedRequests++
+
+	return false
+}
+
+func (sw *SlidingWindowLimiter) isAllowedLocked() bool {
 	now := time.Now()
 	validRequests := make([]time.Time, 0)
 
@@ -374,15 +396,10 @@ func (sw *SlidingWindowLimiter) Allow() bool {
 	// Accept the request when the current window is below its limit.
 	if len(sw.requests) < sw.rate {
 		sw.requests = append(sw.requests, now)
-		// Record a successful request.
-		sw.metrics.TotalRequests++
-		sw.metrics.AllowedRequests++
+
 		return true
 	}
 
-	// Record a rejected request when the window is full.
-	sw.metrics.TotalRequests++
-	sw.metrics.DeniedRequests++
 	return false
 }
 
@@ -398,6 +415,22 @@ func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
 
+	if sw.isAllowedNLocked(n) {
+		// Record all requests in the batch as allowed.
+		sw.metrics.TotalRequests += int64(n)
+		sw.metrics.AllowedRequests += int64(n)
+
+		return true
+	}
+
+	// Record all requests in the batch as denied.
+	sw.metrics.TotalRequests += int64(n)
+	sw.metrics.DeniedRequests += int64(n)
+
+	return false
+}
+
+func (sw *SlidingWindowLimiter) isAllowedNLocked(n int) bool {
 	now := time.Now()
 	validRequests := make([]time.Time, 0)
 
@@ -416,15 +449,10 @@ func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 		for i := 0; i < n; i++ {
 			sw.requests = append(sw.requests, now)
 		}
-		// Record all requests in the batch as allowed.
-		sw.metrics.TotalRequests += int64(n)
-		sw.metrics.AllowedRequests += int64(n)
+
 		return true
 	}
 
-	// Record all requests in the batch as denied.
-	sw.metrics.TotalRequests += int64(n)
-	sw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -436,11 +464,6 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 
 	start := time.Now()
 	if sw.Allow() {
-		// Immediate success still contributes to the average wait metric.
-		sw.mu.Lock()
-		awt := sw.calculateAverageWaitTimeLocked(time.Since(start))
-		sw.metrics.AverageWaitTime = awt
-		sw.mu.Unlock()
 		return nil
 	}
 
@@ -454,16 +477,13 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 		case <-ctx.Done():
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if sw.Allow() {
-				sw.mu.Lock()
+			sw.mu.Lock()
+			if sw.isAllowedLocked() {
 				// Record the observed wait after a successful retry.
 				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 				sw.mu.Unlock()
 				return nil
 			}
-			// Keep the running average current even when a retry loses the race.
-			sw.mu.Lock()
-			sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 			sw.mu.Unlock()
 		}
 	}
@@ -474,7 +494,7 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 	if sw == nil {
 		return fmt.Errorf("sliding window limiter method Wait: %w", ErrNilReceiver)
 	}
-	if n <= 0 {
+	if n <= 0 || n > sw.rate {
 		return fmt.Errorf("sliding window limiter method WaitN: %w", ErrBadParam)
 	}
 
@@ -497,16 +517,13 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		case <-ctx.Done():
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if sw.AllowN(n) {
-				sw.mu.Lock()
+			sw.mu.Lock()
+			if sw.isAllowedNLocked(n) {
 				// Record the observed wait after a successful retry.
 				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 				sw.mu.Unlock()
 				return nil
 			}
-			// Update the average even if another goroutine consumed the slot first.
-			sw.mu.Lock()
-			sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 			sw.mu.Unlock()
 		}
 	}
@@ -528,6 +545,7 @@ func (sw *SlidingWindowLimiter) Reset() {
 	defer sw.mu.Unlock()
 	sw.requests = make([]time.Time, 0)
 	sw.metrics = RateLimiterMetrics{}
+	sw.waitSamples = 0
 }
 
 // GetMetrics returns a snapshot of sliding window metrics.
@@ -554,17 +572,18 @@ func (sw *SlidingWindowLimiter) calculateWaitTimeLocked() time.Duration {
 // calculateAverageWaitTimeLocked updates the rolling average wait duration.
 // The caller must hold sw.mu.
 func (sw *SlidingWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
-	return (sw.metrics.AverageWaitTime*time.Duration(sw.metrics.AllowedRequests) + wt) / time.Duration(float64(sw.metrics.AllowedRequests+1))
+	return (sw.metrics.AverageWaitTime*time.Duration(sw.waitSamples) + wt) / time.Duration(float64(sw.waitSamples+1))
 }
 
 // FixedWindowLimiter counts requests within discrete, resettable windows.
 type FixedWindowLimiter struct {
 	mu           sync.Mutex
-	rate         int
+	rate         int // ruquests per window, imutable after creation
 	windowSize   time.Duration
 	windowStart  time.Time
 	requestCount int
 	metrics      RateLimiterMetrics
+	waitSamples  int64 // cound of wait samples for average wait tame calculation
 }
 
 // NewFixedWindowLimiter creates a fixed window limiter.
@@ -579,6 +598,7 @@ func NewFixedWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 		windowStart:  time.Now(),
 		requestCount: 0,
 		metrics:      RateLimiterMetrics{},
+		waitSamples:  0,
 	}
 }
 
@@ -591,6 +611,20 @@ func (fw *FixedWindowLimiter) Allow() bool {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
+	if fw.isAllowedLodked() {
+		fw.metrics.TotalRequests++
+		fw.metrics.AllowedRequests++
+
+		return true
+	}
+
+	fw.metrics.TotalRequests++
+	fw.metrics.DeniedRequests++
+
+	return false
+}
+
+func (fw *FixedWindowLimiter) isAllowedLodked() bool {
 	now := time.Now()
 	// Start a fresh window when the current one has expired.
 	if now.Sub(fw.windowStart) >= fw.windowSize {
@@ -601,13 +635,10 @@ func (fw *FixedWindowLimiter) Allow() bool {
 	// Accept the request when the current window has remaining capacity.
 	if fw.requestCount < fw.rate {
 		fw.requestCount++
-		fw.metrics.TotalRequests++
-		fw.metrics.AllowedRequests++
+
 		return true
 	}
 
-	fw.metrics.TotalRequests++
-	fw.metrics.DeniedRequests++
 	return false
 }
 
@@ -623,6 +654,20 @@ func (fw *FixedWindowLimiter) AllowN(n int) bool {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
+	if fw.isAllowedNLocked(n) {
+		fw.metrics.TotalRequests += int64(n)
+		fw.metrics.AllowedRequests += int64(n)
+
+		return true
+	}
+
+	fw.metrics.TotalRequests += int64(n)
+	fw.metrics.DeniedRequests += int64(n)
+
+	return false
+}
+
+func (fw *FixedWindowLimiter) isAllowedNLocked(n int) bool {
 	now := time.Now()
 	// Roll the fixed window forward when it has expired.
 	if now.Sub(fw.windowStart) >= fw.windowSize {
@@ -633,13 +678,10 @@ func (fw *FixedWindowLimiter) AllowN(n int) bool {
 	// Accept the full batch only when enough room remains in this window.
 	if fw.requestCount+n <= fw.rate {
 		fw.requestCount += n
-		fw.metrics.TotalRequests += int64(n)
-		fw.metrics.AllowedRequests += int64(n)
+
 		return true
 	}
 
-	fw.metrics.TotalRequests += int64(n)
-	fw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -651,12 +693,6 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 
 	start := time.Now()
 	if fw.Allow() {
-		// Immediate success still contributes to the average wait metric.
-		fw.mu.Lock()
-		awt := fw.calculateAverageWaitTimeLocked(time.Since(start))
-		fw.metrics.AverageWaitTime = awt
-		fw.mu.Unlock()
-
 		return nil
 	}
 
@@ -669,16 +705,13 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 		case <-ctx.Done():
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if fw.Allow() {
-				fw.mu.Lock()
+			fw.mu.Lock()
+			if fw.isAllowedLodked() {
 				// Record the observed delay for the granted request.
 				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 				fw.mu.Unlock()
 				return nil
 			}
-			// Another goroutine may have claimed the slot first; keep waiting.
-			fw.mu.Lock()
-			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 			fw.mu.Unlock()
 		}
 	}
@@ -689,7 +722,7 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	if fw == nil {
 		return fmt.Errorf("fixed window limiter method Wait: %w", ErrNilReceiver)
 	}
-	if n <= 0 {
+	if n <= 0 || n > fw.rate {
 		return fmt.Errorf("fixed window limiter method WaitN: %w", ErrBadParam)
 	}
 
@@ -713,16 +746,14 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 		case <-ctx.Done():
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
-			if fw.AllowN(n) {
-				fw.mu.Lock()
+			fw.mu.Lock()
+			if fw.isAllowedNLocked(n) {
 				// Record the observed delay for the granted batch.
 				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 				fw.mu.Unlock()
+
 				return nil
 			}
-			// Another goroutine may have consumed the reopened window first.
-			fw.mu.Lock()
-			fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 			fw.mu.Unlock()
 		}
 	}
@@ -745,6 +776,7 @@ func (fw *FixedWindowLimiter) Reset() {
 	fw.windowStart = time.Now()
 	fw.requestCount = 0
 	fw.metrics = RateLimiterMetrics{}
+	fw.waitSamples = 0
 }
 
 // GetMetrics returns a snapshot of fixed window metrics.
@@ -771,7 +803,7 @@ func (fw *FixedWindowLimiter) calculateWaitTimeLocked() time.Duration {
 // calculateAverageWaitTimeLocked updates the rolling average wait duration.
 // The caller must hold fw.mu.
 func (fw *FixedWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
-	return (fw.metrics.AverageWaitTime*time.Duration(fw.metrics.AllowedRequests) + wt) / time.Duration(float64(fw.metrics.AllowedRequests+1))
+	return (fw.metrics.AverageWaitTime*time.Duration(fw.waitSamples) + wt) / time.Duration(float64(fw.waitSamples+1))
 }
 
 // RateLimiterFactory creates limiter implementations from configuration.
