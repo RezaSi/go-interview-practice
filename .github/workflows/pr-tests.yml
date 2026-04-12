@@ -1,8 +1,7 @@
 name: PR Tests
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 on:
   pull_request:
@@ -367,53 +366,3 @@ jobs:
           fi
           
           echo "✅ All checks passed - PR is ready for merge"
-
-  # Add auto-merge label when all checks pass
-  add-auto-merge-label:
-    runs-on: ubuntu-latest
-    needs: pr-status
-    if: always() && needs.pr-status.result == 'success'
-    
-    steps:
-      - name: Add ready-to-merge label
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const labels = context.payload.pull_request.labels.map(l => l.name);
-            
-            // Add 'ready-to-merge' label if not already present
-            if (!labels.includes('ready-to-merge')) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                labels: ['ready-to-merge']
-              });
-              console.log('Added ready-to-merge label to PR #' + prNumber);
-            }
-            
-            // Add a comment about auto-merge timeline
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber
-            });
-            
-            const botComment = comments.data.find(c => 
-              c.user.type === 'Bot' && 
-              c.body.includes('All checks passed!')
-            );
-            
-            if (!botComment) {
-              const mergeDate = new Date();
-              mergeDate.setDate(mergeDate.getDate() + 2);
-              const mergeDateStr = mergeDate.toISOString().split('T')[0];
-              
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: `✅ **All checks passed!**\n\nThis PR will be automatically merged on **${mergeDateStr}** (2 days from now) if no changes are requested.\n\nMaintainers can:\n- Merge immediately by approving the PR\n- Prevent auto-merge by adding the \`do-not-merge\` label`
-              });
-            }

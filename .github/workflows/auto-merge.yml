@@ -3,6 +3,7 @@ name: Auto Merge Ready PRs
 permissions:
   contents: write
   pull-requests: write
+  checks: read
 
 on:
   schedule:
@@ -27,12 +28,13 @@ jobs:
             const now = new Date();
             let mergeCount = 0;
             
-            // Get all open PRs with 'ready-to-merge' label
+            // Get all open PRs targeting main
             const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              base: 'main'
+              base: 'main',
+              per_page: 100
             });
             
             for (const pr of prs) {
@@ -41,13 +43,8 @@ jobs:
                 console.log(`Reached maximum of ${MAX_MERGES_PER_RUN} merges per run. Stopping.`);
                 break;
               }
-              const labels = pr.labels.map(l => l.name);
               
-              // Skip if not ready to merge
-              if (!labels.includes('ready-to-merge')) {
-                console.log(`PR #${pr.number}: Skipping - no 'ready-to-merge' label`);
-                continue;
-              }
+              const labels = pr.labels.map(l => l.name);
               
               // Skip if marked as do-not-merge
               if (labels.includes('do-not-merge')) {
@@ -55,38 +52,7 @@ jobs:
                 continue;
               }
               
-              // Skip if requires manual approval and doesn't have it
-              if (labels.includes('manual-approval-needed') && !labels.includes('manual-approval-granted')) {
-                console.log(`PR #${pr.number}: Skipping - needs manual approval`);
-                continue;
-              }
-              
-              // Check when the 'ready-to-merge' label was added
-              const { data: events } = await github.rest.issues.listEvents({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number
-              });
-              
-              const labelEvent = events
-                .filter(e => e.event === 'labeled' && e.label?.name === 'ready-to-merge')
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-              
-              if (!labelEvent) {
-                console.log(`PR #${pr.number}: Skipping - could not find label event`);
-                continue;
-              }
-              
-              const labeledAt = new Date(labelEvent.created_at);
-              const timeSinceLabel = now - labeledAt;
-              
-              if (timeSinceLabel < TWO_DAYS_MS) {
-                const hoursRemaining = Math.ceil((TWO_DAYS_MS - timeSinceLabel) / (60 * 60 * 1000));
-                console.log(`PR #${pr.number}: Skipping - only ${Math.floor(timeSinceLabel / (60 * 60 * 1000))} hours old, needs ${hoursRemaining} more hours`);
-                continue;
-              }
-              
-              // Verify all status checks still pass
+              // Get the pr-status check result
               const { data: checks } = await github.rest.checks.listForRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -94,15 +60,26 @@ jobs:
               });
               
               const prStatusCheck = checks.check_runs.find(c => c.name === 'pr-status');
-              if (!prStatusCheck || prStatusCheck.conclusion !== 'success') {
-                console.log(`PR #${pr.number}: Skipping - pr-status check not successful`);
-                // Remove the ready-to-merge label since checks are no longer passing
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                  name: 'ready-to-merge'
-                }).catch(() => {});
+              
+              // Skip if pr-status check hasn't run or didn't succeed
+              if (!prStatusCheck) {
+                console.log(`PR #${pr.number}: Skipping - no pr-status check found`);
+                continue;
+              }
+              
+              if (prStatusCheck.conclusion !== 'success') {
+                console.log(`PR #${pr.number}: Skipping - pr-status check is '${prStatusCheck.conclusion}'`);
+                continue;
+              }
+              
+              // Use the pr-status check completion time for the 2-day wait
+              const checkCompletedAt = new Date(prStatusCheck.completed_at);
+              const timeSinceCheck = now - checkCompletedAt;
+              
+              if (timeSinceCheck < TWO_DAYS_MS) {
+                const hoursRemaining = Math.ceil((TWO_DAYS_MS - timeSinceCheck) / (60 * 60 * 1000));
+                const hoursSinceCheck = Math.floor(timeSinceCheck / (60 * 60 * 1000));
+                console.log(`PR #${pr.number}: Skipping - pr-status passed ${hoursSinceCheck} hours ago, needs ${hoursRemaining} more hours`);
                 continue;
               }
               
@@ -119,7 +96,8 @@ jobs:
               }
               
               // All conditions met - merge the PR
-              console.log(`PR #${pr.number}: Merging - all conditions met, label added ${Math.floor(timeSinceLabel / (60 * 60 * 1000))} hours ago`);
+              const hoursSinceCheck = Math.floor(timeSinceCheck / (60 * 60 * 1000));
+              console.log(`PR #${pr.number}: Merging - pr-status passed ${hoursSinceCheck} hours ago`);
               
               try {
                 await github.rest.pulls.merge({
