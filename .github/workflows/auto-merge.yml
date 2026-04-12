@@ -1,0 +1,157 @@
+name: Auto Merge Ready PRs
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Auto-merge eligible PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+            const MAX_MERGES_PER_RUN = 10;
+            const now = new Date();
+            let mergeCount = 0;
+            
+            // Get all open PRs with 'ready-to-merge' label
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'main'
+            });
+            
+            for (const pr of prs) {
+              // Check if we've reached the merge limit
+              if (mergeCount >= MAX_MERGES_PER_RUN) {
+                console.log(`Reached maximum of ${MAX_MERGES_PER_RUN} merges per run. Stopping.`);
+                break;
+              }
+              const labels = pr.labels.map(l => l.name);
+              
+              // Skip if not ready to merge
+              if (!labels.includes('ready-to-merge')) {
+                console.log(`PR #${pr.number}: Skipping - no 'ready-to-merge' label`);
+                continue;
+              }
+              
+              // Skip if marked as do-not-merge
+              if (labels.includes('do-not-merge')) {
+                console.log(`PR #${pr.number}: Skipping - has 'do-not-merge' label`);
+                continue;
+              }
+              
+              // Skip if requires manual approval and doesn't have it
+              if (labels.includes('manual-approval-needed') && !labels.includes('manual-approval-granted')) {
+                console.log(`PR #${pr.number}: Skipping - needs manual approval`);
+                continue;
+              }
+              
+              // Check when the 'ready-to-merge' label was added
+              const { data: events } = await github.rest.issues.listEvents({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number
+              });
+              
+              const labelEvent = events
+                .filter(e => e.event === 'labeled' && e.label?.name === 'ready-to-merge')
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+              
+              if (!labelEvent) {
+                console.log(`PR #${pr.number}: Skipping - could not find label event`);
+                continue;
+              }
+              
+              const labeledAt = new Date(labelEvent.created_at);
+              const timeSinceLabel = now - labeledAt;
+              
+              if (timeSinceLabel < TWO_DAYS_MS) {
+                const hoursRemaining = Math.ceil((TWO_DAYS_MS - timeSinceLabel) / (60 * 60 * 1000));
+                console.log(`PR #${pr.number}: Skipping - only ${Math.floor(timeSinceLabel / (60 * 60 * 1000))} hours old, needs ${hoursRemaining} more hours`);
+                continue;
+              }
+              
+              // Verify all status checks still pass
+              const { data: checks } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha
+              });
+              
+              const prStatusCheck = checks.check_runs.find(c => c.name === 'pr-status');
+              if (!prStatusCheck || prStatusCheck.conclusion !== 'success') {
+                console.log(`PR #${pr.number}: Skipping - pr-status check not successful`);
+                // Remove the ready-to-merge label since checks are no longer passing
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'ready-to-merge'
+                }).catch(() => {});
+                continue;
+              }
+              
+              // Check if PR is mergeable
+              const { data: prDetails } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+              
+              if (prDetails.mergeable_state !== 'clean' && prDetails.mergeable_state !== 'unstable') {
+                console.log(`PR #${pr.number}: Skipping - mergeable_state is '${prDetails.mergeable_state}'`);
+                continue;
+              }
+              
+              // All conditions met - merge the PR
+              console.log(`PR #${pr.number}: Merging - all conditions met, label added ${Math.floor(timeSinceLabel / (60 * 60 * 1000))} hours ago`);
+              
+              try {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  merge_method: 'squash',
+                  commit_title: `${pr.title} (#${pr.number})`,
+                  commit_message: `Auto-merged after 2 days with all checks passing.\n\nPR: #${pr.number}\nAuthor: @${pr.user.login}`
+                });
+                
+                console.log(`PR #${pr.number}: Successfully merged!`);
+                mergeCount++;
+                
+                // Add a comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `🎉 **Auto-merged!**\n\nThis PR was automatically merged after 2 days with all checks passing.\n\nThank you for your contribution, @${pr.user.login}!`
+                });
+                
+              } catch (error) {
+                console.log(`PR #${pr.number}: Failed to merge - ${error.message}`);
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `⚠️ **Auto-merge failed**\n\nCould not automatically merge this PR: ${error.message}\n\nA maintainer will need to merge manually.`
+                });
+              }
+            }
+            
+            console.log(`\nAuto-merge complete. Merged ${mergeCount} PR(s) this run.`);
