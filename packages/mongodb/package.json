@@ -1,0 +1,29 @@
+{
+  "name": "mongodb",
+  "display_name": "MongoDB Go Driver",
+  "description": "Official MongoDB driver for Go - Build database applications",
+  "version": "v1.13.1",
+  "github_url": "https://github.com/mongodb/mongo-go-driver",
+  "documentation_url": "https://pkg.go.dev/go.mongodb.org/mongo-driver",
+  "stars": 8100,
+  "category": "database",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "database_concepts", "json_bson"],
+  "learning_path": [
+    "challenge-1-connection-crud",
+    "challenge-2-queries-filtering", 
+    "challenge-3-aggregation-pipeline",
+    "challenge-4-indexing-performance",
+    "challenge-5-transactions-advanced"
+  ],
+  "tags": ["database", "nosql", "mongodb", "crud", "aggregation", "indexing", "transactions"],
+  "estimated_time": "8-12 hours",
+  "real_world_usage": [
+    "Web application backends",
+    "Microservices data layer", 
+    "Content management systems",
+    "Real-time analytics platforms",
+    "E-commerce product catalogs",
+    "User authentication systems"
+  ]
+}

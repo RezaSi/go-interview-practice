@@ -14,7 +14,7 @@ import (
 func TestClientRegistration(t *testing.T) {
 	server := NewOAuth2Server()
 
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -27,7 +27,7 @@ func TestClientRegistration(t *testing.T) {
 	}
 
 	// Try to register a client with the same ID
-	duplicateClient := &OAuth2Client{
+	duplicateClient := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "different-secret",
 		RedirectURIs:  []string{"https://different.example.com/callback"},
@@ -70,7 +70,7 @@ func TestAuthorizationEndpoint(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -191,7 +191,7 @@ func TestTokenEndpoint(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -208,7 +208,7 @@ func TestTokenEndpoint(t *testing.T) {
 		RedirectURI:         "https://client.example.com/callback",
 		Scopes:              []string{"read", "profile"},
 		ExpiresAt:           time.Now().Add(10 * time.Minute),
-		CodeChallenge:       "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", // SHA256 hash of "test-verifier"
+		CodeChallenge:       "JBbiqONGWPaAmwXk_8bT6UnlPfrn65D32eZlJS-zGG0", // SHA256 hash of "test-verifier"
 		CodeChallengeMethod: "S256",
 	}
 	server.authCodes[codeStr] = code
@@ -330,7 +330,7 @@ func TestTokenEndpoint(t *testing.T) {
 			RedirectURI:         "https://client.example.com/callback",
 			Scopes:              []string{"read"},
 			ExpiresAt:           time.Now().Add(10 * time.Minute),
-			CodeChallenge:       "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", // SHA256 hash of "test-verifier"
+			CodeChallenge:       "JBbiqONGWPaAmwXk_8bT6UnlPfrn65D32eZlJS-zGG0", // SHA256 hash of "test-verifier"
 			CodeChallengeMethod: "S256",
 		}
 		server.authCodes[newCodeStr] = newCode
@@ -377,7 +377,7 @@ func TestRefreshToken(t *testing.T) {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "test-client",
 		ClientSecret:  "test-secret",
 		RedirectURIs:  []string{"https://client.example.com/callback"},
@@ -615,7 +615,7 @@ func TestPKCE(t *testing.T) {
 	t.Run("VerifyValidCodeChallenge", func(t *testing.T) {
 		// Test verifying a valid code challenge with S256 method
 		codeVerifier := "test-verifier"
-		codeChallenge := "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" // SHA256 hash of "test-verifier" in base64url encoding
+		codeChallenge := "JBbiqONGWPaAmwXk_8bT6UnlPfrn65D32eZlJS-zGG0" // SHA256 hash of "test-verifier" in base64url encoding
 
 		valid := VerifyCodeChallenge(codeVerifier, codeChallenge, "S256")
 		if !valid {

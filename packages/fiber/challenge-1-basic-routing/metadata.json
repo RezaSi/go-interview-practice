@@ -1,0 +1,31 @@
+{
+  "title": "Basic Routing with Fiber",
+  "description": "Learn Fiber fundamentals by building a simple task management API with basic HTTP routing and request handling.",
+  "short_description": "Build a REST API with basic routing, JSON handling, and in-memory storage",
+  "difficulty": "Beginner",
+  "estimated_time": "30-45 min",
+  "learning_objectives": [
+    "Understand Fiber application setup and configuration",
+    "Implement basic HTTP routes (GET, POST, PUT, DELETE)",
+    "Handle JSON request and response data",
+    "Extract path parameters and parse request bodies",
+    "Implement in-memory data storage with proper concurrency"
+  ],
+  "prerequisites": ["basic_go", "http_concepts"],
+  "tags": ["fiber", "routing", "http", "api", "json"],
+  "real_world_connection": "REST APIs are fundamental to modern web development. This challenge teaches the basics of building HTTP APIs that can handle CRUD operations - skills essential for any backend developer.",
+  "requirements": [
+    "Implement all 6 required endpoints",
+    "Handle JSON request/response correctly",
+    "Use proper HTTP status codes",
+    "Implement error handling for invalid requests",
+    "Store data in memory with thread safety"
+  ],
+  "bonus_points": [
+    "Add input validation for task creation/updates",
+    "Implement query parameters for filtering tasks",
+    "Add comprehensive error messages"
+  ],
+  "icon": "bi-router",
+  "order": 1
+}

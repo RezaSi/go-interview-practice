@@ -1,0 +1,54 @@
+{
+  "id": "challenge-5-generics",
+  "title": "The Generics Way",
+  "description": "Master GORM's new Generics API for type-safe, high-performance database operations",
+  "difficulty": "Advanced",
+  "estimated_time": "90-120 minutes",
+  "topics": [
+    "GORM Generics API",
+    "Type Safety",
+    "Context-Aware Operations",
+    "Enhanced Joins & Preload",
+    "OnConflict Handling",
+    "Result Metadata",
+    "Performance Optimization"
+  ],
+  "learning_objectives": [
+    "Use gorm.G[T] for type-safe database operations",
+    "Implement context-aware database programming patterns",
+    "Handle conflicts and upsert operations with OnConflict",
+    "Use enhanced join and preload features",
+    "Capture and use result metadata",
+    "Apply performance optimizations with generics",
+    "Migrate from traditional GORM API to generics"
+  ],
+  "prerequisites": [
+    "Go Generics (Go 1.18+)",
+    "Basic GORM knowledge",
+    "Context package understanding",
+    "Database fundamentals"
+  ],
+  "requirements": {
+    "go_version": "1.18+",
+    "gorm_version": "v1.30.0+",
+    "packages": [
+      "gorm.io/gorm",
+      "gorm.io/driver/sqlite",
+      "gorm.io/gorm/clause"
+    ]
+  },
+  "real_world_applications": [
+    "Modern web applications with type safety",
+    "High-performance database operations",
+    "Microservices with strict type checking",
+    "Enterprise applications with complex queries",
+    "APIs requiring optimal database performance"
+  ],
+  "key_concepts": [
+    "Type-safe database operations",
+    "Context-driven programming",
+    "Enhanced association handling",
+    "Conflict resolution strategies",
+    "Performance optimization techniques"
+  ]
+} 

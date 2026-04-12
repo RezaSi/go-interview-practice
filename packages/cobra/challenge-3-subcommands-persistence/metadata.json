@@ -1,0 +1,40 @@
+{
+  "title": "Subcommands & Data Persistence",
+  "difficulty": "Intermediate",
+  "duration": "45-60 minutes",
+  "topics": [
+    "cobra",
+    "cli",
+    "subcommands",
+    "json",
+    "persistence",
+    "flags",
+    "crud operations"
+  ],
+  "learning_objectives": [
+    "Create nested command hierarchies with Cobra",
+    "Implement CRUD operations via CLI",
+    "Handle JSON data persistence",
+    "Design effective CLI user interfaces",
+    "Implement search and filtering functionality",
+    "Handle command-line flags and arguments",
+    "Structure complex CLI applications"
+  ],
+  "prerequisites": [
+    "Basic Go programming",
+    "Understanding of JSON",
+    "Familiarity with command-line tools",
+    "Basic Cobra knowledge"
+  ],
+  "skills_tested": [
+    "Cobra command structure",
+    "Flag handling",
+    "JSON marshaling/unmarshaling",
+    "File I/O operations",
+    "Error handling",
+    "Data filtering and search",
+    "CLI UX design"
+  ],
+  "icon": "bi-database",
+  "order": 3
+} 

@@ -1,0 +1,46 @@
+{
+  "title": "Advanced Flags and Arguments",
+  "description": "Build a File Manager CLI that demonstrates advanced flag and argument handling with Cobra, including global flags, command-specific flags, required/optional flags, and different flag types.",
+  "short_description": "Master Cobra's flag system by building a file management CLI with complex flag handling",
+  "difficulty": "Intermediate",
+  "estimated_time": "45-60 min",
+  "learning_objectives": [
+    "Understand Cobra flag types and binding",
+    "Implement global vs command-specific flags",
+    "Handle required and optional flags",
+    "Work with positional arguments",
+    "Validate flag combinations and constraints",
+    "Create user-friendly CLI help and usage"
+  ],
+  "prerequisites": [
+    "Basic Go syntax and structs",
+    "Understanding of CLI concepts",
+    "Familiarity with command-line tools",
+    "Basic Cobra knowledge (Challenge 1)"
+  ],
+  "tags": [
+    "cli",
+    "flags",
+    "arguments",
+    "validation",
+    "file-management"
+  ],
+  "real_world_connection": "Professional CLI tools like kubectl, docker, and git heavily rely on sophisticated flag systems for user interaction and configuration management.",
+  "requirements": [
+    "Implement global --verbose flag available to all commands",
+    "Create 'list' command with --format flag (json, table)",
+    "Create 'copy' command accepting source and destination arguments",
+    "Create 'delete' command with required --force flag for safety",
+    "Create 'create' command with --name and --size flags",
+    "Implement proper flag validation and error handling",
+    "Support help text generation for all flags"
+  ],
+  "bonus_points": [
+    "Add flag aliases (short forms like -v for --verbose)",
+    "Implement flag value validation",
+    "Add command completion support",
+    "Create custom flag types"
+  ],
+  "icon": "bi-terminal",
+  "order": 2
+} 

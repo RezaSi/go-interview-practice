@@ -1,0 +1,22 @@
+title: Go Package Challenges
+description: Interactive challenges for popular Go packages. Learn by doing, not just reading.
+baseurl: ""
+url: "https://rezasi.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Exclude from processing
+exclude:  
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+
+# Social
+github_username: RezaSi
+repository: go-interview-practice 

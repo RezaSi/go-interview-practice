@@ -1,0 +1,33 @@
+{
+  "title": "Authentication & Session Management",
+  "description": "Build a secure user authentication API with JWT tokens, password hashing, role-based access control, and session management using Fiber.",
+  "short_description": "Create secure auth system with JWT, password hashing, and RBAC",
+  "difficulty": "Advanced",
+  "estimated_time": "75-90 min",
+  "learning_objectives": [
+    "Implement secure password hashing with bcrypt",
+    "Create JWT token generation and validation",
+    "Build role-based access control middleware",
+    "Handle user registration and authentication flows",
+    "Design secure API endpoints with proper authorization"
+  ],
+  "prerequisites": ["fiber_basics", "middleware", "security", "jwt"],
+  "tags": ["authentication", "jwt", "security", "rbac", "bcrypt"],
+  "real_world_connection": "Authentication and authorization are fundamental to most applications. This challenge teaches security patterns used in production systems for user management, API protection, and access control.",
+  "requirements": [
+    "Implement secure user registration with password validation",
+    "Create JWT token generation and validation middleware",
+    "Hash passwords securely using bcrypt",
+    "Build role-based access control (user/admin roles)",
+    "Protect endpoints with authentication middleware",
+    "Handle token refresh and expiration"
+  ],
+  "bonus_points": [
+    "Add password reset functionality",
+    "Implement account lockout after failed attempts",
+    "Add refresh token rotation",
+    "Create user activity logging"
+  ],
+  "icon": "bi-shield-lock",
+  "order": 4
+}

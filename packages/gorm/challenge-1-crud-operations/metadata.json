@@ -1,0 +1,44 @@
+{
+  "title": "CRUD Operations",
+  "description": "Build a user management system using GORM that demonstrates fundamental database operations including creating, reading, updating, and deleting users.",
+  "short_description": "Learn basic GORM CRUD operations and build a user management system",
+  "difficulty": "Beginner",
+  "estimated_time": "30-45 min",
+  "learning_objectives": [
+    "Understand GORM basics and database connection",
+    "Implement Create, Read, Update, Delete operations",
+    "Work with GORM models and structs",
+    "Handle database validation and constraints",
+    "Manage database transactions and error handling"
+  ],
+  "prerequisites": [
+    "Basic Go syntax",
+    "Understanding of structs and pointers",
+    "Basic SQL concepts"
+  ],
+  "tags": [
+    "crud",
+    "database",
+    "orm",
+    "sqlite",
+    "user-management"
+  ],
+  "real_world_connection": "User management systems are foundational to most applications, from authentication systems to content management platforms.",
+  "requirements": [
+    "Implement database connection with SQLite",
+    "Create users with validation",
+    "Retrieve users by ID and get all users",
+    "Update user information",
+    "Delete users from database",
+    "Handle proper error cases",
+    "Implement data validation"
+  ],
+  "bonus_points": [
+    "Add input validation",
+    "Implement soft deletes",
+    "Add database indexes",
+    "Create user search functionality"
+  ],
+  "icon": "bi-database",
+  "order": 1
+} 

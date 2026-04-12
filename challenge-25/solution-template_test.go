@@ -217,9 +217,9 @@ func TestBellmanFord(t *testing.T) {
 				{},      // Edge weights from vertex 4
 			},
 			source:      0,
-			wantDist:    []int{0, 6, 7, 11, 13},
+			wantDist:    []int{0, 5, 7, 10, 12},
 			wantHasPath: []bool{true, true, true, true, true},
-			wantPred:    []int{-1, 0, 0, 2, 3},
+			wantPred:    []int{-1, 2, 0, 1, 3},
 		},
 		{
 			name: "Graph with negative cycle",

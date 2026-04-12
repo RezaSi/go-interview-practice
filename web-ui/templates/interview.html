@@ -1,0 +1,1311 @@
+{{define "content"}}
+<div class="row mb-4" id="setup">
+  <div class="col">
+    <div class="card shadow-lg border-0">
+      <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="bi bi-person-workspace me-2"></i>Interview Simulator</h3>
+      </div>
+      <div class="card-body bg-light">
+        <p class="text-muted mb-4">🚀 Select challenges, set a duration, and start your coding interview session. Get real-time feedback and track your progress!</p>
+
+        <div class="mb-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill bg-primary">1</span>
+          <span class="fw-semibold">Select Challenges</span>
+          <span class="ms-auto small text-muted">Selected: <span id="selected-count">0</span></span>
+        </div>
+
+        <div id="step-1" class="card border-primary mb-4">
+          <div class="card-header bg-white">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-6">
+                <input id="challenge-search" class="form-control form-control-sm" placeholder="🔍 Search challenges by title or number..." />
+              </div>
+              <div class="col-md-6 text-md-end">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
+                  <button type="button" class="btn btn-outline-success" data-filter="beginner">Beginner</button>
+                  <button type="button" class="btn btn-outline-warning" data-filter="intermediate">Intermediate</button>
+                  <button type="button" class="btn btn-outline-danger" data-filter="advanced">Advanced</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush" id="challenge-checkboxes" style="max-height: 320px; overflow:auto;"></div>
+          </div>
+          <div class="card-footer bg-white d-flex justify-content-end">
+            <button type="button" id="to-step-2" class="btn btn-primary" disabled>
+              Next <i class="bi bi-arrow-right-short ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3 d-flex align-items-center gap-2">
+          <span class="badge rounded-pill bg-primary">2</span>
+          <span class="fw-semibold">Duration & Start</span>
+        </div>
+
+        <div id="step-2" class="card border-success">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">⏱️ Duration (minutes)</label>
+                <input id="interview-duration" type="number" class="form-control form-control-lg" min="5" max="240" value="45" />
+                <div class="form-text">Recommended: 30-60 minutes</div>
+              </div>
+              <div class="col-md-8 text-md-end">
+                <button type="button" id="back-to-step-1" class="btn btn-outline-secondary me-2"><i class="bi bi-arrow-left-short me-1"></i>Back</button>
+                <button type="button" id="start-interview" class="btn btn-success btn-lg">
+                  <i class="bi bi-play-circle me-1"></i>Start Interview
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="interview-session" class="row" style="display:none;">
+    <div class="col-12">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Active Interview</h5>
+              <small class="opacity-75" id="session-meta"></small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+              <span class="badge bg-dark fs-5 px-3 py-2 font-monospace" id="timer">--:--</span>
+              <div class="dropdown">
+                <button class="btn btn-warning dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-flag-fill me-1"></i>Finish Interview
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><button class="dropdown-item" id="finish-interview">
+                    <i class="bi bi-flag-fill me-2 text-warning"></i>Finish & Submit
+                  </button></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><button class="dropdown-item" id="save-progress">
+                    <i class="bi bi-save me-2 text-info"></i>Save Progress
+                  </button></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <!-- Problem Description & AI Assistant Tabs -->
+              <div class="card h-100 border-primary border-2">
+                <div class="card-header bg-primary text-white p-0">
+                  <ul class="nav nav-tabs nav-fill border-0" id="sidebar-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active border-0 fw-semibold" id="problem-tab" data-bs-toggle="tab" data-bs-target="#problem-content" type="button" role="tab" style="background: rgba(255,255,255,0.2); color: white;">
+                        <i class="bi bi-file-text me-1"></i>Problem
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link border-0 fw-semibold" id="ai-tab" data-bs-toggle="tab" data-bs-target="#ai-content" type="button" role="tab" style="color: rgba(255,255,255,0.7);">
+                        <i class="bi bi-robot me-1"></i>AI Assistant
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="card-body p-0">
+                  <div class="tab-content h-100" id="sidebar-tab-content">
+                    <!-- Problem Description Tab -->
+                    <div class="tab-pane fade show active h-100" id="problem-content" role="tabpanel">
+                      <div class="p-3 h-100 d-flex flex-column">
+                        <div class="mb-3 p-2 bg-light rounded">
+                          <div class="small text-muted mb-1">Current Challenge:</div>
+                          <div><span class="badge bg-secondary">#<span id="preview-challenge-id">-</span></span> <span id="preview-challenge-title" class="fw-semibold"></span></div>
+                        </div>
+                        <div class="flex-grow-1" style="overflow-y: auto; max-height: 550px;">
+                          <div id="preview-description" class="markdown-content" style="font-size: 0.9rem;"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- AI Assistant Tab -->
+                    <div class="tab-pane fade h-100" id="ai-content" role="tabpanel">
+                      <div class="p-3 h-100 d-flex flex-column">
+                        <div class="text-center mb-3">
+                          <div class="d-inline-block p-3 bg-primary bg-opacity-10 rounded-circle mb-3">
+                            <i class="bi bi-robot fs-2 text-primary"></i>
+                          </div>
+                          <h6 class="text-primary mb-1">AI Assistant</h6>
+                          <p class="small text-muted mb-0">Your coding companion</p>
+                        </div>
+                        
+                        <!-- AI Action Buttons -->
+                        <div class="d-grid gap-2">
+                          <button type="button" class="btn btn-primary btn-sm" onclick="requestAIReview()">
+                            <i class="bi bi-search me-1"></i> Get AI Code Review
+                          </button>
+                          <button type="button" class="btn btn-info btn-sm" onclick="requestInterviewQuestions()">
+                            <i class="bi bi-chat-dots me-1"></i> Ask Interviewer Questions
+                          </button>
+                          <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-warning btn-sm" onclick="requestHint(1)">
+                              💡 Hint Lv1
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="requestHint(2)">
+                              Lv2
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="requestHint(3)">
+                              Lv3
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="requestHint(4)">
+                              Lv4
+                            </button>
+                            </div>
+                          </div>
+                          
+                        <!-- AI Response Area -->
+                        <div id="ai-response-area" class="mt-3" style="display: none;">
+                          <div class="card border-0 bg-light">
+                            <div class="card-header bg-primary text-white py-2">
+                              <h6 class="mb-0">
+                                <i class="bi bi-robot me-1"></i>
+                                <span id="ai-response-title">AI Feedback</span>
+                              </h6>
+                                </div>
+                            <div class="card-body p-3" id="ai-response-content">
+                              <!-- AI responses will appear here -->
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="mt-auto">
+                          <div class="alert alert-success py-2 px-3 mb-0 small">
+                            <i class="bi bi-check-circle me-1"></i>
+                            <strong>AI Ready!</strong> Click buttons above to get AI assistance.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div id="challenge-container" style="display:none;">
+                <div class="card border-0 bg-light mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <h5 id="challenge-title" class="mb-1 text-primary"></h5>
+                        <small class="text-muted">Challenge #<span id="challenge-id"></span> • <span id="challenge-difficulty" class="text-capitalize"></span></small>
+                      </div>
+                      <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="btn-group btn-group-sm me-2" role="group" aria-label="Navigate questions">
+                          <button type="button" id="prev-question" class="btn btn-outline-primary"><i class="bi bi-chevron-left"></i></button>
+                          <div id="question-pager" class="btn-group btn-group-sm"></div>
+                          <button type="button" id="next-question" class="btn btn-outline-primary"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                        <button type="button" id="run-tests" class="btn btn-success btn-sm">
+                          <span class="btn-label"><i class="bi bi-play"></i> Run Tests</span>
+                          <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="editor-container" id="editor"></div>
+                <div class="mt-3">
+                  <div class="card border-0">
+                    <div class="card-header bg-info text-white py-2">
+                      <h6 class="mb-0"><i class="bi bi-terminal me-1"></i>Test Output</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="test-results p-2 bg-dark text-light rounded" id="test-output" style="min-height:80px; font-family: 'Courier New', monospace; font-size: 0.85rem;"></div>
+                      <div class="small text-muted mt-2" id="exec-time" style="display:none;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="challenge-placeholder" class="text-center py-5" style="display:block;">
+                <div class="text-muted">
+                  <i class="bi bi-hourglass-split fs-1 d-block mb-3"></i>
+                  <h5 class="text-muted">Loading your first challenge...</h5>
+                  <p class="small">Please wait while we prepare your interview session.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Interview History</h5>
+          <button id="clear-history" class="btn btn-sm btn-outline-light"><i class="bi bi-trash"></i> Clear All</button>
+        </div>
+        <div class="card-body" id="history-list">
+          <div class="text-muted text-center py-3">
+            <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+            No interviews yet. Start your first interview to see your progress!
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Finish Interview Modal -->
+  <div class="modal fade" id="finishInterviewModal" tabindex="-1" aria-labelledby="finishInterviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title" id="finishInterviewModalLabel">
+            <i class="bi bi-flag-fill me-2"></i>Finish Interview
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <div class="mb-4">
+            <i class="bi bi-question-circle fs-1 text-warning"></i>
+          </div>
+          <h4 class="mb-3">Are you sure you want to finish?</h4>
+          <p class="text-muted mb-4">Your interview session will end and you'll receive your final score based on completed challenges.</p>
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="fw-bold text-primary" id="modal-time-remaining">--:--</div>
+                  <small class="text-muted">Time Remaining</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="fw-bold text-success" id="modal-challenges-completed">0/0</div>
+                  <small class="text-muted">Challenges Attempted</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-arrow-left me-1"></i>Continue Interview
+          </button>
+          <button type="button" class="btn btn-warning" id="confirm-finish-interview">
+            <i class="bi bi-flag-fill me-1"></i>Yes, Finish Interview
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear History Modal -->
+  <div class="modal fade" id="clearHistoryModal" tabindex="-1" aria-labelledby="clearHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="clearHistoryModalLabel">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Clear Interview History
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <div class="mb-4">
+            <i class="bi bi-trash3 fs-1 text-danger"></i>
+          </div>
+          <h4 class="mb-3">Are you sure?</h4>
+          <p class="text-muted mb-4">This will permanently delete all your interview history and scores. This action cannot be undone.</p>
+          <div class="alert alert-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Warning:</strong> All your past interview records will be lost forever.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-danger" id="confirm-clear-history">
+            <i class="bi bi-trash3 me-1"></i>Yes, Clear All History
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+(function(){
+  const lsKeyHistory = 'interview_history_v1';
+  const sessionKeyPrefix = 'interview_session_v1_';
+  let editor = null;
+  let currentSession = null;
+  let timerInterval = null;
+  let activeFilter = 'all';
+  const allChallenges = [
+    {{- $first := true -}}
+    {{- range .Challenges -}}
+    {{- if not $first }},{{ end -}}
+    { id: {{.ID}}, title: "{{js .Title}}", difficulty: "{{lower .Difficulty}}" }
+    {{- $first = false -}}
+    {{- end -}}
+  ];
+  const selectedIds = new Set();
+
+  function getUsername() {
+    const input = document.getElementById('username');
+    const profile = document.getElementById('profile-username');
+    return (profile && profile.textContent) || (input && input.value) || '';
+  }
+
+  function loadHistory() {
+    try {
+      const data = JSON.parse(localStorage.getItem(lsKeyHistory) || '[]');
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
+  }
+
+  function saveHistory(history) {
+    localStorage.setItem(lsKeyHistory, JSON.stringify(history));
+  }
+
+  function renderHistory() {
+    const container = document.getElementById('history-list');
+    const history = loadHistory();
+    if (!history.length) { 
+      container.innerHTML = `
+        <div class="text-muted text-center py-3">
+          <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+          No interviews yet. Start your first interview to see your progress!
+        </div>`;
+      return; 
+    }
+    container.innerHTML = '';
+    history.slice().reverse().forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'card border-0 shadow-sm mb-3';
+      const dt = new Date(item.startedAt);
+      const tests = `${item.totalTestsPassed || 0}/${item.totalTests || 0}`;
+      const challenges = `${item.solvedChallenges || 0}/${item.totalChallenges || item.challengeIds.length}`;
+      const scoreColor = item.score >= 80 ? 'success' : item.score >= 60 ? 'warning' : 'danger';
+      div.innerHTML = `
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="mb-1">${item.title || 'Custom Interview'}</h6>
+              <div class="small text-muted">
+                <i class="bi bi-calendar me-1"></i>${dt.toLocaleString()} • 
+                <i class="bi bi-clock me-1"></i>${item.duration}m • 
+                <i class="bi bi-list-check me-1"></i>${item.challengeIds.length} challenges
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="badge bg-${scoreColor} fs-6 mb-1">Score: ${item.score}%</div>
+              <div class="small text-muted">Solved: ${challenges}</div>
+              <div class="small text-muted">Tests: ${tests}</div>
+            </div>
+          </div>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  function startTimer(minutes) {
+    const endAt = Date.now() + minutes*60*1000;
+    const el = document.getElementById('timer');
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      const remain = Math.max(0, endAt - Date.now());
+      const m = Math.floor(remain/60000);
+      const s = Math.floor((remain%60000)/1000);
+      el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (remain === 0) {
+        clearInterval(timerInterval);
+        finishInterview();
+      }
+    }, 250);
+  }
+
+  function createEditorIfNeeded() {
+    if (!editor) {
+      editor = createEditor('editor', '');
+    }
+  }
+
+  async function fetchChallenge(id) {
+    const res = await fetch(`/api/challenges/${id}`);
+    if (!res.ok) throw new Error('failed fetching challenge');
+    return res.json();
+  }
+
+  function persistSession() {
+    if (!currentSession) return;
+    localStorage.setItem(sessionKeyPrefix + currentSession.id, JSON.stringify(currentSession));
+  }
+
+  function initSession(challengeIds, duration) {
+    currentSession = {
+      id: Date.now().toString(36),
+      title: `Interview ${new Date().toLocaleString()}`,
+      username: getUsername(),
+      challengeIds: challengeIds.map(Number),
+      duration,
+      startedAt: Date.now(),
+      answers: {},        // challengeId -> code
+      results: {},        // challengeId -> {passed, testsPassed, testsTotal}
+    };
+    persistSession();
+  }
+
+  function updateSessionMeta() {
+    const meta = document.getElementById('session-meta');
+    meta.textContent = `${currentSession.challengeIds.length} challenges • ${currentSession.duration}m`;
+  }
+
+  function renderChallengeList() {
+    // Render numeric pager buttons
+    const pager = document.getElementById('question-pager');
+    if (!pager) return;
+    pager.innerHTML = '';
+    const ordered = [...currentSession.challengeIds].map(Number).sort((a,b)=>a-b);
+    const currentId = Number(document.getElementById('challenge-id').textContent || ordered[0]);
+    ordered.forEach((id, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn ' + (id===currentId ? 'btn-primary' : 'btn-outline-secondary');
+      btn.textContent = String(idx+1);
+      btn.title = `#${id}`;
+      btn.addEventListener('click', () => openChallenge(id));
+      pager.appendChild(btn);
+    });
+  }
+
+  async function openChallenge(id) {
+    createEditorIfNeeded();
+    const container = document.getElementById('challenge-container');
+    const placeholder = document.getElementById('challenge-placeholder');
+    container.style.display = 'block';
+    placeholder.style.display = 'none';
+
+    const ch = await fetchChallenge(id);
+    document.getElementById('challenge-title').textContent = ch.title;
+    document.getElementById('challenge-id').textContent = ch.id;
+    document.getElementById('challenge-difficulty').textContent = ch.difficulty;
+    // Update right-side preview
+    const prevTitle = document.getElementById('preview-challenge-title');
+    const prevId = document.getElementById('preview-challenge-id');
+    const prevDesc = document.getElementById('preview-description');
+    if (prevTitle && prevId && prevDesc) {
+      prevTitle.textContent = ch.title;
+      prevId.textContent = ch.id;
+      prevDesc.innerHTML = '';
+      if (typeof renderMarkdownAndCleanup === 'function') {
+        renderMarkdownAndCleanup(ch.description || '', prevDesc);
+      } else if (typeof renderMarkdown === 'function') {
+        renderMarkdown(ch.description || '', prevDesc);
+      } else {
+        prevDesc.textContent = ch.description || '';
+      }
+    }
+    const saved = currentSession.answers[id] ?? ch.template;
+    editor.setValue(saved || '', -1);
+    
+    // Update the pager buttons to show current selection
+    renderChallengeList();
+    
+    // Switch to Problem tab to show the new challenge description
+    const problemTab = document.getElementById('problem-tab');
+    if (problemTab) {
+      const tab = new bootstrap.Tab(problemTab);
+      tab.show();
+    }
+  }
+
+  async function runTestsForCurrent() {
+    const id = Number(document.getElementById('challenge-id').textContent);
+    if (!id) return;
+    const code = editor.getValue();
+    const btn = document.getElementById('run-tests');
+    const label = btn.querySelector('.btn-label');
+    const spinner = btn.querySelector('.spinner-border');
+    const outputEl = document.getElementById('test-output');
+    const execTimeEl = document.getElementById('exec-time');
+
+    // Loading UI
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    label.innerHTML = '<i class="bi bi-hourglass-split"></i> Testing...';
+    outputEl.innerHTML = '<div class="d-flex align-items-center text-muted"><div class="spinner-border spinner-border-sm me-2" role="status"></div> Running tests...</div>';
+    execTimeEl.style.display = 'none';
+
+    let data;
+    try {
+      const res = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challengeId: id, code }) });
+      data = await res.json();
+    } catch (e) {
+      outputEl.innerHTML = '<span class="text-danger">Failed to run tests. Please try again.</span>';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      label.innerHTML = '<i class="bi bi-play"></i> Test';
+      return;
+    }
+    // Parse test results like backend does for packages
+    const output = data.output || '';
+    const lines = output.split('\n');
+    let passed = 0, total = 0;
+    lines.forEach(l => {
+      if (l.includes('--- PASS:')) { passed++; total++; }
+      else if (l.includes('--- FAIL:')) { total++; }
+    });
+    if (total === 0) {
+      if (output.includes('PASS') && !output.includes('FAIL')) { passed = 1; total = 1; }
+      else if (output.includes('FAIL')) { passed = 0; total = 1; }
+    }
+
+    currentSession.answers[id] = code;
+    currentSession.results[id] = { passed: data.passed, testsPassed: passed, testsTotal: total, executionMs: data.executionMs };
+    persistSession();
+
+    outputEl.innerHTML = formatTestOutput(output);
+    if (data.executionMs !== undefined) {
+      execTimeEl.textContent = `Execution time: ${formatExecutionTime(data.executionMs)}`;
+      execTimeEl.style.display = 'block';
+    }
+    renderChallengeList();
+
+    // Reset UI
+    btn.disabled = false;
+    spinner.classList.add('d-none');
+    label.innerHTML = '<i class="bi bi-play"></i> Test';
+  }
+
+  function saveProgress() {
+    const id = Number(document.getElementById('challenge-id').textContent);
+    if (!id) return;
+    currentSession.answers[id] = editor.getValue();
+    persistSession();
+  }
+
+  function computeScore() {
+    let totalChallenges = currentSession.challengeIds.length;
+    let solvedChallenges = 0;
+    let totalTestsPassed = 0;
+    let totalTestsRun = 0;
+    
+    // Count challenges solved (all tests passed) vs total challenges selected
+    for (const id of currentSession.challengeIds) {
+      const r = currentSession.results[id];
+      if (r) {
+        totalTestsRun += (r.testsTotal || 0);
+        totalTestsPassed += (r.testsPassed || 0);
+        
+        // A challenge is considered "solved" only if ALL its tests pass
+        if (r.testsPassed > 0 && r.testsPassed === r.testsTotal) {
+          solvedChallenges++;
+        }
+      }
+      // If not attempted, it counts as 0 (not solved)
+    }
+    
+    // Score is based on challenges solved, not individual tests
+    const score = totalChallenges ? Math.round((solvedChallenges / totalChallenges) * 100) : 0;
+    
+    return { 
+      score, 
+      totalPassed: totalTestsPassed, 
+      totalTests: totalTestsRun,
+      solvedChallenges,
+      totalChallenges
+    };
+  }
+
+  function finishInterview() {
+    if (!currentSession) return;
+    const { score, totalPassed, totalTests, solvedChallenges, totalChallenges } = computeScore();
+
+    // Save to history
+    const history = loadHistory();
+    history.push({
+      title: currentSession.title,
+      username: currentSession.username,
+      startedAt: currentSession.startedAt,
+      duration: currentSession.duration,
+      challengeIds: currentSession.challengeIds,
+      score,
+      totalTestsPassed: totalPassed,
+      totalTests,
+      solvedChallenges,
+      totalChallenges
+    });
+    saveHistory(history);
+    renderHistory();
+
+    // Reset UI
+    clearInterval(timerInterval);
+    document.getElementById('interview-session').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+    
+    // Show results in a nice modal
+    showFinishResultsModal(score, totalPassed, totalTests, solvedChallenges, totalChallenges);
+    currentSession = null;
+  }
+
+  function showFinishResultsModal(score, testsPassed, testsTotal, solvedChallenges, totalChallenges) {
+    const scoreColor = score >= 80 ? 'success' : score >= 60 ? 'warning' : 'danger';
+    const modalContent = `
+      <div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-${scoreColor} text-white">
+              <h5 class="modal-title">
+                <i class="bi bi-trophy-fill me-2"></i>Interview Completed!
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+              <div class="mb-4">
+                <div class="display-1 fw-bold text-${scoreColor}">${score}%</div>
+                <p class="text-muted">Your Final Score</p>
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <div class="fw-bold text-success">${solvedChallenges}</div>
+                      <small class="text-muted">Challenges Solved</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <div class="fw-bold text-primary">${totalChallenges}</div>
+                      <small class="text-muted">Total Challenges</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <div class="fw-bold text-info">${testsPassed}</div>
+                      <small class="text-muted">Tests Passed</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <div class="fw-bold text-secondary">${testsTotal}</div>
+                      <small class="text-muted">Tests Run</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ${score >= 80 ? 
+                '<div class="alert alert-success"><i class="bi bi-star-fill me-2"></i>Excellent work! You\'re ready for technical interviews.</div>' :
+                score >= 60 ?
+                '<div class="alert alert-warning"><i class="bi bi-lightbulb me-2"></i>Good job! Keep practicing to improve your score.</div>' :
+                '<div class="alert alert-info"><i class="bi bi-arrow-repeat me-2"></i>Keep practicing! Every interview makes you stronger.</div>'
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                <i class="bi bi-arrow-left me-1"></i>Start New Interview
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    
+    // Remove any existing results modal
+    document.getElementById('resultsModal')?.remove();
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    modal.show();
+    
+    // Clean up when closed
+    document.getElementById('resultsModal').addEventListener('hidden.bs.modal', () => {
+      document.getElementById('resultsModal').remove();
+    });
+  }
+
+  // Bindings
+  document.getElementById('start-interview').addEventListener('click', async () => {
+    const chosen = Array.from(document.querySelectorAll('#challenge-checkboxes input[type="checkbox"]:checked')).map(c => c.value);
+    const duration = parseInt(document.getElementById('interview-duration').value || '0', 10);
+    if (chosen.length === 0) { alert('Select at least one challenge.'); return; }
+    if (duration <= 0) { alert('Enter a valid duration.'); return; }
+    initSession(chosen, duration);
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('interview-session').style.display = 'block';
+    updateSessionMeta();
+    renderChallengeList();
+    startTimer(duration);
+    
+    // Smooth scroll to top to show interview session
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // Automatically open the first challenge after a short delay
+    const sorted = chosen.map(Number).sort((a,b) => a-b);
+    if (sorted.length > 0) {
+      setTimeout(async () => {
+        await openChallenge(sorted[0]);
+      }, 500);
+    }
+  });
+
+  document.getElementById('finish-interview').addEventListener('click', () => {
+    if (!currentSession) return;
+    
+    // Update modal content with current session info
+    const remainingTime = Math.max(0, currentSession.startedAt + currentSession.duration * 60 * 1000 - Date.now());
+    const minutes = Math.floor(remainingTime / 60000);
+    const seconds = Math.floor((remainingTime % 60000) / 1000);
+    document.getElementById('modal-time-remaining').textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    
+    const attempted = Object.keys(currentSession.results).length;
+    document.getElementById('modal-challenges-completed').textContent = `${attempted}/${currentSession.challengeIds.length}`;
+    
+    // Show confirmation modal
+    const modal = new bootstrap.Modal(document.getElementById('finishInterviewModal'));
+    modal.show();
+  });
+  
+  document.getElementById('confirm-finish-interview').addEventListener('click', () => {
+    // Close confirmation modal
+    bootstrap.Modal.getInstance(document.getElementById('finishInterviewModal')).hide();
+    // Execute finish
+    finishInterview();
+  });
+  document.getElementById('run-tests').addEventListener('click', runTestsForCurrent);
+  document.getElementById('save-progress').addEventListener('click', saveProgress);
+  document.getElementById('clear-history').addEventListener('click', () => {
+    const modal = new bootstrap.Modal(document.getElementById('clearHistoryModal'));
+    modal.show();
+  });
+  
+  document.getElementById('confirm-clear-history').addEventListener('click', () => {
+    localStorage.removeItem(lsKeyHistory);
+    renderHistory();
+    bootstrap.Modal.getInstance(document.getElementById('clearHistoryModal')).hide();
+  });
+
+  // Prev/Next navigation between questions
+  const prevBtn = document.getElementById('prev-question');
+  const nextBtn = document.getElementById('next-question');
+  function gotoRelative(delta) {
+    if (!currentSession || !currentSession.challengeIds?.length) return;
+    const ordered = [...currentSession.challengeIds].map(Number).sort((a,b)=>a-b);
+    const currentId = Number(document.getElementById('challenge-id').textContent || ordered[0]);
+    const idx = Math.max(0, ordered.indexOf(currentId));
+    const nextIdx = Math.min(ordered.length-1, Math.max(0, idx + delta));
+    const target = ordered[nextIdx];
+    if (target && target !== currentId) {
+      openChallenge(target);
+    }
+  }
+  prevBtn.addEventListener('click', ()=>gotoRelative(-1));
+  nextBtn.addEventListener('click', ()=>gotoRelative(1));
+
+  // Step navigation
+  const step1 = document.getElementById('step-1');
+  const step2 = document.getElementById('step-2');
+  const toStep2 = document.getElementById('to-step-2');
+  const backToStep1 = document.getElementById('back-to-step-1');
+
+  function updateSelectedCount() {
+    const count = document.querySelectorAll('#challenge-checkboxes input[type="checkbox"]:checked').length;
+    document.getElementById('selected-count').textContent = count;
+    toStep2.disabled = count === 0;
+  }
+
+  // Dynamic checkbox rendering & filtering
+  const checkboxContainer = document.getElementById('challenge-checkboxes');
+
+  function renderCheckboxes(list) {
+    const html = list.map(ch => {
+      const difficultyIcon = ch.difficulty === 'beginner' ? 'bi-star' : ch.difficulty === 'intermediate' ? 'bi-star-fill' : 'bi-stars';
+      return `
+        <label class="list-group-item d-flex align-items-center gap-3 py-3 border-0 border-bottom" data-id="${ch.id}" data-difficulty="${ch.difficulty}" style="cursor: pointer;"> 
+          <input class="form-check-input" type="checkbox" value="${ch.id}" ${selectedIds.has(String(ch.id)) || selectedIds.has(ch.id) ? 'checked' : ''}>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold text-primary">#${ch.id} - ${ch.title}</div>
+              </div>
+              <span class="badge ${ch.difficulty==='beginner'?'bg-success':(ch.difficulty==='intermediate'?'bg-warning':'bg-danger')} px-2 py-1">
+                <i class="bi ${difficultyIcon} me-1"></i>${ch.difficulty.charAt(0).toUpperCase()+ch.difficulty.slice(1)}
+              </span>
+            </div>
+          </div>
+        </label>`;
+    }).join('');
+    checkboxContainer.innerHTML = html;
+    // Bind change events
+    checkboxContainer.querySelectorAll('input[type=\"checkbox\"]').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const id = e.target.value;
+        if (e.target.checked) selectedIds.add(id); else selectedIds.delete(id);
+        updateSelectedCount();
+      });
+    });
+  }
+
+  function filteredChallenges() {
+    const term = (document.getElementById('challenge-search')?.value || '').toLowerCase().trim();
+    const normalizedTerm = term.replace(/\s+/g,'');
+    const list = allChallenges.filter(ch => {
+      const matchesDiff = (activeFilter==='all') || (ch.difficulty===activeFilter);
+      const text = (`#${ch.id} ${ch.title}`).toLowerCase();
+      const normalizedText = text.replace(/\s+/g,'');
+      const matchesTerm = !term || text.includes(term) || normalizedText.includes(normalizedTerm);
+      return matchesDiff && matchesTerm;
+    });
+    // Sort by id ascending by default
+    list.sort((a,b) => a.id - b.id);
+    return list;
+  }
+
+  function applyFiltersAndRender() {
+    renderCheckboxes(filteredChallenges());
+  }
+
+  // Initial render
+  applyFiltersAndRender();
+  updateSelectedCount();
+
+  toStep2.addEventListener('click', () => {
+    step2.scrollIntoView({ behavior: 'smooth' });
+  });
+  backToStep1.addEventListener('click', () => {
+    step1.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // Filtering and search controls
+  const filterButtons = Array.from(step1.querySelectorAll('button[data-filter]'));
+  const searchInput = document.getElementById('challenge-search');
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+      applyFiltersAndRender();
+    });
+  });
+  searchInput.addEventListener('input', applyFiltersAndRender);
+
+  // Handle tab styling for sidebar tabs
+  const sidebarTabButtons = document.querySelectorAll('#sidebar-tabs .nav-link');
+  sidebarTabButtons.forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function (event) {
+      // Remove active styling from all tabs
+      sidebarTabButtons.forEach(t => {
+        t.style.background = 'transparent';
+        t.style.color = 'rgba(255,255,255,0.7)';
+      });
+      // Add active styling to current tab
+      event.target.style.background = 'rgba(255,255,255,0.2)';
+      event.target.style.color = 'white';
+    });
+  });
+
+  renderHistory();
+
+  // Helper function to escape HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Helper function to get current challenge ID
+  function getCurrentChallengeId() {
+    if (!currentSession || !currentSession.challengeIds || currentSession.challengeIds.length === 0) {
+      return null;
+    }
+    
+    // Get the currently active challenge ID from the DOM element
+    const challengeIdElement = document.getElementById('challenge-id');
+    if (challengeIdElement && challengeIdElement.textContent) {
+      const currentId = Number(challengeIdElement.textContent);
+      // Verify this ID is in our session's challenge list
+      if (currentSession.challengeIds.includes(currentId)) {
+        return currentId;
+      }
+    }
+    
+    // Fallback to first challenge if no active challenge is found
+    return currentSession.challengeIds[0];
+  }
+
+
+
+  // AI Functions
+  window.requestAIReview = async function() {
+    const currentCode = editor ? editor.getValue() : '';
+    
+    if (!currentCode.trim()) {
+      alert('Please write some code first!');
+      return;
+    }
+    
+    // Get current challenge ID using the helper function
+    const currentChallengeId = getCurrentChallengeId();
+    
+    if (!currentChallengeId) {
+      alert('Please start an interview session and select a challenge first!\n\nSteps:\n1. Select challenges from the list\n2. Set duration\n3. Click "Start Interview"\n4. Begin coding on a challenge');
+      return;
+    }
+
+    showAILoading('Getting AI Code Review...');
+    
+    try {
+      const response = await fetch('/api/ai/code-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: currentChallengeId,
+          code: currentCode,
+          context: `Interview session, ${currentSession.challengeIds.length} challenges, ${Math.floor((Date.now() - currentSession.startedAt) / 60000)} minutes elapsed`
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const review = await response.json();
+      console.log('AI Review Response:', review);
+      
+      if (!review || typeof review !== 'object') {
+        throw new Error('Invalid response format from AI service');
+      }
+      
+      displayAIReview(review);
+    } catch (error) {
+      showAIError('Failed to get AI review: ' + error.message);
+    }
+  };
+
+  window.requestInterviewQuestions = async function() {
+    const currentCode = editor ? editor.getValue() : '';
+    
+    // Get current challenge ID using the helper function
+    const currentChallengeId = getCurrentChallengeId();
+    
+    if (!currentChallengeId) {
+      alert('Please start an interview session and select a challenge first!');
+      return;
+    }
+
+    showAILoading('Generating Interview Questions...');
+    
+    try {
+      const response = await fetch('/api/ai/interviewer-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: currentChallengeId,
+          code: currentCode,
+          userProgress: `Challenge 1 of ${currentSession.challengeIds.length}`
+        })
+      });
+      
+      const result = await response.json();
+      console.log('AI Questions Response:', result);
+      
+      // Handle both direct array and object with questions property
+      const questions = result.questions || result;
+      displayInterviewQuestions(questions);
+    } catch (error) {
+      showAIError('Failed to get interview questions: ' + error.message);
+    }
+  };
+
+
+  window.requestHint = async function(level = 1) {
+    const currentCode = editor ? editor.getValue() : '';
+    
+    // Get current challenge ID using the helper function
+    const currentChallengeId = getCurrentChallengeId();
+    
+    if (!currentChallengeId) {
+      alert('Please start an interview session and select a challenge first!');
+      return;
+    }
+
+    showAILoading(`Getting Hint (Level ${level})...`);
+    
+    try {
+      const response = await fetch('/api/ai/code-hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: currentChallengeId,
+          code: currentCode,
+          hintLevel: level
+        })
+      });
+      
+      const result = await response.json();
+      displayHint(result.hint, level);
+    } catch (error) {
+      showAIError('Failed to get hint: ' + error.message);
+    }
+  };
+
+  function showAILoading(message) {
+    const responseArea = document.getElementById('ai-response-area');
+    const title = document.getElementById('ai-response-title');
+    const content = document.getElementById('ai-response-content');
+    
+    title.textContent = 'AI Thinking...';
+    content.innerHTML = `
+      <div class="text-center">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        ${message}
+      </div>
+    `;
+    responseArea.style.display = 'block';
+  }
+
+  function displayAIReview(review) {
+    const title = document.getElementById('ai-response-title');
+    const content = document.getElementById('ai-response-content');
+    
+    // helper to render markdown when available
+    const md = (text) => {
+      if (!text) return '';
+      const safe = text.toString();
+      if (typeof marked !== 'undefined') {
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        }
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>');
+    };
+
+    // Provide defaults for missing properties
+    const overallScore = review.overall_score || 0;
+    const readabilityScore = review.readability_score || 0;
+    const interviewerFeedback = review.interviewer_feedback || 'No feedback available';
+    
+    title.textContent = `AI Code Review (Score: ${overallScore}/100)`;
+    
+    let html = `
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="badge bg-${getScoreColor(overallScore)} fs-6">
+            Overall Score: ${overallScore}/100
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="badge bg-info fs-6">
+            Readability: ${readabilityScore}/100
+          </div>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <h6><i class="bi bi-chat-quote-fill me-1"></i>Interviewer Feedback:</h6>
+        <div class="alert alert-light p-2 small">
+          <div class="markdown-content" style="padding: 0;">${typeof marked !== 'undefined' ? marked.parse(interviewerFeedback) : escapeHtml(interviewerFeedback)}</div>
+        </div>
+      </div>
+    `;
+    
+    if (review.issues && Array.isArray(review.issues) && review.issues.length > 0) {
+      html += `
+        <div class="mb-3">
+          <h6><i class="bi bi-exclamation-triangle me-1"></i>Issues Found:</h6>
+          ${review.issues.map(issue => `
+            <div class="alert alert-${getSeverityColor(issue.severity)} p-2 small mb-1">
+              <div><strong>${escapeHtml((issue.type||'').toString().toUpperCase())}:</strong></div>
+              <div class="markdown-content" style="padding:0; margin-top: .25rem;">${md(issue.description)}</div>
+              ${issue.solution ? `<div class="mt-1"><em>Fix:</em><div class="markdown-content" style="padding:0;">${md(issue.solution)}</div></div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    if (review.suggestions && Array.isArray(review.suggestions) && review.suggestions.length > 0) {
+      html += `
+        <div class="mb-3">
+          <h6><i class="bi bi-lightbulb me-1"></i>Suggestions:</h6>
+          ${review.suggestions.map(suggestion => `
+            <div class="alert alert-info p-2 small mb-1">
+              <div><strong>${escapeHtml(suggestion.category || '')}:</strong></div>
+              <div class="markdown-content" style="padding:0; margin-top: .25rem;">${md(suggestion.description)}</div>
+              ${suggestion.example ? `<div class="mt-1"><em>Example:</em><div class="markdown-content" style="padding:0;">${md(suggestion.example)}</div></div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    if (review.complexity) {
+      html += `
+        <div class="mb-3">
+          <h6><i class="bi bi-speedometer me-1"></i>Complexity Analysis:</h6>
+          <div class="alert alert-light p-2 small">
+            <div class="mb-2">
+              <strong>Time Complexity:</strong> <code>${escapeHtml(review.complexity.time_complexity || 'N/A')}</code>
+            </div>
+            <div class="mb-2">
+              <strong>Space Complexity:</strong> <code>${escapeHtml(review.complexity.space_complexity || 'N/A')}</code>
+            </div>
+            ${review.complexity.can_optimize && review.complexity.optimized_approach ? 
+              `<div><strong>Optimization:</strong><div class="markdown-content mt-1" style="padding:0;">${md(review.complexity.optimized_approach)}</div></div>` : 
+              ''}
+          </div>
+        </div>
+      `;
+    }
+    
+    content.innerHTML = html;
+  }
+
+  function displayInterviewQuestions(questions) {
+    const title = document.getElementById('ai-response-title');
+    const content = document.getElementById('ai-response-content');
+    
+    title.textContent = 'Interview Questions';
+    
+    const md = (text) => {
+      if (!text) return '';
+      const safe = text.toString();
+      if (typeof marked !== 'undefined') {
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        }
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>');
+    };
+
+    let html = `
+      <div class="mb-2">
+        <h6><i class="bi bi-person-check me-1"></i>The interviewer asks:</h6>
+      </div>
+    `;
+    
+    // Ensure questions is an array
+    if (questions && Array.isArray(questions)) {
+      questions.forEach((question, index) => {
+        // Convert markdown to HTML for proper rendering
+        const questionHtml = md(question);
+        html += `
+          <div class="alert alert-primary p-2 small mb-2">
+            <strong>Q${index + 1}:</strong> 
+            <div class="markdown-content" style="margin-top: 0.5rem; padding: 0;">${questionHtml}</div>
+          </div>
+        `;
+      });
+    } else {
+      html += `
+        <div class="alert alert-warning p-2 small">
+          No questions available at this time.
+        </div>
+      `;
+    }
+    
+    content.innerHTML = html;
+  }
+
+  function displayHint(hint, level) {
+    const title = document.getElementById('ai-response-title');
+    const content = document.getElementById('ai-response-content');
+    
+    title.textContent = `Hint (Level ${level}/4)`;
+    
+    // Ensure hint is a string
+    const safeHint = hint || 'No hint available at this time.';
+    
+    const nextLevelButton = level < 4 ? `
+      <button class="btn btn-warning btn-sm mt-2" onclick="requestHint(${level + 1})">
+        <i class="bi bi-lightbulb me-1"></i>Need More Help? (Level ${level + 1})
+      </button>
+    ` : '';
+    
+    // Convert markdown to HTML for proper rendering
+    const hintHtml = (function(t){
+      if (!t) return '';
+      const safe = t.toString();
+      if (typeof marked !== 'undefined') { 
+        try { 
+          return marked.parse(safe, { breaks: true }); 
+        } catch { 
+          return escapeHtml(safe).replace(/\n/g, '<br/>'); 
+        } 
+      }
+      return escapeHtml(safe).replace(/\n/g, '<br/>' );
+    })(safeHint);
+    
+    content.innerHTML = `
+      <div class="alert alert-warning p-3">
+        <i class="bi bi-lightbulb-fill me-2"></i>
+        <div class="markdown-content" style="margin-top: 0.5rem; padding: 0;">${hintHtml}</div>
+        ${nextLevelButton}
+      </div>
+    `;
+  }
+
+
+
+  function showAIError(message) {
+    const title = document.getElementById('ai-response-title');
+    const content = document.getElementById('ai-response-content');
+    
+    title.textContent = 'AI Error';
+    content.innerHTML = `
+      <div class="alert alert-danger p-2 small">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        ${message}
+      </div>
+    `;
+  }
+
+  function getScoreColor(score) {
+    if (score >= 80) return 'success';
+    if (score >= 60) return 'warning';
+    return 'danger';
+  }
+
+  function getSeverityColor(severity) {
+    switch (severity) {
+      case 'critical': return 'danger';
+      case 'high': return 'warning';
+      case 'medium': return 'info';
+      case 'low': return 'light';
+      default: return 'secondary';
+    }
+  }
+})();
+</script>
+{{end}}
+
+

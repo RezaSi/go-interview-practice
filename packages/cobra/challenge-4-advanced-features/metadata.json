@@ -1,0 +1,49 @@
+{
+  "title": "Advanced Features & Middleware",
+  "difficulty": "Advanced",
+  "duration": "60-90 minutes",
+  "topics": [
+    "cobra",
+    "cli",
+    "middleware",
+    "plugins",
+    "viper",
+    "configuration",
+    "yaml",
+    "json",
+    "toml",
+    "validation",
+    "environment variables"
+  ],
+  "learning_objectives": [
+    "Implement command middleware patterns",
+    "Build plugin architecture for CLI applications",
+    "Master advanced Cobra features and patterns",
+    "Handle multiple configuration formats",
+    "Implement validation pipelines",
+    "Create custom help systems",
+    "Integrate environment variables",
+    "Design production-ready CLI architecture"
+  ],
+  "prerequisites": [
+    "Advanced Go programming",
+    "Solid understanding of Cobra",
+    "Knowledge of design patterns",
+    "Experience with CLI tools",
+    "Understanding of middleware concepts"
+  ],
+  "skills_tested": [
+    "Advanced Cobra patterns",
+    "Middleware implementation",
+    "Plugin architecture",
+    "Configuration management",
+    "Format conversion",
+    "Validation pipelines",
+    "Error handling and recovery",
+    "Performance optimization",
+    "Security considerations",
+    "CLI UX design"
+  ],
+  "icon": "bi-layers",
+  "order": 4
+} 

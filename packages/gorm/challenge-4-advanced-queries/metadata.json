@@ -1,0 +1,47 @@
+{
+  "title": "Advanced Queries",
+  "description": "Build a social media analytics system using GORM that demonstrates advanced querying techniques, aggregations, and complex data analysis.",
+  "short_description": "Learn GORM advanced queries and build a social media analytics system",
+  "difficulty": "Advanced",
+  "estimated_time": "90-120 min",
+  "learning_objectives": [
+    "Implement complex database queries with GORM",
+    "Use aggregations and group by operations",
+    "Work with subqueries and raw SQL",
+    "Implement pagination and efficient data retrieval",
+    "Build analytics and reporting queries",
+    "Optimize query performance"
+  ],
+  "prerequisites": [
+    "GORM CRUD operations",
+    "GORM associations",
+    "Basic SQL knowledge",
+    "Understanding of database indexing"
+  ],
+  "tags": [
+    "advanced-queries",
+    "aggregations",
+    "analytics",
+    "pagination",
+    "subqueries",
+    "raw-sql"
+  ],
+  "real_world_connection": "Social media platforms and analytics systems require complex queries to generate insights, user recommendations, and engagement statistics.",
+  "requirements": [
+    "Implement top users by post count aggregation",
+    "Create paginated post retrieval with user info",
+    "Calculate user engagement statistics",
+    "Filter popular posts by time period and likes",
+    "Generate country-based user statistics",
+    "Implement full-text search functionality",
+    "Build user recommendation algorithm",
+    "Optimize query performance"
+  ],
+  "bonus_points": [
+    "Implement query result caching",
+    "Add database indexing strategies",
+    "Create query performance monitoring"
+  ],
+  "icon": "bi-graph-up",
+  "order": 4
+} 

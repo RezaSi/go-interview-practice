@@ -27,7 +27,7 @@ type OAuth2Config struct {
 // OAuth2Server implements an OAuth2 authorization server
 type OAuth2Server struct {
 	// clients stores registered OAuth2 clients
-	clients map[string]*OAuth2Client
+	clients map[string]*OAuth2ClientInfo
 	// authCodes stores issued authorization codes
 	authCodes map[string]*AuthorizationCode
 	// tokens stores issued access tokens
@@ -40,8 +40,8 @@ type OAuth2Server struct {
 	mu sync.RWMutex
 }
 
-// OAuth2Client represents a registered OAuth2 client
-type OAuth2Client struct {
+// OAuth2ClientInfo represents a registered OAuth2 client
+type OAuth2ClientInfo struct {
 	// ClientID is the unique identifier for the client
 	ClientID string
 	// ClientSecret is the secret for the client
@@ -113,7 +113,7 @@ type RefreshToken struct {
 // NewOAuth2Server creates a new OAuth2Server
 func NewOAuth2Server() *OAuth2Server {
 	server := &OAuth2Server{
-		clients:       make(map[string]*OAuth2Client),
+		clients:       make(map[string]*OAuth2ClientInfo),
 		authCodes:     make(map[string]*AuthorizationCode),
 		tokens:        make(map[string]*Token),
 		refreshTokens: make(map[string]*RefreshToken),
@@ -131,7 +131,7 @@ func NewOAuth2Server() *OAuth2Server {
 }
 
 // RegisterClient registers a new OAuth2 client
-func (s *OAuth2Server) RegisterClient(client *OAuth2Client) error {
+func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
 	// TODO: Implement client registration
 	return errors.New("not implemented")
 }
@@ -228,7 +228,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 }
 
 // RefreshToken refreshes the access token using the refresh token
-func (c *OAuth2Client) RefreshToken() error {
+func (c *OAuth2Client) DoRefreshToken() error {
 	// TODO: Implement token refresh
 	return errors.New("not implemented")
 }
@@ -244,7 +244,7 @@ func main() {
 	server := NewOAuth2Server()
 
 	// Register a client
-	client := &OAuth2Client{
+	client := &OAuth2ClientInfo{
 		ClientID:      "example-client",
 		ClientSecret:  "example-secret",
 		RedirectURIs:  []string{"http://localhost:8080/callback"},
