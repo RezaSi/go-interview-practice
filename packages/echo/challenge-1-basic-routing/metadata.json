@@ -1,0 +1,43 @@
+{
+  "title": "Basic Routing & Task Management API",
+  "description": "Build a simple REST API with Echo framework that handles task management operations including creating, reading, updating, and deleting tasks.",
+  "short_description": "Learn fundamental Echo routing and build a task management REST API",
+  "difficulty": "Beginner",
+  "estimated_time": "30-45 min",
+  "learning_objectives": [
+    "Understand Echo framework basics",
+    "Implement HTTP routes (GET, POST, PUT, DELETE)",
+    "Handle JSON request/response",
+    "Work with URL parameters",
+    "Manage in-memory data structures"
+  ],
+  "prerequisites": [
+    "Basic Go syntax",
+    "Understanding of HTTP methods",
+    "JSON concepts"
+  ],
+  "tags": [
+    "routing",
+    "rest-api",
+    "json",
+    "http-methods"
+  ],
+  "real_world_connection": "Task management APIs are foundational to most web applications, from productivity tools to project management platforms.",
+  "requirements": [
+    "Implement GET /health endpoint for health checks",
+    "Implement GET /tasks endpoint to retrieve all tasks",
+    "Implement POST /tasks endpoint to create new tasks",
+    "Implement GET /tasks/:id endpoint to get specific task",
+    "Implement PUT /tasks/:id endpoint to update tasks",
+    "Implement DELETE /tasks/:id endpoint to remove tasks",
+    "Handle proper HTTP status codes",
+    "Return appropriate JSON responses"
+  ],
+  "bonus_points": [
+    "Add input validation",
+    "Implement query parameter filtering",
+    "Add comprehensive error handling"
+  ],
+  "icon": "bi-play-circle",
+  "order": 1
+}

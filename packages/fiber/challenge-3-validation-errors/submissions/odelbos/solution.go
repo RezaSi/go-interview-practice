@@ -165,8 +165,8 @@ func getProductsHandler(c fiber.Ctx) error {
 }
 
 func getProductHandler(c fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	if err != nil {
+	id := fiber.Params[int](c, "id")
+	if id == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
 			Success: false,
 			Error:   "Invalid ID",
@@ -213,8 +213,8 @@ func createProductHandler(c fiber.Ctx) error {
 }
 
 func updateProductHandler(c fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	if err != nil {
+	id := fiber.Params[int](c, "id")
+	if id == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse{
 			Success: false,
 			Error:   "Invalid ID",

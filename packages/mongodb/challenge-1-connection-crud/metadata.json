@@ -1,0 +1,51 @@
+{
+  "title": "MongoDB Connection & CRUD Operations",
+  "description": "Build a user registration system with MongoDB using basic CRUD operations. Learn to connect to MongoDB, handle collections and documents, and implement proper error handling with the official Go driver.",
+  "short_description": "Master MongoDB basics by building a user registration system with CRUD operations",
+  "difficulty": "Beginner",
+  "estimated_time": "45-60 min",
+  "learning_objectives": [
+    "Connect to MongoDB using the official Go driver",
+    "Understand collections, documents, and BSON data types",
+    "Implement Create, Read, Update, Delete operations",
+    "Handle MongoDB errors and context properly",
+    "Work with ObjectID and custom ID generation",
+    "Structure MongoDB responses and error handling"
+  ],
+  "prerequisites": [
+    "Basic Go syntax and structs",
+    "Understanding of JSON data format",
+    "Basic database concepts",
+    "HTTP request/response concepts"
+  ],
+  "tags": [
+    "mongodb",
+    "crud",
+    "connection",
+    "bson",
+    "database",
+    "user-management"
+  ],
+  "real_world_connection": "User registration and management systems are the foundation of most web applications. This challenge teaches the essential MongoDB skills used in authentication systems, user profiles, and content management platforms used by companies like Netflix, Uber, and Airbnb.",
+  "requirements": [
+    "Implement MongoDB connection with proper configuration",
+    "Create User struct with BSON tags and validation",
+    "Implement CreateUser function with auto-generated ObjectID",
+    "Implement GetUser function with ID-based lookup",
+    "Implement UpdateUser function with partial updates",
+    "Implement DeleteUser function with proper error handling",
+    "Implement ListUsers function with optional filtering",
+    "Handle all MongoDB errors appropriately",
+    "Use context.Context for all database operations",
+    "Return structured responses with success/error states"
+  ],
+  "bonus_points": [
+    "Add email uniqueness validation",
+    "Implement user search by email or name",
+    "Add created_at and updated_at timestamps",
+    "Implement pagination for ListUsers",
+    "Add input validation for user data"
+  ],
+  "icon": "bi-database-fill",
+  "order": 1
+}

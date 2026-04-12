@@ -97,6 +97,17 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	// GitHub webhook route
 	mux.HandleFunc("/webhook/github", apiHandler.GitHubWebhookHandler)
 
+	// Health check endpoint for Railway
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  "healthy",
+			"service": "go-interview-practice",
+			"version": "1.0.0",
+		})
+	})
+
 	// Debug route for sponsors
 	mux.HandleFunc("/api/debug/sponsors", apiHandler.GetSponsorsDebug)
 	mux.HandleFunc("/api/ai/status", func(w http.ResponseWriter, r *http.Request) {
