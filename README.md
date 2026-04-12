@@ -21,7 +21,15 @@
 
 Welcome to the **Go Interview Practice** repository! Master Go programming and ace your technical interviews with our interactive coding challenges.
 
-Our interactive platform is now live at **[app.gointerview.dev](https://app.gointerview.dev/)** 🎉 Explore challenges, track your progress, and elevate your Go skills with AI-powered mentorship.
+<a href="https://prodpath.dev" target="_blank">
+          <p align="center">
+  <img src="images/prodpath-banner.png" alt="Go Interview Practice Banner" width="100%">
+</p>
+</a>
+
+**Go Interview Practice is now part of [ProdPath](https://prodpath.dev)** — the complete platform for becoming a production-ready developer with Cloud Labs, System Design, and AI mentorship.
+
+Our interactive platform is live at **[app.gointerview.dev](https://app.gointerview.dev/)** 🎉 Explore challenges, track your progress, and elevate your Go skills with AI-powered mentorship.
 
 <div align="center">
   <a href="https://app.gointerview.dev/" target="_blank">
@@ -94,8 +102,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 6 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 7 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 8 | <img src="https://github.com/Ali-Fartoot.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Ali-Fartoot](https://github.com/Ali-Fartoot)** | **19**/30 | **63.3%** | Expert | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 9 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **17**/30 | **56.7%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜⬜✅✅⬜⬜⬜✅⬜⬜✅ |
-| 10 | <img src="https://github.com/Cpoing.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Cpoing](https://github.com/Cpoing)** | **16**/30 | **53.3%** | Expert | ✅✅✅✅⬜✅✅✅✅✅⬜✅✅✅✅<br/>⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 9 | <img src="https://github.com/Cpoing.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Cpoing](https://github.com/Cpoing)** | **17**/30 | **56.7%** | Expert | ✅✅✅✅⬜✅✅✅✅✅✅✅✅✅✅<br/>⬜✅✅⬜⬜✅⬜⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 10 | <img src="https://github.com/ashwinipatankar.png" width="24" height="24" style="border-radius: 50%;"><br/>**[ashwinipatankar](https://github.com/ashwinipatankar)** ❤️ | **17**/30 | **56.7%** | Expert | ✅✅✅⬜✅✅✅⬜✅✅⬜⬜✅✅⬜<br/>⬜✅✅✅⬜⬜✅✅⬜⬜⬜✅⬜⬜✅ |
 
 <div align="center">
 
@@ -110,7 +118,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 218
+- **Active Developers**: 252
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -188,11 +196,12 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | Rank | Developer | Completed | Progress |
 |:---:|:---:|:---:|:---|
 | 🥇 | **[RezaSi](https://github.com/RezaSi)** | 2/5 | 🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% |
+| 🥈 | **[Onkar-25](https://github.com/Onkar-25)** | 1/5 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% |
 
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 26
-- **Active Package Learners**: 26
+- **Active Package Learners**: 35
 - **Available Packages**: 6 (cobra, echo, fiber, gin, gorm, mongodb)
 
 - **Most Package Challenges Solved**: 17 by odelbos
