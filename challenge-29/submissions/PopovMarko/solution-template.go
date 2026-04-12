@@ -168,9 +168,14 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	}
 
 	start := time.Now()
-	if tb.Allow() {
+	tb.mu.Lock()
+	if tb.isAllowedLocked() {
+		tb.metrics.TotalRequests++
+		tb.metrics.AllowedRequests++
+		tb.mu.Unlock()
 		return nil
 	}
+	tb.mu.Unlock()
 
 	ch := make(chan struct{})
 
@@ -192,12 +197,18 @@ func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 		tb.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			tb.mu.Lock()
+			tb.metrics.TotalRequests++
+			tb.metrics.DeniedRequests++
+			tb.mu.Unlock()
 			tb.removeCh(ch)
 			close(ch) // Clean up the wait queue channel
 			return fmt.Errorf("token bucket limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
 			tb.mu.Lock()
 			if tb.isAllowedLocked() {
+				tb.metrics.TotalRequests++
+				tb.metrics.AllowedRequests++
 				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
 				tb.metrics.AverageWaitTime = awt
 				tb.mu.Unlock()
@@ -258,9 +269,15 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	}
 
 	start := time.Now()
-	if tb.AllowN(n) {
+	tb.mu.Lock()
+	if tb.isAllowedNLocked(n) {
+		tb.metrics.TotalRequests += int64(n)
+		tb.metrics.AllowedRequests += int64(n)
+		tb.mu.Unlock()
 		return nil
 	}
+	tb.mu.Unlock()
+
 	// Enqueue all requested slots so wait time reflects total demand.
 	tb.mu.Lock()
 	if len(tb.waitQueue)+n > tb.maxQueue {
@@ -277,6 +294,10 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		tb.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			tb.mu.Lock()
+			tb.metrics.TotalRequests += int64(n)
+			tb.metrics.DeniedRequests += int64(n)
+			tb.mu.Unlock()
 			for _, ch := range chans {
 				tb.removeCh(ch)
 				close(ch)
@@ -285,6 +306,8 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		case <-time.After(waitTime):
 			tb.mu.Lock()
 			if tb.isAllowedNLocked(n) {
+				tb.metrics.TotalRequests += int64(n)
+				tb.metrics.AllowedRequests += int64(n)
 				awt := tb.calculateAverageWaitTimeLocked(time.Since(start))
 				tb.metrics.AverageWaitTime = awt
 				tb.mu.Unlock()
@@ -463,9 +486,14 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 	}
 
 	start := time.Now()
-	if sw.Allow() {
+	sw.mu.Lock()
+	if sw.isAllowedLocked() {
+		sw.metrics.TotalRequests++
+		sw.metrics.AllowedRequests++
+		sw.mu.Unlock()
 		return nil
 	}
+	sw.mu.Unlock()
 
 	for {
 		// Recalculate the window delay every time through the loop because the
@@ -475,10 +503,16 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 		sw.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			sw.mu.Lock()
+			sw.metrics.TotalRequests++
+			sw.metrics.DeniedRequests++
+			sw.mu.Unlock()
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
 			sw.mu.Lock()
 			if sw.isAllowedLocked() {
+				sw.metrics.TotalRequests++
+				sw.metrics.AllowedRequests++
 				// Record the observed wait after a successful retry.
 				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 				sw.mu.Unlock()
@@ -499,14 +533,15 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 	}
 
 	start := time.Now()
-	if sw.AllowN(n) {
-		// Immediate success still contributes to the average wait metric.
-		sw.mu.Lock()
-		awt := sw.calculateAverageWaitTimeLocked(time.Since(start))
-		sw.metrics.AverageWaitTime = awt
+	sw.mu.Lock()
+	if sw.isAllowedNLocked(n) {
+
+		sw.metrics.TotalRequests += int64(n)
+		sw.metrics.AllowedRequests += int64(n)
 		sw.mu.Unlock()
 		return nil
 	}
+	sw.mu.Unlock()
 
 	for {
 		// Recompute the delay on every loop because request expirations are dynamic.
@@ -515,10 +550,16 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		sw.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			sw.mu.Lock()
+			sw.metrics.TotalRequests += int64(n)
+			sw.metrics.DeniedRequests += int64(n)
+			sw.mu.Unlock()
 			return fmt.Errorf("sliding window limiter metod Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
 			sw.mu.Lock()
 			if sw.isAllowedNLocked(n) {
+				sw.metrics.TotalRequests += int64(n)
+				sw.metrics.AllowedRequests += int64(n)
 				// Record the observed wait after a successful retry.
 				sw.metrics.AverageWaitTime = sw.calculateAverageWaitTimeLocked(time.Since(start))
 				sw.mu.Unlock()
@@ -572,7 +613,9 @@ func (sw *SlidingWindowLimiter) calculateWaitTimeLocked() time.Duration {
 // calculateAverageWaitTimeLocked updates the rolling average wait duration.
 // The caller must hold sw.mu.
 func (sw *SlidingWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
-	return (sw.metrics.AverageWaitTime*time.Duration(sw.waitSamples) + wt) / time.Duration(float64(sw.waitSamples+1))
+	awt := (sw.metrics.AverageWaitTime*time.Duration(sw.waitSamples) + wt) / time.Duration(float64(sw.waitSamples+1))
+	sw.waitSamples++
+	return awt
 }
 
 // FixedWindowLimiter counts requests within discrete, resettable windows.
@@ -692,10 +735,14 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 	}
 
 	start := time.Now()
-	if fw.Allow() {
+	if fw.isAllowedLodked() {
+		fw.mu.Lock()
+		fw.metrics.TotalRequests++
+		fw.metrics.AllowedRequests++
+		fw.mu.Unlock()
 		return nil
 	}
-
+	fw.mu.Unlock()
 	for {
 		// Recompute the delay because window boundaries move over time.
 		fw.mu.Lock()
@@ -703,10 +750,16 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 		fw.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			fw.mu.Lock()
+			fw.metrics.TotalRequests++
+			fw.metrics.DeniedRequests++
+			fw.mu.Unlock()
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
 			fw.mu.Lock()
 			if fw.isAllowedLodked() {
+				fw.metrics.TotalRequests++
+				fw.metrics.AllowedRequests++
 				// Record the observed delay for the granted request.
 				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 				fw.mu.Unlock()
@@ -727,15 +780,14 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	}
 
 	start := time.Now()
-	if fw.AllowN(n) {
-		// Immediate success still contributes to the average wait metric.
-		fw.mu.Lock()
-		awt := fw.calculateAverageWaitTimeLocked(time.Since(start))
-		fw.metrics.AverageWaitTime = awt
+	fw.mu.Lock()
+	if fw.isAllowedNLocked(n) {
+		fw.metrics.TotalRequests += int64(n)
+		fw.metrics.AllowedRequests += int64(n)
 		fw.mu.Unlock()
-
 		return nil
 	}
+	fw.mu.Unlock()
 
 	for {
 		// Recompute on every loop so retries align with the next window boundary.
@@ -744,10 +796,16 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 		fw.mu.Unlock()
 		select {
 		case <-ctx.Done():
+			fw.mu.Lock()
+			fw.metrics.TotalRequests += int64(n)
+			fw.metrics.DeniedRequests += int64(n)
+			fw.mu.Unlock()
 			return fmt.Errorf("fixed window limiter method Wait: %w", ctx.Err())
 		case <-time.After(waitTime):
 			fw.mu.Lock()
 			if fw.isAllowedNLocked(n) {
+				fw.metrics.TotalRequests += int64(n)
+				fw.metrics.AllowedRequests += int64(n)
 				// Record the observed delay for the granted batch.
 				fw.metrics.AverageWaitTime = fw.calculateAverageWaitTimeLocked(time.Since(start))
 				fw.mu.Unlock()
@@ -803,7 +861,9 @@ func (fw *FixedWindowLimiter) calculateWaitTimeLocked() time.Duration {
 // calculateAverageWaitTimeLocked updates the rolling average wait duration.
 // The caller must hold fw.mu.
 func (fw *FixedWindowLimiter) calculateAverageWaitTimeLocked(wt time.Duration) time.Duration {
-	return (fw.metrics.AverageWaitTime*time.Duration(fw.waitSamples) + wt) / time.Duration(float64(fw.waitSamples+1))
+	awt := (fw.metrics.AverageWaitTime*time.Duration(fw.waitSamples) + wt) / time.Duration(float64(fw.waitSamples+1))
+	fw.waitSamples++
+	return awt
 }
 
 // RateLimiterFactory creates limiter implementations from configuration.
