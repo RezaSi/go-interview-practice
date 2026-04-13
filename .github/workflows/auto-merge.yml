@@ -24,7 +24,7 @@ jobs:
         with:
           script: |
             const TWO_DAYS_MS = 2 * 60 * 60 * 1000;
-            const MAX_MERGES_PER_RUN = 10;
+            const MAX_MERGES_PER_RUN = 100;
             const now = new Date();
             let mergeCount = 0;
             
