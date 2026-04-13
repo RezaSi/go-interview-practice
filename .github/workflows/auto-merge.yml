@@ -7,8 +7,8 @@ permissions:
 
 on:
   schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,8 +23,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const TWO_DAYS_MS = 2 * 60 * 60 * 1000;
-            const MAX_MERGES_PER_RUN = 100;
+            const TWO_DAYS_MS = 12 * 60 * 60 * 1000;
+            const MAX_MERGES_PER_RUN = 10;
             const now = new Date();
             let mergeCount = 0;
             
