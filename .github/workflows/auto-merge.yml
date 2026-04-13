@@ -84,11 +84,24 @@ jobs:
               }
               
               // Check if PR is mergeable
-              const { data: prDetails } = await github.rest.pulls.get({
+              // First call triggers GitHub to compute mergeable_state (it's lazy-loaded)
+              let prDetails = (await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: pr.number
-              });
+              })).data;
+              
+              // If state is unknown, wait and retry
+              if (prDetails.mergeable_state === 'unknown' || prDetails.mergeable === null) {
+                console.log(`PR #${pr.number}: Waiting for GitHub to compute merge status...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                prDetails = (await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number
+                })).data;
+              }
               
               if (prDetails.mergeable_state !== 'clean' && prDetails.mergeable_state !== 'unstable') {
                 console.log(`PR #${pr.number}: Skipping - mergeable_state is '${prDetails.mergeable_state}'`);
