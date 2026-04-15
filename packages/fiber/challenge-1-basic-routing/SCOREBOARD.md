@@ -2,5 +2,6 @@
 
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xSangeet | 8 | 8 |
 | RezaSi | 8 | 8 |
 | odelbos | 8 | 8 |

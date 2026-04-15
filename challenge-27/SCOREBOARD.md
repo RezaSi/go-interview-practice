@@ -1,6 +1,7 @@
 # Scoreboard for challenge-27
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| AkifhanIlgaz | 28 | 28 |
 | Ali-Fartoot | 28 | 28 |
 | Gandook | 28 | 28 |
 | JackDalberg | 28 | 28 |
@@ -14,9 +15,14 @@
 | diyorich | 28 | 28 |
 | grozdovk | 28 | 28 |
 | hvijaycse | 28 | 28 |
+| imankhodadi | 28 | 28 |
+| jrbarbati | 28 | 28 |
 | kiramux | 28 | 28 |
+| maket12 | 28 | 28 |
 | mick4711 | 28 | 28 |
 | nzamulov | 28 | 28 |
 | odelbos | 28 | 28 |
+| shansing | 28 | 28 |
 | t4e1 | 28 | 28 |
+| xyersh | 28 | 28 |
 | y1hao | 28 | 28 |

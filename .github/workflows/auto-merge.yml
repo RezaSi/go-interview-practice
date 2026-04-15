@@ -133,6 +133,42 @@ jobs:
                   body: `🎉 **Auto-merged!**\n\nThis PR was automatically merged after 2 days with all checks passing.\n\nThank you for your contribution, @${pr.user.login}!`
                 });
                 
+                // Trigger scoreboard update workflows
+                // (GITHUB_TOKEN merges don't trigger push-based workflows, so we dispatch manually)
+                try {
+                  // Check if PR modified classic challenges
+                  const { data: files } = await github.rest.pulls.listFiles({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number
+                  });
+                  
+                  const hasClassicSubmission = files.some(f => /^challenge-\d+\/submissions\//.test(f.filename));
+                  const hasPackageSubmission = files.some(f => /^packages\/[^/]+\/challenge-[^/]+\/submissions\//.test(f.filename));
+                  
+                  if (hasClassicSubmission) {
+                    console.log(`PR #${pr.number}: Triggering classic scoreboard update...`);
+                    await github.rest.actions.createWorkflowDispatch({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      workflow_id: 'update-scoreboards.yml',
+                      ref: 'main'
+                    });
+                  }
+                  
+                  if (hasPackageSubmission) {
+                    console.log(`PR #${pr.number}: Triggering package scoreboard update...`);
+                    await github.rest.actions.createWorkflowDispatch({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      workflow_id: 'update-package-scoreboards.yml',
+                      ref: 'main'
+                    });
+                  }
+                } catch (dispatchError) {
+                  console.log(`PR #${pr.number}: Warning - failed to trigger scoreboard update: ${dispatchError.message}`);
+                }
+                
               } catch (error) {
                 console.log(`PR #${pr.number}: Failed to merge - ${error.message}`);
                 
