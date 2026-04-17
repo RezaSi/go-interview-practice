@@ -527,42 +527,63 @@ type ThreadSafeCache struct {
 // NewThreadSafeCache wraps any cache implementation to make it thread-safe
 func NewThreadSafeCache(cache Cache) *ThreadSafeCache {
 	// TODO: Implement thread-safe wrapper constructor
-	return nil
+	if cache == nil {
+		return nil
+	}
+	return &ThreadSafeCache{
+		cache: cache,
+	}
 }
 
 func (c *ThreadSafeCache) Get(key string) (interface{}, bool) {
 	// TODO: Implement thread-safe get operation
 	// Hint: Use read lock for better performance
-	return nil, false
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cache.Get(key)
 }
 
 func (c *ThreadSafeCache) Put(key string, value interface{}) {
 	// TODO: Implement thread-safe put operation
 	// Hint: Use write lock
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.cache.Put(key, value)
 }
 
 func (c *ThreadSafeCache) Delete(key string) bool {
 	// TODO: Implement thread-safe delete operation
-	return false
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cache.Delete(key)
 }
 
 func (c *ThreadSafeCache) Clear() {
 	// TODO: Implement thread-safe clear operation
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.cache.Clear()
 }
 
 func (c *ThreadSafeCache) Size() int {
 	// TODO: Implement thread-safe size operation
-	return 0
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cache.Size()
 }
 
 func (c *ThreadSafeCache) Capacity() int {
 	// TODO: Implement thread-safe capacity operation
-	return 0
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cache.Capacity()
 }
 
 func (c *ThreadSafeCache) HitRate() float64 {
 	// TODO: Implement thread-safe hit rate operation
-	return 0.0
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.cache.HitRate()
 }
 
 //
@@ -576,19 +597,35 @@ func NewCache(policy CachePolicy, capacity int) Cache {
 	switch policy {
 	case LRU:
 		// TODO: Return LRU cache
+		return NewLRUCache(capacity)
 	case LFU:
 		// TODO: Return LFU cache
+		return NewLFUCache(capacity)
 	case FIFO:
 		// TODO: Return FIFO cache
+		return NewFIFOCache(capacity)
 	default:
 		// TODO: Return default cache or handle error
+		return NewLRUCache(capacity)
 	}
-	return nil
 }
 
 // NewThreadSafeCacheWithPolicy creates a thread-safe cache with the specified policy
 func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
 	// TODO: Implement thread-safe cache factory
 	// Should create cache with policy and wrap it with thread safety
-	return nil
+	switch policy {
+	case LRU:
+		// TODO: Return LRU cache
+		return NewThreadSafeCache(NewLRUCache(capacity))
+	case LFU:
+		// TODO: Return LFU cache
+		return NewThreadSafeCache(NewLFUCache(capacity))
+	case FIFO:
+		// TODO: Return FIFO cache
+		return NewThreadSafeCache(NewFIFOCache(capacity))
+	default:
+		// TODO: Return default cache or handle error
+		return NewThreadSafeCache(NewLRUCache(capacity))
+	}
 }
