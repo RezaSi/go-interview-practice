@@ -434,6 +434,14 @@ func (c *FIFOCache) removeFIFONode(node *FIFONode) bool {
 func (c *FIFOCache) Get(key string) (interface{}, bool) {
 	// TODO: Implement FIFO get operation
 	// Note: Get operations don't affect eviction order in FIFO
+	if key == "" {
+		return nil, false
+	}
+	if node, exists := c.cache[key]; exists {
+		c.metrics.hits++
+		return node.value, true
+	}
+	c.metrics.misses++
 	return nil, false
 }
 
@@ -449,6 +457,10 @@ func (c *FIFOCache) Put(key string, value interface{}) {
 	}
 	node := newFIFONode(key, value)
 
+	if c.size == c.capacity {
+		c.evictFIFONode()
+		c.metrics.evictions++
+	}
 	if c.size == 0 {
 		c.head = node
 		c.tail = node
@@ -458,6 +470,7 @@ func (c *FIFOCache) Put(key string, value interface{}) {
 	}
 	node.next = c.head
 	c.head = node
+	node.next.prev = node
 	c.cache[key] = node
 	c.size++
 }
