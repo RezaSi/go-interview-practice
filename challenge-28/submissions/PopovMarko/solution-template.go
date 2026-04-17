@@ -349,12 +349,86 @@ func (c *LFUCache) HitRate() float64 {
 type FIFOCache struct {
 	// TODO: Add necessary fields for FIFO implementation
 	// Hint: Use a queue or circular buffer
+	capacity int
+	size     int
+	cache    map[string]*FIFONode
+	metrics  Metrics
+	head     *FIFONode
+	tail     *FIFONode
+}
+
+type FIFONode struct {
+	key   string
+	value interface{}
+	next  *FIFONode
+	prev  *FIFONode
 }
 
 // NewFIFOCache creates a new FIFO cache with the specified capacity
 func NewFIFOCache(capacity int) *FIFOCache {
 	// TODO: Implement FIFO cache constructor
-	return nil
+	if capacity <= 0 {
+		return nil
+	}
+	return &FIFOCache{
+		capacity: capacity,
+		cache:    make(map[string]*FIFONode),
+		metrics:  Metrics{},
+	}
+}
+
+func newFIFONode(key string, value interface{}) *FIFONode {
+	if key == "" {
+		return nil
+	}
+	return &FIFONode{
+		key:   key,
+		value: value,
+	}
+}
+
+func (c *FIFOCache) evictFIFONode() bool {
+	if c.size == 0 {
+		return false
+	}
+	node := c.tail
+	return c.removeFIFONode(node)
+}
+
+func (c *FIFOCache) removeFIFONode(node *FIFONode) bool {
+	if node == nil || c.size == 0 {
+		return false
+	}
+	if c.size == 1 {
+		c.head = nil
+		c.tail = nil
+		delete(c.cache, node.key)
+		c.size = 0
+		return true
+	}
+	if c.head == node {
+		c.head = node.next
+		c.head.prev = nil
+		node.next = nil
+		delete(c.cache, node.key)
+		c.size--
+		return true
+	}
+	if c.tail == node {
+		c.tail = node.prev
+		c.tail.next = nil
+		node.prev = nil
+		delete(c.cache, node.key)
+		c.size--
+		return true
+	}
+	node.prev.next = node.next
+	node.next.prev = node.prev
+	node.next = nil
+	node.prev = nil
+	delete(c.cache, node.key)
+	c.size--
+	return true
 }
 
 func (c *FIFOCache) Get(key string) (interface{}, bool) {
@@ -366,29 +440,64 @@ func (c *FIFOCache) Get(key string) (interface{}, bool) {
 func (c *FIFOCache) Put(key string, value interface{}) {
 	// TODO: Implement FIFO put operation
 	// Should evict first-in item if at capacity
+	if key == "" {
+		return
+	}
+	if node, exists := c.cache[key]; exists {
+		node.value = value
+		return
+	}
+	node := newFIFONode(key, value)
+
+	if c.size == 0 {
+		c.head = node
+		c.tail = node
+		c.cache[key] = node
+		c.size++
+		return
+	}
+	node.next = c.head
+	c.head = node
+	c.cache[key] = node
+	c.size++
 }
 
 func (c *FIFOCache) Delete(key string) bool {
 	// TODO: Implement delete operation
+	if key == "" {
+		return false
+	}
+	if node, exists := c.cache[key]; exists {
+		return c.removeFIFONode(node)
+	}
 	return false
 }
 
 func (c *FIFOCache) Clear() {
 	// TODO: Implement clear operation
+	c.cache = make(map[string]*FIFONode)
+	c.head = nil
+	c.tail = nil
+	c.size = 0
+	c.metrics = Metrics{}
 }
 
 func (c *FIFOCache) Size() int {
 	// TODO: Return current cache size
-	return 0
+	return c.size
 }
 
 func (c *FIFOCache) Capacity() int {
 	// TODO: Return cache capacity
-	return 0
+	return c.capacity
 }
 
 func (c *FIFOCache) HitRate() float64 {
 	// TODO: Calculate and return hit rate
+	total := c.metrics.hits + c.metrics.misses
+	if total > 0 {
+		return float64(c.metrics.hits) / float64(total)
+	}
 	return 0.0
 }
 
