@@ -25,7 +25,7 @@ const (
 )
 
 // LRU Cache Implementation
-type metrics struct {
+type Metrics struct {
 	hits      int
 	misses    int
 	evictions int
@@ -37,7 +37,7 @@ type LRUCache struct {
 	capacity int
 	size     int
 	cache    map[string]*LRUNode
-	metrics  metrics
+	metrics  Metrics
 	head     *LRUNode
 	tail     *LRUNode
 }
@@ -50,7 +50,7 @@ func NewLRUCache(capacity int) *LRUCache {
 	return &LRUCache{
 		capacity: capacity,
 		cache:    make(map[string]*LRUNode, capacity),
-		metrics:  metrics{},
+		metrics:  Metrics{},
 	}
 }
 
@@ -82,11 +82,6 @@ func (c *LRUCache) removeLRUNode(node *LRUNode) bool {
 	if c.size == 0 || node == nil {
 		return false
 	}
-	defer func() {
-		if node == nil {
-			return
-		}
-	}()
 
 	if c.size == 1 {
 		c.head = nil
@@ -185,11 +180,9 @@ func (c *LRUCache) Delete(key string) bool {
 }
 
 func (c *LRUCache) Clear() {
+	c.size = 0
 	c.cache = make(map[string]*LRUNode)
-	c.metrics = metrics{}
-	for c.size > 0 {
-		c.evictLRUNode()
-	}
+	c.metrics = Metrics{}
 }
 
 func (c *LRUCache) Size() int {
@@ -215,12 +208,103 @@ func (c *LRUCache) HitRate() float64 {
 type LFUCache struct {
 	// TODO: Add necessary fields for LFU implementation
 	// Hint: Use frequency tracking with efficient eviction
+	capacity   int
+	size       int
+	cache      map[string]*LFUNode
+	freqGroups map[int]*FreqGroup
+	freqList   []int
+	metrics    Metrics
+}
+
+type LFUNode struct {
+	key   string
+	value interface{}
+	freq  int
+	next  *LFUNode
+	prev  *LFUNode
+}
+
+type FreqGroup struct {
+	freq int
+	size int
+	head *LFUNode
+	tail *LFUNode
 }
 
 // NewLFUCache creates a new LFU cache with the specified capacity
 func NewLFUCache(capacity int) *LFUCache {
 	// TODO: Implement LFU cache constructor
-	return nil
+	if capacity <= 0 {
+		return nil
+	}
+	return &LFUCache{
+		capacity: capacity,
+		cache:    make(map[string]*LFUNode, capacity),
+		freqList: make([]int, 0),
+	}
+}
+
+func newLFUNode(key string, value interface{}) *LFUNode {
+	if key == "" {
+		return nil
+	}
+	return &LFUNode{
+		key:   key,
+		value: value,
+	}
+}
+
+func newFreqGroup(freq int) *FreqGroup {
+	if freq <= 0 {
+		return nil
+	}
+	return &FreqGroup{
+		freq: freq,
+	}
+}
+
+func (c *LFUCache) evictLFUNode() bool {
+	if bucket, exists := c.freqGroups[c.freqList[0]]; exists {
+		c.removeLFUNode(bucket.tail)
+		return true
+	}
+	return false
+}
+
+func (c *LFUCache) removeLFUNode(node *LFUNode) bool {
+	if node == nil {
+		return false
+	}
+	if bucket, exists := c.freqGroups[node.freq]; exists {
+		if bucket.size == 0 {
+			delete(c.freqGroups, bucket.freq)
+			return false
+		}
+		if bucket.size == 1 {
+			bucket.head = nil
+			bucket.tail = nil
+			delete(c.freqGroups, bucket.freq)
+			c.size--
+			return true
+		}
+		if bucket.head == node {
+			bucket.head = node.next
+			bucket.head.prev = nil
+			node.next = nil
+			bucket.size--
+			c.size--
+			return true
+		}
+		if bucket.tail == node {
+			bucket.tail = node.prev
+			bucket.tail.next = nil
+			node.prev = nil
+			bucket.size--
+			c.size--
+			return true
+		}
+	}
+	return false
 }
 
 func (c *LFUCache) Get(key string) (interface{}, bool) {
