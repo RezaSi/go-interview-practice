@@ -17,7 +17,7 @@
 [![Challenges Solved](https://img.shields.io/badge/Go_Challenges-0%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 [![Achievement Level](https://img.shields.io/badge/Level-🌱_Beginner-97ca00?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 [![Completion Rate](https://img.shields.io/badge/Completion-0.0%25-97ca00?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Package Challenges](https://img.shields.io/badge/Package_Challenges-3_across_2_packages-purple?style=for-the-badge&logo=package&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Package Challenges](https://img.shields.io/badge/Package_Challenges-2_across_2_packages-purple?style=for-the-badge&logo=package&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 🔗 Repository Link Badge
 [![Go Interview Practice Repository](https://img.shields.io/badge/View_Repository-Go_Interview_Practice-blue?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
@@ -30,4 +30,4 @@
 **🏅 Achievement Level:** 🌱 **Beginner Developer**  
 **📊 Classic Challenges:** 0/30 (0.0% complete)  
 **🔗 Repository:** [Go Interview Practice](https://github.com/RezaSi/go-interview-practice)  
-**Package Challenges:** 3 across 2 packages
+**Package Challenges:** 2 across 2 packages

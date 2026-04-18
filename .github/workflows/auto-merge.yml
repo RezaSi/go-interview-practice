@@ -1,0 +1,184 @@
+name: Auto Merge Ready PRs
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Auto-merge eligible PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const TWO_DAYS_MS = 12 * 60 * 60 * 1000;
+            const MAX_MERGES_PER_RUN = 10;
+            const now = new Date();
+            let mergeCount = 0;
+            
+            // Get all open PRs targeting main
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'main',
+              per_page: 100
+            });
+            
+            for (const pr of prs) {
+              // Check if we've reached the merge limit
+              if (mergeCount >= MAX_MERGES_PER_RUN) {
+                console.log(`Reached maximum of ${MAX_MERGES_PER_RUN} merges per run. Stopping.`);
+                break;
+              }
+              
+              const labels = pr.labels.map(l => l.name);
+              
+              // Skip if marked as do-not-merge
+              if (labels.includes('do-not-merge')) {
+                console.log(`PR #${pr.number}: Skipping - has 'do-not-merge' label`);
+                continue;
+              }
+              
+              // Get the pr-status check result
+              const { data: checks } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha
+              });
+              
+              const prStatusCheck = checks.check_runs.find(c => c.name === 'pr-status');
+              
+              // Skip if pr-status check hasn't run or didn't succeed
+              if (!prStatusCheck) {
+                console.log(`PR #${pr.number}: Skipping - no pr-status check found`);
+                continue;
+              }
+              
+              if (prStatusCheck.conclusion !== 'success') {
+                console.log(`PR #${pr.number}: Skipping - pr-status check is '${prStatusCheck.conclusion}'`);
+                continue;
+              }
+              
+              // Use the pr-status check completion time for the 2-day wait
+              const checkCompletedAt = new Date(prStatusCheck.completed_at);
+              const timeSinceCheck = now - checkCompletedAt;
+              
+              if (timeSinceCheck < TWO_DAYS_MS) {
+                const hoursRemaining = Math.ceil((TWO_DAYS_MS - timeSinceCheck) / (60 * 60 * 1000));
+                const hoursSinceCheck = Math.floor(timeSinceCheck / (60 * 60 * 1000));
+                console.log(`PR #${pr.number}: Skipping - pr-status passed ${hoursSinceCheck} hours ago, needs ${hoursRemaining} more hours`);
+                continue;
+              }
+              
+              // Check if PR is mergeable
+              // First call triggers GitHub to compute mergeable_state (it's lazy-loaded)
+              let prDetails = (await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              })).data;
+              
+              // If state is unknown, wait and retry
+              if (prDetails.mergeable_state === 'unknown' || prDetails.mergeable === null) {
+                console.log(`PR #${pr.number}: Waiting for GitHub to compute merge status...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                prDetails = (await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number
+                })).data;
+              }
+              
+              if (prDetails.mergeable_state !== 'clean' && prDetails.mergeable_state !== 'unstable') {
+                console.log(`PR #${pr.number}: Skipping - mergeable_state is '${prDetails.mergeable_state}'`);
+                continue;
+              }
+              
+              // All conditions met - merge the PR
+              const hoursSinceCheck = Math.floor(timeSinceCheck / (60 * 60 * 1000));
+              console.log(`PR #${pr.number}: Merging - pr-status passed ${hoursSinceCheck} hours ago`);
+              
+              try {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  merge_method: 'squash',
+                  commit_title: `${pr.title} (#${pr.number})`,
+                  commit_message: `Auto-merged after 2 days with all checks passing.\n\nPR: #${pr.number}\nAuthor: @${pr.user.login}`
+                });
+                
+                console.log(`PR #${pr.number}: Successfully merged!`);
+                mergeCount++;
+                
+                // Add a comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `🎉 **Auto-merged!**\n\nThis PR was automatically merged after 2 days with all checks passing.\n\nThank you for your contribution, @${pr.user.login}!`
+                });
+                
+                // Trigger scoreboard update workflows
+                // (GITHUB_TOKEN merges don't trigger push-based workflows, so we dispatch manually)
+                try {
+                  // Check if PR modified classic challenges
+                  const { data: files } = await github.rest.pulls.listFiles({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number
+                  });
+                  
+                  const hasClassicSubmission = files.some(f => /^challenge-\d+\/submissions\//.test(f.filename));
+                  const hasPackageSubmission = files.some(f => /^packages\/[^/]+\/challenge-[^/]+\/submissions\//.test(f.filename));
+                  
+                  if (hasClassicSubmission) {
+                    console.log(`PR #${pr.number}: Triggering classic scoreboard update...`);
+                    await github.rest.actions.createWorkflowDispatch({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      workflow_id: 'update-scoreboards.yml',
+                      ref: 'main'
+                    });
+                  }
+                  
+                  if (hasPackageSubmission) {
+                    console.log(`PR #${pr.number}: Triggering package scoreboard update...`);
+                    await github.rest.actions.createWorkflowDispatch({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      workflow_id: 'update-package-scoreboards.yml',
+                      ref: 'main'
+                    });
+                  }
+                } catch (dispatchError) {
+                  console.log(`PR #${pr.number}: Warning - failed to trigger scoreboard update: ${dispatchError.message}`);
+                }
+                
+              } catch (error) {
+                console.log(`PR #${pr.number}: Failed to merge - ${error.message}`);
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `⚠️ **Auto-merge failed**\n\nCould not automatically merge this PR: ${error.message}\n\nA maintainer will need to merge manually.`
+                });
+              }
+            }
+            
+            console.log(`\nAuto-merge complete. Merged ${mergeCount} PR(s) this run.`);

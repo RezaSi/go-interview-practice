@@ -1,0 +1,77 @@
+package main
+
+import "fmt"
+
+// Employee struct
+type Employee struct {
+	ID     int
+	Name   string
+	Age    int
+	Salary float64
+}
+
+// Container for Employee
+type Manager struct {
+	Employees []Employee
+}
+
+// AddEmployee adds a new employee to the manager's list.
+func (m *Manager) AddEmployee(e Employee) {
+	// Append employee to employee list
+	m.Employees = append(m.Employees, e)
+}
+
+// RemoveEmployee removes an employee by ID from the manager's list.
+// func(*Manager) RemoveEmployee(int)
+func (m *Manager) RemoveEmployee(id int) {
+	// Delete employee by ID
+	for i, e := range m.Employees {
+		if e.ID == id {
+			copy(m.Employees[i:], m.Employees[i+1:])
+			m.Employees[len(m.Employees)-1] = Employee{}
+			m.Employees = m.Employees[:len(m.Employees)-1]
+			return
+		}
+	}
+}
+
+// GetAverageSalary calculates the average salary of all employees.
+func (m *Manager) GetAverageSalary() float64 {
+	// Get average salary of all employees
+	if len(m.Employees) == 0 {
+		return 0.0
+	}
+	var sum float64
+	for _, s := range m.Employees {
+		sum += s.Salary
+	}
+
+	return sum / float64(len(m.Employees))
+}
+
+// FindEmployeeByID finds and returns an employee by their ID.
+func (m *Manager) FindEmployeeByID(id int) *Employee {
+	// Find employee by ID
+	for i := range m.Employees {
+		if m.Employees[i].ID == id {
+			res := &m.Employees[i]
+			return res
+		}
+	}
+	return nil
+}
+
+// Main function
+func main() {
+	manager := Manager{}
+	manager.AddEmployee(Employee{ID: 1, Name: "Alice", Age: 30, Salary: 70000})
+	manager.AddEmployee(Employee{ID: 2, Name: "Bob", Age: 25, Salary: 65000})
+	manager.RemoveEmployee(1)
+	averageSalary := manager.GetAverageSalary()
+	employee := manager.FindEmployeeByID(2)
+
+	fmt.Printf("Average Salary: %f\n", averageSalary)
+	if employee != nil {
+		fmt.Printf("Employee found: %+v\n", *employee)
+	}
+}

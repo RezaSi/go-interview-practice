@@ -6,6 +6,12 @@ on:
       - main
     paths:
       - 'challenge-*/submissions/**'
+  workflow_dispatch:
+    inputs:
+      challenge_name:
+        description: 'Specific challenge to update (e.g., challenge-5). Leave empty to detect from recent commits.'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -23,7 +29,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # Need to compare with previous commit
+          fetch-depth: 10  # Need more history for dispatch mode
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -33,13 +39,20 @@ jobs:
       - name: Detect changed challenges
         id: detect-changes
         run: |
-          # Get list of changed files in this push
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-          
-          # Extract unique challenge directories that have submission changes
-          CHANGED_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "challenge-[0-9]+/submissions/" | cut -d'/' -f1 | sort -u || true)
+          # Check if specific challenge was provided
+          if [ -n "${{ github.event.inputs.challenge_name }}" ]; then
+            echo "Using provided challenge: ${{ github.event.inputs.challenge_name }}"
+            CHANGED_CHALLENGES="${{ github.event.inputs.challenge_name }}"
+          else
+            # Get list of changed files in recent commits
+            # For workflow_dispatch (after auto-merge), check last few commits
+            CHANGED_FILES=$(git diff --name-only HEAD~5 HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            
+            # Extract unique challenge directories that have submission changes
+            CHANGED_CHALLENGES=$(echo "$CHANGED_FILES" | grep -E "challenge-[0-9]+/submissions/" | cut -d'/' -f1 | sort -u || true)
+          fi
           
           if [ -z "$CHANGED_CHALLENGES" ]; then
             echo "No challenge submissions were modified"
