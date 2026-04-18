@@ -212,7 +212,7 @@ type LFUCache struct {
 	size       int
 	cache      map[string]*LFUNode
 	freqGroups map[int]*FreqGroup
-	freqList   []int
+	minFreq    int
 	metrics    Metrics
 }
 
@@ -238,9 +238,9 @@ func NewLFUCache(capacity int) *LFUCache {
 		return nil
 	}
 	return &LFUCache{
-		capacity: capacity,
-		cache:    make(map[string]*LFUNode, capacity),
-		freqList: make([]int, 0),
+		capacity:   capacity,
+		cache:      make(map[string]*LFUNode, capacity),
+		freqGroups: make(map[int]*FreqGroup),
 	}
 }
 
@@ -251,6 +251,7 @@ func newLFUNode(key string, value interface{}) *LFUNode {
 	return &LFUNode{
 		key:   key,
 		value: value,
+		freq:  1,
 	}
 }
 
@@ -264,8 +265,12 @@ func newFreqGroup(freq int) *FreqGroup {
 }
 
 func (c *LFUCache) evictLFUNode() bool {
-	if bucket, exists := c.freqGroups[c.freqList[0]]; exists {
+
+	if bucket, exists := c.freqGroups[c.minFreq]; exists {
 		c.removeLFUNode(bucket.tail)
+		if _, exists = c.freqGroups[c.minFreq]; !exists {
+			c.minFreq++
+		}
 		return true
 	}
 	return false
@@ -278,12 +283,14 @@ func (c *LFUCache) removeLFUNode(node *LFUNode) bool {
 	if bucket, exists := c.freqGroups[node.freq]; exists {
 		if bucket.size == 0 {
 			delete(c.freqGroups, bucket.freq)
+
 			return false
 		}
 		if bucket.size == 1 {
 			bucket.head = nil
 			bucket.tail = nil
 			delete(c.freqGroups, bucket.freq)
+			delete(c.cache, node.key)
 			c.size--
 			return true
 		}
@@ -291,6 +298,7 @@ func (c *LFUCache) removeLFUNode(node *LFUNode) bool {
 			bucket.head = node.next
 			bucket.head.prev = nil
 			node.next = nil
+			delete(c.cache, node.key)
 			bucket.size--
 			c.size--
 			return true
@@ -299,6 +307,7 @@ func (c *LFUCache) removeLFUNode(node *LFUNode) bool {
 			bucket.tail = node.prev
 			bucket.tail.next = nil
 			node.prev = nil
+			delete(c.cache, node.key)
 			bucket.size--
 			c.size--
 			return true
@@ -307,38 +316,107 @@ func (c *LFUCache) removeLFUNode(node *LFUNode) bool {
 	return false
 }
 
+func (c *LFUCache) addLFUNode(node *LFUNode) {
+	if bucket, exists := c.freqGroups[node.freq]; exists {
+		node.next = bucket.head
+		bucket.head = node
+		node.next.prev = node
+		bucket.size++
+		return
+	}
+	bucket := newFreqGroup(node.freq)
+	bucket.head = node
+	bucket.tail = node
+	bucket.size++
+	c.freqGroups[bucket.freq] = bucket
+}
+
 func (c *LFUCache) Get(key string) (interface{}, bool) {
 	// TODO: Implement LFU get operation
 	// Should increment frequency count of accessed item
+
+	if node, exists := c.cache[key]; exists {
+		c.removeLFUNode(node)
+		if _, exists = c.freqGroups[node.freq]; !exists && node.freq == c.minFreq {
+			c.minFreq++
+		}
+		node.freq++
+		c.addLFUNode(node)
+		return node.value, true
+	}
 	return nil, false
 }
 
 func (c *LFUCache) Put(key string, value interface{}) {
 	// TODO: Implement LFU put operation
 	// Should evict least frequently used item if at capacity
+	if key == "" {
+		return
+	}
+
+	var (
+		node   *LFUNode
+		exists bool
+	)
+
+	if c.size == c.capacity {
+		c.evictLFUNode()
+	}
+	if node, exists = c.cache[key]; exists {
+		c.removeLFUNode(node)
+		node.value = value
+		node.freq++
+		c.size++
+		c.cache[key] = node
+	} else {
+		node = newLFUNode(key, value)
+		c.minFreq = 1
+	}
+	c.addLFUNode(node)
 }
 
 func (c *LFUCache) Delete(key string) bool {
 	// TODO: Implement delete operation
+	if key == "" {
+		return false
+	}
+	if node, exists := c.cache[key]; exists {
+		c.removeLFUNode(node)
+		if _, exists = c.freqGroups[node.freq]; !exists && node.freq == c.minFreq {
+			// TODO search minFreq in c.freqGroups withe complexity O(1)
+			c.minFreq++
+			return true
+		}
+		return true
+	}
 	return false
 }
 
 func (c *LFUCache) Clear() {
 	// TODO: Implement clear operation
+	c.size = 0
+	c.cache = make(map[string]*LFUNode)
+	c.freqGroups = make(map[int]*FreqGroup)
+	c.minFreq = 0
+	c.metrics = Metrics{}
 }
 
 func (c *LFUCache) Size() int {
 	// TODO: Return current cache size
-	return 0
+	return c.size
 }
 
 func (c *LFUCache) Capacity() int {
 	// TODO: Return cache capacity
-	return 0
+	return c.capacity
 }
 
 func (c *LFUCache) HitRate() float64 {
 	// TODO: Calculate and return hit rate
+	total := c.metrics.hits + c.metrics.misses
+	if total > 0 {
+		return float64(c.metrics.hits) / float64(total)
+	}
 	return 0.0
 }
 
