@@ -296,9 +296,6 @@ func newLFUNode(key string, value interface{}) *LFUNode {
 }
 
 func newFreqGroup(freq int) *FreqGroup {
-	if freq <= 0 {
-		return nil
-	}
 	return &FreqGroup{
 		freq: freq,
 	}
@@ -459,7 +456,6 @@ func (c *LFUCache) Delete(key string) bool {
 			c.minFreq++
 			return true
 		}
-		return true
 	}
 	return false
 }
@@ -524,7 +520,7 @@ func NewFIFOCache(capacity int) *FIFOCache {
 	}
 	return &FIFOCache{
 		capacity: capacity,
-		cache:    make(map[string]*FIFONode),
+		cache:    make(map[string]*FIFONode, capacity),
 		metrics:  Metrics{},
 	}
 }
@@ -670,7 +666,7 @@ func (c *FIFOCache) HitRate() float64 {
 // state (node repositioning) even during reads.
 type ThreadSafeCache struct {
 	cache Cache
-	mu    sync.RWMutex
+	mu    sync.Mutex
 }
 
 // NewThreadSafeCache wraps cache with a mutex. Returns nil if cache is nil.
