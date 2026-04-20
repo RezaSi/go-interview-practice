@@ -5,6 +5,7 @@
 package cache
 
 import (
+	"reflect"
 	"sync"
 )
 
@@ -170,7 +171,6 @@ func (c *LRUCache) moveToFront(node *LRUNode) bool {
 }
 
 // Get returns the value for key and moves the accessed node to the MRU position.
-// An empty key is treated as a valid key that maps to "empty".
 func (c *LRUCache) Get(key string) (interface{}, bool) {
 	if node, exists := c.cache[key]; exists {
 		c.moveToFront(node)
@@ -397,7 +397,6 @@ func (c *LFUCache) addLFUNode(node *LFUNode) {
 
 // Get returns the value for key and increments its access frequency.
 // The node is moved from its current frequency bucket to the freq+1 bucket.
-// An empty key is treated as a valid key that maps to "empty".
 func (c *LFUCache) Get(key string) (interface{}, bool) {
 
 	if node, exists := c.cache[key]; exists {
@@ -437,6 +436,7 @@ func (c *LFUCache) Put(key string, value interface{}) {
 		node.value = value
 		node.freq++
 		c.addLFUNode(node)
+		return
 	} else {
 		if c.size == c.capacity {
 			if c.evictLFUNode() {
@@ -586,7 +586,6 @@ func (c *FIFOCache) removeFIFONode(node *FIFONode) bool {
 
 // Get returns the value for key.
 // In FIFO semantics, reads do not affect eviction order.
-// An empty key is treated as a valid key that maps to "empty".
 func (c *FIFOCache) Get(key string) (interface{}, bool) {
 	if node, exists := c.cache[key]; exists {
 		c.metrics.hits++
@@ -676,11 +675,24 @@ type ThreadSafeCache struct {
 
 // NewThreadSafeCache wraps cache with a mutex. Returns nil if cache is nil.
 func NewThreadSafeCache(cache Cache) *ThreadSafeCache {
-	if cache == nil {
+	if isNilCache(cache) {
 		return nil
 	}
 	return &ThreadSafeCache{
 		cache: cache,
+	}
+}
+
+func isNilCache(cache Cache) bool {
+	if cache == nil {
+		return true
+	}
+	value := reflect.ValueOf(cache)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
 	}
 }
 
