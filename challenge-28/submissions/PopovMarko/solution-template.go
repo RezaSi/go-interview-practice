@@ -86,9 +86,6 @@ func NewLRUCache(capacity int) *LRUCache {
 }
 
 func newLRUNode(key string, value interface{}) *LRUNode {
-	if key == "" {
-		return nil
-	}
 	return &LRUNode{
 		key:   key,
 		value: value,
@@ -175,9 +172,6 @@ func (c *LRUCache) moveToFront(node *LRUNode) bool {
 // Get returns the value for key and moves the accessed node to the MRU position.
 // An empty key is treated as a valid key that maps to "empty".
 func (c *LRUCache) Get(key string) (interface{}, bool) {
-	if key == "" {
-		return "empty", true
-	}
 	if node, exists := c.cache[key]; exists {
 		c.moveToFront(node)
 		c.metrics.hits++
@@ -191,9 +185,6 @@ func (c *LRUCache) Get(key string) (interface{}, bool) {
 // If the cache is full, the least recently used entry is evicted before insertion.
 // Updating an existing key refreshes its recency without changing the cache size.
 func (c *LRUCache) Put(key string, value interface{}) {
-	if key == "" {
-		return
-	}
 	if node, exists := c.cache[key]; exists {
 		// Update value in-place and refresh its recency position.
 		node.value = value
@@ -210,9 +201,6 @@ func (c *LRUCache) Put(key string, value interface{}) {
 
 // Delete removes the entry for key and returns true if the key existed.
 func (c *LRUCache) Delete(key string) bool {
-	if key == "" {
-		return false
-	}
 	if node, exists := c.cache[key]; exists {
 		c.removeLRUNode(node)
 		return true
@@ -223,7 +211,9 @@ func (c *LRUCache) Delete(key string) bool {
 // Clear removes all entries and resets metrics.
 func (c *LRUCache) Clear() {
 	c.size = 0
-	c.cache = make(map[string]*LRUNode)
+	c.cache = make(map[string]*LRUNode, c.capacity)
+	c.head = nil
+	c.tail = nil
 	c.metrics = Metrics{}
 }
 
@@ -298,9 +288,6 @@ func NewLFUCache(capacity int) *LFUCache {
 }
 
 func newLFUNode(key string, value interface{}) *LFUNode {
-	if key == "" {
-		return nil
-	}
 	return &LFUNode{
 		key:   key,
 		value: value,
@@ -412,9 +399,6 @@ func (c *LFUCache) addLFUNode(node *LFUNode) {
 // The node is moved from its current frequency bucket to the freq+1 bucket.
 // An empty key is treated as a valid key that maps to "empty".
 func (c *LFUCache) Get(key string) (interface{}, bool) {
-	if key == "" {
-		return "empty", true
-	}
 
 	if node, exists := c.cache[key]; exists {
 		// Promote node: remove from current bucket, bump frequency, re-insert.
@@ -437,24 +421,28 @@ func (c *LFUCache) Get(key string) (interface{}, bool) {
 // Inserting a new key resets minFreq to 1.
 // If the cache is full, the least-frequent (oldest on ties) entry is evicted first.
 func (c *LFUCache) Put(key string, value interface{}) {
-	if key == "" {
-		return
-	}
 
 	var (
 		node   *LFUNode
 		exists bool
 	)
 
-	if c.size == c.capacity {
-		c.evictLFUNode()
-		c.metrics.evictions++
-	}
 	if node, exists = c.cache[key]; exists {
 		// Update existing entry: remove from old freq bucket, bump frequency.
+		oldFreq := node.freq
 		c.removeLFUNode(node)
+		if _, stillExists := c.freqGroups[oldFreq]; !stillExists && oldFreq == c.minFreq {
+			c.minFreq++
+		}
 		node.value = value
+		node.freq++
+		c.addLFUNode(node)
 	} else {
+		if c.size == c.capacity {
+			if c.evictLFUNode() {
+				c.metrics.evictions++
+			}
+		}
 		// New entry: starts at frequency 1; a new entry is always the new minimum.
 		node = newLFUNode(key, value)
 		c.minFreq = 1
@@ -465,9 +453,6 @@ func (c *LFUCache) Put(key string, value interface{}) {
 // Delete removes the entry for key and returns true if the key existed.
 // minFreq is advanced if the deleted node's bucket was the minimum and is now empty.
 func (c *LFUCache) Delete(key string) bool {
-	if key == "" {
-		return false
-	}
 	if node, exists := c.cache[key]; exists {
 		c.removeLFUNode(node)
 		if _, exists = c.freqGroups[node.freq]; !exists && node.freq == c.minFreq {
@@ -482,7 +467,7 @@ func (c *LFUCache) Delete(key string) bool {
 // Clear removes all entries, resets frequency tracking, and resets metrics.
 func (c *LFUCache) Clear() {
 	c.size = 0
-	c.cache = make(map[string]*LFUNode)
+	c.cache = make(map[string]*LFUNode, c.capacity)
 	c.freqGroups = make(map[int]*FreqGroup)
 	c.minFreq = 0
 	c.metrics = Metrics{}
@@ -545,9 +530,6 @@ func NewFIFOCache(capacity int) *FIFOCache {
 }
 
 func newFIFONode(key string, value interface{}) *FIFONode {
-	if key == "" {
-		return nil
-	}
 	return &FIFONode{
 		key:   key,
 		value: value,
@@ -606,9 +588,6 @@ func (c *FIFOCache) removeFIFONode(node *FIFONode) bool {
 // In FIFO semantics, reads do not affect eviction order.
 // An empty key is treated as a valid key that maps to "empty".
 func (c *FIFOCache) Get(key string) (interface{}, bool) {
-	if key == "" {
-		return "empty", true
-	}
 	if node, exists := c.cache[key]; exists {
 		c.metrics.hits++
 		return node.value, true
@@ -621,9 +600,6 @@ func (c *FIFOCache) Get(key string) (interface{}, bool) {
 // Updating an existing key changes its value but preserves its position in the
 // eviction queue. If the cache is full, the oldest entry is evicted first.
 func (c *FIFOCache) Put(key string, value interface{}) {
-	if key == "" {
-		return
-	}
 	if node, exists := c.cache[key]; exists {
 		// Update value only — eviction order is unchanged for existing keys.
 		node.value = value
@@ -652,9 +628,6 @@ func (c *FIFOCache) Put(key string, value interface{}) {
 
 // Delete removes the entry for key and returns true if the key existed.
 func (c *FIFOCache) Delete(key string) bool {
-	if key == "" {
-		return false
-	}
 	if node, exists := c.cache[key]; exists {
 		return c.removeFIFONode(node)
 	}
@@ -712,9 +685,6 @@ func NewThreadSafeCache(cache Cache) *ThreadSafeCache {
 }
 
 func (c *ThreadSafeCache) Get(key string) (interface{}, bool) {
-	if key == "" {
-		return "empty", true
-	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cache.Get(key)
@@ -761,6 +731,9 @@ func (c *ThreadSafeCache) HitRate() float64 {
 // NewCache creates and returns a Cache using the given eviction policy and capacity.
 // Unrecognised policies fall back to LRU.
 func NewCache(policy CachePolicy, capacity int) Cache {
+	if capacity <= 0 {
+		return nil
+	}
 	switch policy {
 	case LRU:
 		return NewLRUCache(capacity)
@@ -776,6 +749,9 @@ func NewCache(policy CachePolicy, capacity int) Cache {
 // NewThreadSafeCacheWithPolicy creates a thread-safe Cache using the given
 // eviction policy and capacity. Unrecognised policies fall back to LRU.
 func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
+	if capacity <= 0 {
+		return nil
+	}
 	switch policy {
 	case LRU:
 		return NewThreadSafeCache(NewLRUCache(capacity))
