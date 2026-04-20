@@ -48,9 +48,9 @@ const (
 
 // Metrics holds access counters used to compute the hit rate.
 type Metrics struct {
-	hits      int
-	misses    int
-	evictions int
+	hits      int // number of Get calls that found a key
+	misses    int // number of Get calls that did not find a key
+	evictions int // number of entries removed due to capacity overflow
 }
 
 // LRUCache implements Cache with the Least Recently Used eviction policy.
@@ -86,6 +86,7 @@ func NewLRUCache(capacity int) *LRUCache {
 	}
 }
 
+// newLRUNode allocates a new LRUNode with the given key and value.
 func newLRUNode(key string, value interface{}) *LRUNode {
 	return &LRUNode{
 		key:   key,
@@ -259,19 +260,19 @@ type LFUCache struct {
 type LFUNode struct {
 	key   string
 	value interface{}
-	freq  int // access count; incremented on every Get or Put-update
-	next  *LFUNode
-	prev  *LFUNode
+	freq  int      // access count; incremented on every Get or Put-update
+	next  *LFUNode // next (older) node within the same FreqGroup
+	prev  *LFUNode // previous (newer) node within the same FreqGroup
 }
 
 // FreqGroup is a doubly-linked list of all nodes that share the same access
 // frequency. New nodes are prepended to the head; eviction removes from the
 // tail so the oldest entry within a tied frequency is evicted first.
 type FreqGroup struct {
-	freq int
-	size int
-	head *LFUNode
-	tail *LFUNode
+	freq int      // the shared access count of every node in this bucket
+	size int      // number of nodes currently in the list
+	head *LFUNode // most recently promoted node (kept for O(1) prepend)
+	tail *LFUNode // least recently promoted node — next eviction candidate within the bucket
 }
 
 // NewLFUCache returns a new LFUCache with the given capacity.
@@ -287,6 +288,7 @@ func NewLFUCache(capacity int) *LFUCache {
 	}
 }
 
+// newLFUNode allocates a new LFUNode with frequency 1 (all new entries start at 1).
 func newLFUNode(key string, value interface{}) *LFUNode {
 	return &LFUNode{
 		key:   key,
@@ -295,6 +297,7 @@ func newLFUNode(key string, value interface{}) *LFUNode {
 	}
 }
 
+// newFreqGroup allocates a new empty FreqGroup for the given access frequency.
 func newFreqGroup(freq int) *FreqGroup {
 	return &FreqGroup{
 		freq: freq,
@@ -427,6 +430,7 @@ func (c *LFUCache) Put(key string, value interface{}) {
 		// Update existing entry: remove from old freq bucket, bump frequency.
 		oldFreq := node.freq
 		c.removeLFUNode(node)
+		// If the old bucket is now empty and was the minimum, advance minFreq.
 		if _, stillExists := c.freqGroups[oldFreq]; !stillExists && oldFreq == c.minFreq {
 			c.minFreq++
 		}
@@ -436,6 +440,7 @@ func (c *LFUCache) Put(key string, value interface{}) {
 		return
 	} else {
 		if c.size == c.capacity {
+			// Cache is full — evict the least-frequent (oldest on ties) entry.
 			if c.evictLFUNode() {
 				c.metrics.evictions++
 			}
@@ -525,6 +530,7 @@ func NewFIFOCache(capacity int) *FIFOCache {
 	}
 }
 
+// newFIFONode allocates a new FIFONode with the given key and value.
 func newFIFONode(key string, value interface{}) *FIFONode {
 	return &FIFONode{
 		key:   key,
@@ -679,10 +685,13 @@ func NewThreadSafeCache(cache Cache) *ThreadSafeCache {
 	}
 }
 
+// isNilCache reports whether cache is nil, handling the case where a typed nil
+// (e.g. (*LRUCache)(nil) stored as a Cache interface) would pass a plain == nil check.
 func isNilCache(cache Cache) bool {
 	if cache == nil {
 		return true
 	}
+	// A typed nil is non-nil at the interface level; use reflection to detect it.
 	value := reflect.ValueOf(cache)
 	switch value.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
@@ -692,42 +701,50 @@ func isNilCache(cache Cache) bool {
 	}
 }
 
+// Get acquires the lock and delegates to the underlying cache.
+// A write lock is used because LRU/LFU Get modifies node order internally.
 func (c *ThreadSafeCache) Get(key string) (interface{}, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cache.Get(key)
 }
 
+// Put acquires the lock and delegates to the underlying cache.
 func (c *ThreadSafeCache) Put(key string, value interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache.Put(key, value)
 }
 
+// Delete acquires the lock and delegates to the underlying cache.
 func (c *ThreadSafeCache) Delete(key string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cache.Delete(key)
 }
 
+// Clear acquires the lock and delegates to the underlying cache.
 func (c *ThreadSafeCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.cache.Clear()
 }
 
+// Size acquires the lock and returns the current entry count.
 func (c *ThreadSafeCache) Size() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cache.Size()
 }
 
+// Capacity acquires the lock and returns the maximum entry count.
 func (c *ThreadSafeCache) Capacity() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cache.Capacity()
 }
 
+// HitRate acquires the lock and returns the underlying cache's hit rate.
 func (c *ThreadSafeCache) HitRate() float64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -737,7 +754,7 @@ func (c *ThreadSafeCache) HitRate() float64 {
 // ─── Cache Factory ────────────────────────────────────────────────────────────
 
 // NewCache creates and returns a Cache using the given eviction policy and capacity.
-// Unrecognised policies fall back to LRU.
+// Returns nil for non-positive capacity. Unrecognised policies fall back to LRU.
 func NewCache(policy CachePolicy, capacity int) Cache {
 	if capacity <= 0 {
 		return nil
@@ -750,12 +767,14 @@ func NewCache(policy CachePolicy, capacity int) Cache {
 	case FIFO:
 		return NewFIFOCache(capacity)
 	default:
+		// Unknown policy — default to LRU as the most general-purpose choice.
 		return NewLRUCache(capacity)
 	}
 }
 
 // NewThreadSafeCacheWithPolicy creates a thread-safe Cache using the given
-// eviction policy and capacity. Unrecognised policies fall back to LRU.
+// eviction policy and capacity. Returns nil for non-positive capacity.
+// Unrecognised policies fall back to LRU.
 func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
 	if capacity <= 0 {
 		return nil
@@ -768,6 +787,7 @@ func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
 	case FIFO:
 		return NewThreadSafeCache(NewFIFOCache(capacity))
 	default:
+		// Unknown policy — default to LRU as the most general-purpose choice.
 		return NewThreadSafeCache(NewLRUCache(capacity))
 	}
 }
