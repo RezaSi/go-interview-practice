@@ -455,14 +455,18 @@ func (c *LFUCache) Put(key string, value interface{}) {
 // Delete removes the entry for key and returns true if the key existed.
 // minFreq is advanced if the deleted node's bucket was the minimum and is now empty.
 func (c *LFUCache) Delete(key string) bool {
-	if node, exists := c.cache[key]; exists {
-		c.removeLFUNode(node)
-		if _, exists = c.freqGroups[node.freq]; !exists && node.freq == c.minFreq {
-			c.minFreq++
-			return true
-		}
+	node, exists := c.cache[key]
+	if !exists {
+		return false
 	}
-	return false
+	oldFreq := node.freq
+	c.removeLFUNode(node)
+	if c.size == 0 {
+		c.minFreq = 0
+	} else if _, stillExists := c.freqGroups[node.freq]; !stillExists && oldFreq == c.minFreq {
+		c.minFreq++
+	}
+	return true
 }
 
 // Clear removes all entries, resets frequency tracking, and resets metrics.
@@ -694,7 +698,7 @@ func isNilCache(cache Cache) bool {
 	// A typed nil is non-nil at the interface level; use reflection to detect it.
 	value := reflect.ValueOf(cache)
 	switch value.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		return value.IsNil()
 	default:
 		return false
