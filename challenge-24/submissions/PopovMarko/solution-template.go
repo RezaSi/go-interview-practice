@@ -103,24 +103,32 @@ func OptimizedLIS(nums []int) int {
 // (not just the length, but the actual elements).
 func GetLISElements(nums []int) []int {
 	// Check for empty slice in parameters
-	length := len(nums)
-	if length == 0 {
+	n := len(nums)
+	if n == 0 {
 		return []int{}
 	}
-	// Initialization of helper slice op
-	op := make([]int, 0)
 
-	// For cyclle to calculate helper slice with longest sequense
-	for _, num := range nums {
-		i := sort.Search(len(op), func(x int) bool {
-			return op[x] >= num
-		})
-		if i == len(op) {
-			op = append(op, num)
-		} else {
-			op[i] = num
+	dp := make([]int, n)
+	parent := make([]int, n)
+	bestEnd := 0
+	for i := 0; i < n; i++ {
+		dp[i] = 1
+		parent[i] = -1
+		for j := 0; j < i; j++ {
+			if nums[j] < nums[i] && dp[j]+1 > dp[i] {
+				dp[i] = dp[j] + 1
+				parent[i] = j
+			}
+		}
+		if dp[i] > dp[bestEnd] {
+			bestEnd = i
 		}
 	}
 
-	return op
+	lis := make([]int, dp[bestEnd])
+	for i, cur := len(lis)-1, bestEnd; i >= 0; i-- {
+		lis[i] = nums[cur]
+		cur = parent[cur]
+	}
+	return lis
 }
