@@ -46,19 +46,19 @@ func main() {
 // using a standard dynamic programming approach with O(n²) time complexity.
 func DPLongestIncreasingSubsequence(nums []int) int {
 	// Check for empty slice in parameters
-	lenght := len(nums)
-	if lenght == 0 {
+	length := len(nums)
+	if length == 0 {
 		return 0
 	}
 
 	// Initialization of the helper slice dp
-	dp := make([]int, lenght)
-	for i := range lenght {
+	dp := make([]int, length)
+	for i := range length {
 		dp[i] = 1
 	}
 
 	// Fwo for cycles to calculate helper slice with lengthes of possible sequenses
-	for i := 1; i < lenght; i++ {
+	for i := 1; i < length; i++ {
 		for j := 0; j < i; j++ {
 			if nums[j] < nums[i] {
 				tmp := dp[j] + 1
