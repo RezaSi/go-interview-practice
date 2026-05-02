@@ -1,6 +1,9 @@
 package main
 
-import ("fmt"; "slices")
+import (
+    "fmt"
+    "slices"
+)
 
 type Employee struct {
 	ID     int
@@ -40,14 +43,14 @@ func (m *Manager) GetAverageSalary() float64 {
 	    totalSalary += emp.Salary
 	}
 	
-	return totalSalary /float64(l)
+	return totalSalary / float64(l)
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for _, emp := range m.Employees {
+	for i, emp := range m.Employees {
 	    if emp.ID == id{
-	        return &emp
+	        return &m.Employees[i]
 	    }
 	}
 	return nil
