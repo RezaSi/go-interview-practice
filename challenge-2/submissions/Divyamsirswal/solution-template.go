@@ -25,8 +25,8 @@ func ReverseString(str string) string {
 
     req := []rune(str);
     
-    for i:=0;i<len(str)/2;i++{
-        req[i],req[len(str)-i-1]=req[len(str)-i-1],req[i];
+    for i:=0;i<len(req)/2;i++{
+        req[i],req[len(req)-i-1]=req[len(req)-i-1],req[i];
     }
     
 	
