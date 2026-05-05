@@ -3,6 +3,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 22-7-co | 13 | 13 |
+| 4mzy | 13 | 13 |
 | AlexO-85 | 13 | 13 |
 | Alibiderci | 13 | 13 |
 | BrianHuang813 | 13 | 13 |
