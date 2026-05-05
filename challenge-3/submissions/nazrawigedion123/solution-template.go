@@ -27,6 +27,8 @@ func (m *Manager) RemoveEmployee(id int) {
 	for i,e:=range m.Employees{
 	    if e.ID==id{
 	       m.Employees=append(m.Employees[0:i],m.Employees[i+1:]...)
+	        return
+	        
 	    }
 	}
 }
