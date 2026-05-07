@@ -129,6 +129,7 @@
 | muradheydarov | 5 | 5 |
 | mvsouza | 5 | 5 |
 | n0l3r | 5 | 5 |
+| nazrawigedion123 | 5 | 5 |
 | ne0phyte | 5 | 5 |
 | nosrio | 5 | 5 |
 | nzamulov | 5 | 5 |
@@ -150,6 +151,7 @@
 | timlkko | 5 | 5 |
 | tmsankaram | 5 | 5 |
 | upsaurav12 | 5 | 5 |
+| varshaguna | 5 | 5 |
 | wgasparin | 5 | 5 |
 | wxai2324 | 5 | 5 |
 | x890c | 5 | 5 |
