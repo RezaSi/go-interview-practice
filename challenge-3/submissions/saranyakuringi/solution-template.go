@@ -20,10 +20,11 @@ func (m *Manager) AddEmployee(e Employee) {
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-for i, emp := range m.Employees {
-		if emp.ID == id {
-			m.Employees = append(m.Employees[:i], m.Employees[i+1:]...)
-		}
+for i := 0; i < len(m.Employees); i++ {
+		if m.Employees[i].ID == id {
++			m.Employees = append(m.Employees[:i], m.Employees[i+1:]...)
++			return
++		}
 	}
 }
 
@@ -37,7 +38,7 @@ func (m *Manager) GetAverageSalary() float64 {
 }
 	
 	
-	for _, emp := range m.Employees {
+	for i := 0; i < len(m.Employees); i++ {
 		sum += emp.Salary
 		count += 1
 	}
@@ -47,7 +48,7 @@ func (m *Manager) GetAverageSalary() float64 {
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for i := range m.Employees {
+	for i := 0; i < len(m.Employees); i++ {
 		if m.Employees[i].ID == id {
 			return &m.Employees[i]
 		}
