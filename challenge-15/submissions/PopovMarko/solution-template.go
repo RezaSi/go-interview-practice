@@ -1,21 +1,13 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"slices"
+	"strings"
 	"sync"
 	"time"
-)
-
-// Custom errors
-var (
-	ErrBadParams = errors.New("bad parameter")
 )
 
 // OAuth2Config contains configuration for the OAuth2 server
@@ -120,6 +112,20 @@ type RefreshToken struct {
 	ExpiresAt time.Time
 }
 
+type httpResponseHandler struct {
+	w http.ResponseWriter
+}
+
+func newResponseHandler(w http.ResponseWriter) *httpResponseHandler {
+	return &httpResponseHandler{
+		w: w,
+	}
+}
+
+func (h *httpResponseHandler) ErrorResponse(httpCode int) {
+	h.w.WriteHeader(httpCode)
+}
+
 // NewOAuth2Server creates a new OAuth2Server
 func NewOAuth2Server() *OAuth2Server {
 	server := &OAuth2Server{
@@ -142,123 +148,86 @@ func NewOAuth2Server() *OAuth2Server {
 
 // RegisterClient registers a new OAuth2 client
 func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
-	// Client validation
-	if client == nil {
-		return fmt.Errorf("register client: nil client: %w", ErrBadParams)
-	}
-	if client.ClientID == "" || client.ClientSecret == "" || len(client.RedirectURIs) == 0 || len(client.AllowedScopes) == 0 {
-		return fmt.Errorf("register client: client unvalid: %w", ErrBadParams)
-	}
-	if _, exists := s.clients[client.ClientID]; exists {
-		return fmt.Errorf("redister client: duplicate ID: %w", ErrBadParams)
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Client registration
-	s.clients[client.ClientID] = client
-	return nil
+	// TODO: Implement client registration
+	return errors.New("not implemented")
 }
 
 // GenerateRandomString generates a random string of the specified length
 func GenerateRandomString(length int) (string, error) {
-	if length == 0 {
-		return "", fmt.Errorf("generate random string: %w", ErrBadParams)
-	}
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("generate random string: %w", err)
-	}
-	str := base64.RawURLEncoding.EncodeToString(b)
-	runes := []rune(str)
-	str = string(runes[0:length])
-	return str, nil
-}
-
-// HttpResponseHandler implement handler that respond to client
-type HttpResponseHandler struct {
-	rw http.ResponseWriter
-}
-
-func NewHttpResponseHandler(rw http.ResponseWriter) *HttpResponseHandler {
-	return &HttpResponseHandler{
-		rw: rw,
-	}
-}
-
-// Write error response
-func (h *HttpResponseHandler) httpErrorResponse(status int, msg string, err error) {
-	resp := map[string]string{
-		"status": http.StatusText(status),
-		"msg":    msg,
-		"error":  err.Error(),
-	}
-	h.rw.WriteHeader(status)
-	if err = json.NewEncoder(h.rw).Encode(resp); err != nil {
-		return
-	}
-}
-
-func redirectUriHandler(w http.ResponseWriter, r *http.Request) {
-	query := url.Values{}
-	query.Set("err", "err")
-	url := fmt.Sprintf("%s?%s", r.URL.Query().Get("redirectUri"), query)
-	http.Redirect(w, r, url, http.StatusFound)
+	// TODO: Implement secure random string generation
+	return "", errors.New("not implemented")
 }
 
 // HandleAuthorize handles the authorization endpoint
 func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
+	responseHandler := newResponseHandler(w)
 	// TODO: Implement authorization endpoint
+
+	// Query parameters in URL of the request
+	// response_type=			code
+	// client_id=				test-client
+	// redirect_uri=			https://client.example.com/callback
+
+	// scope=					read
+	// state=					xyz123
+	// code_challenge=			abc123
+	// code_challenge_method=	S256"
+
+	// Get query parameters
+	query := r.URL.Query()
+
 	// 1. Validate request parameters (client_id, redirect_uri, response_type, scope, state)
+	// Validate client ID for not null param and client present in client list of the server
+	clientID := query.Get("client_id")
+	if clientID == "" {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+		return
+	}
+	client, ok := s.clients[clientID]
+	if !ok {
+		responseHandler.ErrorResponse(http.StatusNotFound)
+		return
+	}
+
+	// Validate redirect URI for not null param and present
+	// in allowed redirect URI list of client of server
+	redirectURI := query.Get("redirect_uri")
+	if redirectURI == "" {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+		return
+	}
+	if !slices.Contains(client.RedirectURIs, redirectURI) {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+		return
+	}
+
+	// Validate response type
+	responseType := query.Get("response_type")
+	if responseType == "" || responseType != "code" {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+	}
+
+	//Validate scope
+	scope := query.Get("scope")
+	if scope == "" {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+	}
+	if !slices.Contains(client.AllowedScopes, scope) {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+	}
+
+	// Validate state
+	state := query.Get("state")
+	if state == "" || state != "xyz123" {
+		responseHandler.ErrorResponse(http.StatusBadRequest)
+	}
+
+	codeChallenge := query.Get("code_challenge")
+	CodeChallengeMethod := query.Get("code_challenge_method")
+
 	// 2. Authenticate the user (for this challenge, could be a simple login form)
 	// 3. Present a consent screen to the user
 	// 4. Generate an authorization code and redirect to the client with the code
-
-	// value := r.URL.Query().Get("user_id")
-	// ClientID
-	// ClientSecret
-	// RedirectURIs
-	// AllowedScopes
-	rh := NewHttpResponseHandler(w)
-	query := r.URL.Query()
-	resp_type := query.Get("response_type")
-	client_id := query.Get("client_id")
-	redirect_uri := query.Get("redirect_uri")
-	scope := query.Get("scope")
-	state := query.Get("state")
-	// code_challenge := query.Get("code_challenge")
-	// code_ch_method := query.Get("code_challenge_method")
-
-	// Validate request query parameters
-	if client_id == "" {
-		rh.httpErrorResponse(http.StatusBadRequest, "empty client_id", nil)
-	}
-	client, exists := s.clients[client_id]
-	if !exists {
-		rh.httpErrorResponse(http.StatusNotFound, "client not registered", nil)
-	}
-	if redirect_uri == "" {
-		rh.httpErrorResponse(http.StatusBadRequest, "empty redirect URI", nil)
-	}
-	slices.Sort(client.RedirectURIs)
-	if _, found := slices.BinarySearch(client.RedirectURIs, redirect_uri); !found {
-		rh.httpErrorResponse(http.StatusBadRequest, "redirect URI not in list", nil)
-	}
-	if resp_type != "code" {
-		rh.httpErrorResponse(http.StatusBadRequest, "reponse type is invalid", nil)
-	}
-	if scope == "" {
-		rh.httpErrorResponse(http.StatusBadRequest, "scope is empty", nil)
-	}
-	slices.Sort(client.AllowedScopes)
-	if _, found := slices.BinarySearch(client.AllowedScopes, scope); !found {
-		rh.httpErrorResponse(http.StatusBadRequest, "scope not allowed", nil)
-	}
-	if state == "" {
-		rh.httpErrorResponse(http.StatusBadRequest, "emtpy state", nil)
-	}
-
 }
 
 // HandleToken handles the token endpoint
