@@ -14,9 +14,9 @@
 [![Go Interview Practice](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/RezaSi/go-interview-practice/main/badges/mvsouza.json&style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 ### 📊 Static Badges Collection
-[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-3%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Achievement Level](https://img.shields.io/badge/Level-🌱_Beginner-97ca00?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
-[![Completion Rate](https://img.shields.io/badge/Completion-10.0%25-97ca00?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Challenges Solved](https://img.shields.io/badge/Go_Challenges-23%2F30-brightgreen?style=for-the-badge&logo=go&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Achievement Level](https://img.shields.io/badge/Level-🏆_Master-gold?style=for-the-badge&logo=trophy&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
+[![Completion Rate](https://img.shields.io/badge/Completion-76.7%25-gold?style=for-the-badge&logo=checkmarx&logoColor=white)](https://github.com/RezaSi/go-interview-practice)
 
 
 ### 🔗 Repository Link Badge
@@ -27,6 +27,6 @@
 ### 📈 Your Achievement Summary
 
 **👤 Username:** @mvsouza  
-**🏅 Achievement Level:** 🌱 **Beginner Developer**  
-**📊 Classic Challenges:** 3/30 (10.0% complete)  
+**🏅 Achievement Level:** 🏆 **Master Developer**  
+**📊 Classic Challenges:** 23/30 (76.7% complete)  
 **🔗 Repository:** [Go Interview Practice](https://github.com/RezaSi/go-interview-practice)  
