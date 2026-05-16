@@ -98,10 +98,10 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🥈 | <img src="https://github.com/nzamulov.png" width="24" height="24" style="border-radius: 50%;"><br/>**[nzamulov](https://github.com/nzamulov)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 🥉 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 4 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **27**/30 | **90.0%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜✅✅✅⬜<br/>✅✅✅✅✅✅✅✅✅⬜✅✅✅✅✅ |
-| 5 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
-| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅✅✅⬜⬜✅ |
-| 7 | <img src="https://github.com/imankhodadi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[imankhodadi](https://github.com/imankhodadi)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅⬜⬜✅✅⬜✅⬜✅<br/>✅✅✅✅✅✅✅⬜✅✅⬜✅⬜⬜✅ |
-| 8 | <img src="https://github.com/mvsouza.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mvsouza](https://github.com/mvsouza)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅⬜✅✅⬜⬜⬜⬜⬜⬜⬜⬜ |
+| 5 | <img src="https://github.com/mvsouza.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mvsouza](https://github.com/mvsouza)** | **24**/30 | **80.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅⬜⬜⬜⬜⬜⬜ |
+| 6 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
+| 7 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅✅✅⬜⬜✅ |
+| 8 | <img src="https://github.com/imankhodadi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[imankhodadi](https://github.com/imankhodadi)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅⬜⬜✅✅⬜✅⬜✅<br/>✅✅✅✅✅✅✅⬜✅✅⬜✅⬜⬜✅ |
 | 9 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 10 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 
@@ -118,7 +118,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 335
+- **Active Developers**: 338
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
