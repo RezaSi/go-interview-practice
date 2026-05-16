@@ -39,7 +39,7 @@ func (m *Manager) GetAverageSalary() float64 {
 	
 	
 	for i := 0; i < len(m.Employees); i++ {
-		sum += emp.Salary
+		sum += m.Employees[i].Salary
 		count += 1
 	}
 
