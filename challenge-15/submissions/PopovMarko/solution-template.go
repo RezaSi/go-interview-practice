@@ -1,13 +1,29 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+)
+
+// errors
+var (
+	ErrInvalidRequest       = errors.New("invalid request")
+	ErrInvaldClient         = errors.New("invalid client")
+	ErrInvalidGrant         = errors.New("invalid or extired grant")
+	ErrUnauthorizedClient   = errors.New("client not authorise for grant type")
+	ErrUnsupportedGrantType = errors.New("unsupported grant type")
+	ErrInvalidScope         = errors.New("invalid scope")
+	ErrInvaldResponseType   = errors.New("invalid response type")
+	ErrInternalServerError  = errors.New("internal server error")
 )
 
 // OAuth2Config contains configuration for the OAuth2 server
@@ -78,6 +94,8 @@ type AuthorizationCode struct {
 	Scopes []string
 	// ExpiresAt is when the code expires
 	ExpiresAt time.Time
+	// State of the request
+	State string
 	// CodeChallenge is for PKCE
 	CodeChallenge string
 	// CodeChallengeMethod is for PKCE
@@ -112,20 +130,6 @@ type RefreshToken struct {
 	ExpiresAt time.Time
 }
 
-type httpResponseHandler struct {
-	w http.ResponseWriter
-}
-
-func newResponseHandler(w http.ResponseWriter) *httpResponseHandler {
-	return &httpResponseHandler{
-		w: w,
-	}
-}
-
-func (h *httpResponseHandler) ErrorResponse(httpCode int) {
-	h.w.WriteHeader(httpCode)
-}
-
 // NewOAuth2Server creates a new OAuth2Server
 func NewOAuth2Server() *OAuth2Server {
 	server := &OAuth2Server{
@@ -149,85 +153,67 @@ func NewOAuth2Server() *OAuth2Server {
 // RegisterClient registers a new OAuth2 client
 func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
 	// TODO: Implement client registration
-	return errors.New("not implemented")
+	if client.ClientID == "" {
+		return fmt.Errorf("Client ID can't be empty: %w", ErrInvaldClient)
+	}
+	if _, exists := s.clients[client.ClientID]; exists {
+		return fmt.Errorf("Duplicate client ID: %w", ErrInvaldClient)
+	}
+	if client.ClientSecret == "" {
+		return fmt.Errorf("Client secret can't be empty: %w", ErrInvaldClient)
+	}
+	if len(client.RedirectURIs) == 0 {
+		return fmt.Errorf("RedixectURIs can't be empty: %w", ErrInvaldClient)
+	}
+	if len(client.AllowedScopes) == 0 {
+		return fmt.Errorf("AllowedScopes can't be empty: %w", ErrInvaldClient)
+	}
+	s.clients[client.ClientID] = client
+	return nil
 }
 
 // GenerateRandomString generates a random string of the specified length
 func GenerateRandomString(length int) (string, error) {
 	// TODO: Implement secure random string generation
-	return "", errors.New("not implemented")
+	bytes := make([]byte, length)
+	rand.Read(bytes) // Fills the slice with secure random bytes
+	return hex.EncodeToString(bytes)[:length], nil
+}
+
+type AuthRequestDTO struct {
+	ResponseType        string
+	ClientID            string
+	UserID              string
+	RedirectURI         string
+	Scopes              []string
+	State               string
+	CodeChallenge       string
+	CodeChallengeMethod string
 }
 
 // HandleAuthorize handles the authorization endpoint
 func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
-	responseHandler := newResponseHandler(w)
 	// TODO: Implement authorization endpoint
-
-	// Query parameters in URL of the request
-	// response_type=			code
-	// client_id=				test-client
-	// redirect_uri=			https://client.example.com/callback
-
-	// scope=					read
-	// state=					xyz123
-	// code_challenge=			abc123
-	// code_challenge_method=	S256"
-
-	// Get query parameters
-	query := r.URL.Query()
-
 	// 1. Validate request parameters (client_id, redirect_uri, response_type, scope, state)
-	// Validate client ID for not null param and client present in client list of the server
-	clientID := query.Get("client_id")
-	if clientID == "" {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
+	authRequest, err := s.GetAndValidateAuthRequest(r)
+	if err != nil {
+		if errors.Is(err, ErrInvaldResponseType) {
+			InvalidRTResponse(w, r, authRequest)
+		}
+		ErrorResponse(w, "Query param validation", err, http.StatusBadRequest)
 		return
 	}
-	client, ok := s.clients[clientID]
-	if !ok {
-		responseHandler.ErrorResponse(http.StatusNotFound)
-		return
-	}
-
-	// Validate redirect URI for not null param and present
-	// in allowed redirect URI list of client of server
-	redirectURI := query.Get("redirect_uri")
-	if redirectURI == "" {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-		return
-	}
-	if !slices.Contains(client.RedirectURIs, redirectURI) {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-		return
-	}
-
-	// Validate response type
-	responseType := query.Get("response_type")
-	if responseType == "" || responseType != "code" {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-	}
-
-	//Validate scope
-	scope := query.Get("scope")
-	if scope == "" {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-	}
-	if !slices.Contains(client.AllowedScopes, scope) {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-	}
-
-	// Validate state
-	state := query.Get("state")
-	if state == "" || state != "xyz123" {
-		responseHandler.ErrorResponse(http.StatusBadRequest)
-	}
-
-	codeChallenge := query.Get("code_challenge")
-	CodeChallengeMethod := query.Get("code_challenge_method")
-
 	// 2. Authenticate the user (for this challenge, could be a simple login form)
 	// 3. Present a consent screen to the user
 	// 4. Generate an authorization code and redirect to the client with the code
+	authCode, err := GenerateAuthCode(authRequest)
+	if err != nil {
+		ErrorResponse(w, "Auth code generation", err, http.StatusInternalServerError)
+		return
+	}
+
+	AuthResponse(w, r, authCode)
+
 }
 
 // HandleToken handles the token endpoint
@@ -367,4 +353,130 @@ func main() {
 		resp, _ := client.MakeAuthenticatedRequest("http://api.example.com/resource", "GET")
 		fmt.Printf("Response: %v\n", resp)
 	*/
+}
+
+func (s *OAuth2Server) GetAndValidateAuthRequest(r *http.Request) (AuthRequestDTO, error) {
+	if r.Method != http.MethodGet {
+		return AuthRequestDTO{}, fmt.Errorf("Method not allowed")
+	}
+	user := r.Context().Value("user_id")
+	userID, ok := user.(string)
+	if !ok {
+		return AuthRequestDTO{}, fmt.Errorf("Bad request wrong user id: %v: %w", userID, ErrInvalidRequest)
+	}
+	query := r.URL.Query()
+
+	clientID := query.Get("client_id")
+	client, ok := s.clients[clientID]
+	if !ok {
+		return AuthRequestDTO{}, fmt.Errorf("client validation: %w", ErrInvaldClient)
+	}
+
+	redirectUri := query.Get("redirect_uri")
+	if redirectUri == "" || !slices.Contains(client.RedirectURIs, redirectUri) {
+		return AuthRequestDTO{}, fmt.Errorf("invalid redirect URI: %w", ErrInvalidRequest)
+	}
+
+	scope := query.Get("scope")
+	if scope == "" {
+		return AuthRequestDTO{}, fmt.Errorf("scope validation: %w", ErrInvalidScope)
+	}
+	scopes := strings.Split(scope, " ")
+	for _, scope := range scopes {
+		if slices.Contains(client.AllowedScopes, scope) {
+			continue
+		}
+		return AuthRequestDTO{}, fmt.Errorf("scope not alowed: %w", ErrInvalidScope)
+	}
+
+	state := query.Get("state")
+	if state == "" {
+		return AuthRequestDTO{}, fmt.Errorf("invalid state %s: %w", state, ErrInvalidRequest)
+	}
+
+	responseType := query.Get("response_type")
+	if responseType != "code" {
+		return AuthRequestDTO{
+				ResponseType:        responseType,
+				ClientID:            clientID,
+				UserID:              userID,
+				RedirectURI:         redirectUri,
+				Scopes:              scopes,
+				State:               state,
+				CodeChallenge:       query.Get("code_challenge"),
+				CodeChallengeMethod: query.Get("code_challenge_method"),
+			},
+			fmt.Errorf("Bad request, wrong response type: %s: %w", responseType, ErrInvaldResponseType)
+	}
+
+	return AuthRequestDTO{
+		ResponseType:        responseType,
+		ClientID:            clientID,
+		UserID:              userID,
+		RedirectURI:         redirectUri,
+		Scopes:              scopes,
+		State:               state,
+		CodeChallenge:       query.Get("code_challenge"),
+		CodeChallengeMethod: query.Get("code_challenge_method"),
+	}, nil
+}
+
+func GenerateAuthCode(dto AuthRequestDTO) (AuthorizationCode, error) {
+	codeStr, err := GenerateRandomString(32)
+	if err != nil {
+		return AuthorizationCode{}, err
+	}
+	return AuthorizationCode{
+		Code:                codeStr,
+		ClientID:            dto.ClientID,
+		UserID:              dto.UserID,
+		RedirectURI:         dto.RedirectURI,
+		Scopes:              dto.Scopes,
+		ExpiresAt:           time.Now().Add(5 * time.Minute),
+		State:               dto.State,
+		CodeChallenge:       dto.CodeChallenge,
+		CodeChallengeMethod: dto.CodeChallengeMethod,
+	}, nil
+}
+
+type ErrorBody struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
+func ErrorResponse(w http.ResponseWriter, msg string, err error, status int) {
+	response := ErrorBody{
+		Error:            err.Error(),
+		ErrorDescription: msg,
+	}
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(&response)
+}
+
+func AuthResponse(w http.ResponseWriter, r *http.Request, authCode AuthorizationCode) {
+	params := make(map[string]string)
+	params["code"] = authCode.Code
+	params["state"] = authCode.State
+	redirectRespons(w, r, authCode.RedirectURI, params)
+}
+
+func InvalidRTResponse(w http.ResponseWriter, r *http.Request, authRequest AuthRequestDTO) {
+	params := make(map[string]string)
+	params["error"] = "unsupported_response_type"
+	params["state"] = authRequest.State
+	redirectRespons(w, r, authRequest.RedirectURI, params)
+}
+
+func redirectRespons(w http.ResponseWriter, r *http.Request, uri string, params map[string]string) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		ErrorResponse(w, "parsing redirect URI", err, http.StatusBadRequest)
+	}
+	v := u.Query()
+	for key, val := range params {
+		v.Set(key, val)
+	}
+	v.Set("error", "unsupported_response_type")
+	u.RawQuery = v.Encode()
+	http.Redirect(w, r, u.String(), http.StatusFound)
 }
