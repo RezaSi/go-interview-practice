@@ -1,11 +1,24 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"slices"
+	"strings"
 	"sync"
 	"time"
+)
+
+// errors
+var (
+	ErrInvalidClient           = errors.New("invalid_client")
+	ErrInvalidRequest          = errors.New("invalid_request")
+	ErrInvalidScope            = errors.New("invalid_scope")
+	ErrUnsupportedResponseType = errors.New("unsupported_response_type")
 )
 
 // OAuth2Config contains configuration for the OAuth2 server
@@ -132,23 +145,191 @@ func NewOAuth2Server() *OAuth2Server {
 
 // RegisterClient registers a new OAuth2 client
 func (s *OAuth2Server) RegisterClient(client *OAuth2ClientInfo) error {
-	// TODO: Implement client registration
-	return errors.New("not implemented")
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if client == nil {
+		return fmt.Errorf("Nil client info pointer %w", ErrInvalidClient)
+	}
+
+	if client.ClientID == "" {
+		return fmt.Errorf("Bad client ID %w", ErrInvalidClient)
+	}
+
+	_, exists := s.clients[client.ClientID]
+	if exists {
+		return fmt.Errorf("Client allready registered %w", ErrInvalidClient)
+	}
+
+	if client.ClientSecret == "" {
+		return fmt.Errorf("Invalid client secret %w", ErrInvalidClient)
+	}
+
+	if len(client.RedirectURIs) == 0 {
+		return fmt.Errorf("Invalid redirect URIs %w", ErrInvalidClient)
+	}
+
+	if len(client.AllowedScopes) == 0 {
+		return fmt.Errorf("Invalid scope %w", ErrInvalidScope)
+	}
+	verifiedClient := &OAuth2ClientInfo{
+		ClientID:      client.ClientID,
+		ClientSecret:  client.ClientSecret,
+		RedirectURIs:  append([]string{}, client.RedirectURIs...),
+		AllowedScopes: append([]string{}, client.AllowedScopes...),
+	}
+	s.clients[client.ClientID] = verifiedClient
+
+	return nil
+
 }
 
 // GenerateRandomString generates a random string of the specified length
 func GenerateRandomString(length int) (string, error) {
-	// TODO: Implement secure random string generation
-	return "", errors.New("not implemented")
+	bytes := make([]byte, length)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", fmt.Errorf("generate random string %w", err)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(bytes)[:length], nil
+}
+
+type AuthRequestDTO struct {
+	userID              string
+	clientID            string
+	redirectUri         string
+	responseType        string
+	scope               string
+	state               string
+	codeChallenge       string
+	codeChallengeMethod string
 }
 
 // HandleAuthorize handles the authorization endpoint
 func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement authorization endpoint
 	// 1. Validate request parameters (client_id, redirect_uri, response_type, scope, state)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	requestDTO := getAuthRequestParams(r)
+
+	if err := s.validAuthRequestParams(requestDTO); err != nil {
+		if errors.Is(err, ErrUnsupportedResponseType) {
+			authErrorRedirectResponse(w, r, err.Error(), requestDTO)
+			return
+		}
+		authErrorResponse(w, err.Error())
+		return
+	}
+
 	// 2. Authenticate the user (for this challenge, could be a simple login form)
 	// 3. Present a consent screen to the user
 	// 4. Generate an authorization code and redirect to the client with the code
+	authCode, err := GenerateAuthCode(requestDTO)
+	if err != nil {
+		authErrorResponse(w, err.Error())
+		return
+	}
+	s.authCodes[authCode.Code] = authCode
+
+	authRedirectResponse(w, r, authCode, requestDTO.state)
+}
+
+func authErrorResponse(w http.ResponseWriter, err string) {
+	http.Error(w, err, http.StatusBadRequest)
+}
+
+func authErrorRedirectResponse(w http.ResponseWriter, r *http.Request, err string, dto AuthRequestDTO) {
+	response := make(map[string]string)
+	response["error"] = err
+	response["state"] = dto.state
+	authResponse(w, r, dto.redirectUri, response)
+
+}
+func authRedirectResponse(w http.ResponseWriter, r *http.Request, code *AuthorizationCode, state string) {
+	response := make(map[string]string)
+	response["code"] = code.Code
+	response["state"] = state
+	authResponse(w, r, code.RedirectURI, response)
+}
+func authResponse(w http.ResponseWriter, r *http.Request, redirectUri string, response map[string]string) {
+	uri, _ := url.Parse(redirectUri)
+	val := url.Values{}
+	for k, v := range response {
+		val.Add(k, v)
+	}
+	uri.RawQuery = val.Encode()
+	http.Redirect(w, r, uri.String(), http.StatusFound)
+
+}
+func getAuthRequestParams(r *http.Request) AuthRequestDTO {
+	query := r.URL.Query()
+
+	var userID string
+	if user := r.Context().Value("user_id"); user != nil {
+		userID = user.(string)
+		if userID == "" {
+			userID = "user1"
+		}
+	}
+
+	return AuthRequestDTO{
+		userID:              userID,
+		clientID:            query.Get("client_id"),
+		redirectUri:         query.Get("redirect_uri"),
+		responseType:        query.Get("response_type"),
+		scope:               query.Get("scope"),
+		state:               query.Get("state"),
+		codeChallenge:       query.Get("code_challenge"),
+		codeChallengeMethod: query.Get("code_challenge_method"),
+	}
+
+}
+func (s *OAuth2Server) validAuthRequestParams(dto AuthRequestDTO) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, exists := s.users[dto.userID]; !exists {
+		return fmt.Errorf("user not found %w", ErrInvalidRequest)
+	}
+	client, exists := s.clients[dto.clientID]
+	if !exists {
+		return fmt.Errorf("client not found %w", ErrInvalidRequest)
+	}
+	if !slices.Contains(client.RedirectURIs, dto.redirectUri) {
+		return fmt.Errorf("bad redirect uri %w", ErrInvalidRequest)
+	}
+	if dto.responseType != "code" {
+		return fmt.Errorf("%w", ErrUnsupportedResponseType)
+	}
+	scopes := strings.Fields(dto.scope)
+	for _, scope := range scopes {
+		if !slices.Contains(client.AllowedScopes, scope) {
+			return fmt.Errorf("invalid scope %w", ErrInvalidScope)
+		}
+	}
+	if dto.codeChallenge == "" {
+		return fmt.Errorf("code challenge is required %w", ErrInvalidRequest)
+	}
+	return nil
+}
+
+func GenerateAuthCode(dto AuthRequestDTO) (*AuthorizationCode, error) {
+	randStr, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthorizationCode{
+		Code:                randStr,
+		ClientID:            dto.clientID,
+		UserID:              dto.userID,
+		RedirectURI:         dto.redirectUri,
+		Scopes:              strings.Fields(dto.scope),
+		ExpiresAt:           time.Now().Add(5 * time.Minute),
+		CodeChallenge:       dto.codeChallenge,
+		CodeChallengeMethod: dto.codeChallengeMethod,
+	}, nil
 }
 
 // HandleToken handles the token endpoint
