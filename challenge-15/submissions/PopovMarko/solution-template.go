@@ -478,7 +478,7 @@ func (s *OAuth2Server) handdleAccessRequest(w http.ResponseWriter, dto *TokenReq
 		return
 	}
 
-	accToken, refToken, err := generateTokens(code)
+	accToken, refToken, err := generateTokens(code.ClientID, code.UserID, code.Scopes)
 	if err != nil {
 		tokenErrorResponse(w, "generate tokens", err)
 		return
@@ -491,10 +491,39 @@ func (s *OAuth2Server) handdleAccessRequest(w http.ResponseWriter, dto *TokenReq
 }
 
 func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenRequestDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	refreshToken, ok := s.refreshTokens[dto.refreshToken]
+	if !ok {
+		tokenErrorResponse(w, "Bad refresh token", ErrInvalidGrant)
+		return
+	}
+
+	if refreshToken.ExpiresAt.Before(time.Now()) {
+		tokenErrorResponse(w, "Expired refresh token", ErrInvalidGrant)
+		return
+	}
+
+	if dto.clientSecret != s.clients[refreshToken.ClientID].ClientSecret {
+		tokenErrorResponse(w, "Expired refresh token", ErrInvalidClient)
+		return
+	}
+
+	accToken, refToken, err := generateTokens(refreshToken.ClientID, refreshToken.UserID, refreshToken.Scopes)
+	if err != nil {
+		tokenErrorResponse(w, "generate tokens", err)
+		return
+	}
+
+	s.tokens[accToken.AccessToken] = accToken
+	s.refreshTokens[refToken.RefreshToken] = refToken
+	delete(s.refreshTokens, refreshToken.RefreshToken)
+	tokenResponse(w, accToken, refToken)
 
 }
 
-func generateTokens(code *AuthorizationCode) (*Token, *RefreshToken, error) {
+func generateTokens(clientID, userID string, scopes []string) (*Token, *RefreshToken, error) {
 	tokenStr, err := GenerateRandomString(32)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generate token string %w", err)
@@ -506,16 +535,16 @@ func generateTokens(code *AuthorizationCode) (*Token, *RefreshToken, error) {
 
 	return &Token{
 			AccessToken: tokenStr,
-			ClientID:    code.ClientID,
-			UserID:      code.UserID,
-			Scopes:      code.Scopes,
+			ClientID:    clientID,
+			UserID:      userID,
+			Scopes:      scopes,
 			ExpiresAt:   time.Now().Add(time.Hour),
 		},
 		&RefreshToken{
 			RefreshToken: reftokenStr,
-			ClientID:     code.ClientID,
-			UserID:       code.UserID,
-			Scopes:       code.Scopes,
+			ClientID:     clientID,
+			UserID:       userID,
+			Scopes:       scopes,
 			ExpiresAt:    time.Now().Add(24 * time.Hour),
 		}, nil
 
@@ -524,33 +553,81 @@ func generateTokens(code *AuthorizationCode) (*Token, *RefreshToken, error) {
 // ValidateToken validates an access token
 func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 	// TODO: Implement token validation
-	return nil, errors.New("not implemented")
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	accToken, ok := s.tokens[token]
+	if !ok {
+		return nil, fmt.Errorf("token not found %w", ErrInvalidRequest)
+	}
+
+	if accToken.ExpiresAt.Before(time.Now()) {
+		return nil, fmt.Errorf("expired token %w", ErrInvalidGrant)
+	}
+
+	// client, ok := s.clients[accToken.ClientID]
+	// if !ok {
+	// 	return nil, fmt.Errorf("client not found %w", ErrInvalidClient)
+	// }
+	// _, ok = s.users[accToken.UserID]
+	// if !ok {
+	// 	return nil, fmt.Errorf("user not found %w", ErrInvalidRequest)
+	// }
+	// for _, scope := range accToken.Scopes {
+	// 	if !slices.Contains(client.AllowedScopes, scope) {
+	// 		return nil, fmt.Errorf("scope not allowed %w", ErrInvalidScope)
+	// 	}
+	// }
+	return accToken, nil
 }
 
 // RefreshAccessToken refreshes an access token using a refresh token
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
-	// TODO: Implement token refresh
-	return nil, nil, errors.New("not implemented")
+	refToken, ok := s.refreshTokens[refreshToken]
+	if !ok {
+		return nil, nil, fmt.Errorf("Bad refresh token %w", ErrInvalidGrant)
+	}
+	return generateTokens(refToken.ClientID, refToken.UserID, refToken.Scopes)
 }
 
 // RevokeToken revokes an access or refresh token
 func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 	// TODO: Implement token revocation
-	return errors.New("not implemented")
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if isRefreshToken {
+		if _, ok := s.refreshTokens[token]; !ok {
+			return fmt.Errorf("invalid refresh token %w", ErrInvalidRequest)
+		}
+		delete(s.refreshTokens, token)
+		return nil
+	}
+	if _, ok := s.tokens[token]; !ok {
+		return fmt.Errorf("invalid token %w", ErrInvalidRequest)
+	}
+	delete(s.tokens, token)
+	return nil
 }
 
 // VerifyCodeChallenge verifies a PKCE code challenge
 func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
 	// TODO: Implement PKCE verification
-	if method != "S256" {
+	switch method {
+	case "S256":
+		hash := sha256.Sum256([]byte(codeVerifier))
+		challenge := base64.RawURLEncoding.EncodeToString(hash[:])
+		if codeChallenge != challenge {
+			return false
+		}
+		return true
+
+	case "plain":
+		if codeChallenge != codeVerifier {
+			return false
+		}
+		return true
+	default:
 		return false
 	}
-	hash := sha256.Sum256([]byte(codeVerifier))
-	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
-	if codeChallenge != challenge {
-		return false
-	}
-	return true
 }
 
 // StartServer starts the OAuth2 server
@@ -564,7 +641,9 @@ func (s *OAuth2Server) StartServer(port int) error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
+// =================================
 // Client code to demonstrate usage
+// =================================
 
 // OAuth2Client represents a client application using OAuth2
 type OAuth2Client struct {
