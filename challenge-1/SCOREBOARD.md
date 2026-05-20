@@ -49,6 +49,7 @@
 | KirthiInfra | 6 | 6 |
 | KishanPipariya | 6 | 6 |
 | Kosench | 6 | 6 |
+| Lezhni | 6 | 6 |
 | Linqi-Qin | 6 | 6 |
 | LouisChen-TW | 6 | 6 |
 | MYK12397 | 6 | 6 |
