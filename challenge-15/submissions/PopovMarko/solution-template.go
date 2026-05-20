@@ -2,7 +2,9 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,7 +20,10 @@ var (
 	ErrInvalidClient           = errors.New("invalid_client")
 	ErrInvalidRequest          = errors.New("invalid_request")
 	ErrInvalidScope            = errors.New("invalid_scope")
+	ErrInvalidGrant            = errors.New("invalid_grant")
+	ErrUnauthorizedClient      = errors.New("unauthorized_client")
 	ErrUnsupportedResponseType = errors.New("unsupported_response_type")
+	ErrUnsupportedGrantType    = errors.New("unsupported_grant_type")
 )
 
 // OAuth2Config contains configuration for the OAuth2 server
@@ -232,7 +237,9 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 		authErrorResponse(w, err.Error())
 		return
 	}
+	s.mu.Lock()
 	s.authCodes[authCode.Code] = authCode
+	s.mu.Unlock()
 
 	authRedirectResponse(w, r, authCode, requestDTO.state)
 }
@@ -332,14 +339,186 @@ func GenerateAuthCode(dto AuthRequestDTO) (*AuthorizationCode, error) {
 	}, nil
 }
 
+// =======================================
+// TOKEN HANDLER
+// =======================================
+
+type TokenRequestDTO struct {
+	grantType    string
+	code         string
+	redirectUri  string
+	clientID     string
+	clientSecret string
+	codeVerifier string
+	refreshToken string
+}
+
+type TokenErrorBody struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"description"`
+}
+
 // HandleToken handles the token endpoint
 func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
+
 	// TODO: Implement token endpoint
 	// 1. Validate request parameters (grant_type, code, redirect_uri, client_id, client_secret)
+	if r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
+		tokenErrorResponse(w, "unsupported Content-Type", ErrInvalidRequest)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		tokenErrorResponse(w, "method not allowed %w", ErrInvalidRequest)
+	}
+
+	tokenRequest, err := GetTokenRequestParam(r)
+	if err != nil {
+		tokenErrorResponse(w, "get token params", err)
+	}
+	switch tokenRequest.grantType {
+	case "authorization_code":
+		s.handdleAccessRequest(w, tokenRequest)
+	case "refresh_token":
+		s.handleRefreshRequest(w, tokenRequest)
+	default:
+		tokenErrorResponse(w, "handle token %w", ErrUnsupportedGrantType)
+	}
 	// 2. Verify the authorization code
 	// 3. For PKCE, verify the code_verifier
 	// 4. Generate access and refresh tokens
 	// 5. Return the tokens as a JSON response
+}
+
+func tokenErrorResponse(w http.ResponseWriter, msg string, err error) {
+	//TODO implement error map to status code
+	var status int
+	switch {
+	case errors.Is(err, ErrInvalidRequest):
+		status = http.StatusBadRequest
+	case errors.Is(err, ErrUnauthorizedClient):
+		status = http.StatusUnauthorized
+	case errors.Is(err, ErrInvalidClient):
+		status = http.StatusUnauthorized
+	default:
+		status = http.StatusBadRequest
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{
+		"error":             err.Error(),
+		"error_description": msg,
+	})
+
+}
+
+func tokenResponse(w http.ResponseWriter, token *Token, refreshToken *RefreshToken) {
+	// TODO implement
+	w.Header().Set("Content-Type", "application/json")
+
+	response := map[string]interface{}{
+		"access_token":  token.AccessToken,
+		"token_type":    "Bearer",
+		"expires_in":    int(time.Until(token.ExpiresAt).Seconds()),
+		"refresh_token": refreshToken.RefreshToken,
+	}
+
+	if len(token.Scopes) > 0 {
+		response["scope"] = strings.Join(token.Scopes, " ")
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetTokenRequestParam(r *http.Request) (*TokenRequestDTO, error) {
+	if err := r.ParseForm(); err != nil {
+		return nil, fmt.Errorf("parse form %w", err)
+	}
+
+	return &TokenRequestDTO{
+		grantType:    r.PostFormValue("grant_type"),
+		code:         r.PostFormValue("code"),
+		redirectUri:  r.PostFormValue("redirect_uri"),
+		clientID:     r.PostFormValue("client_id"),
+		clientSecret: r.PostFormValue("client_secret"),
+		codeVerifier: r.PostFormValue("code_verifier"),
+		refreshToken: r.PostFormValue("refresh_token"),
+	}, nil
+
+}
+func (s *OAuth2Server) handdleAccessRequest(w http.ResponseWriter, dto *TokenRequestDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	code, exists := s.authCodes[dto.code]
+	if !exists {
+		tokenErrorResponse(w, "handl access request", ErrInvalidRequest)
+		return
+	}
+	delete(s.authCodes, code.Code)
+
+	client, exists := s.clients[dto.clientID]
+	if !exists {
+		tokenErrorResponse(w, "client validate", ErrUnauthorizedClient)
+		return
+	}
+
+	if dto.redirectUri != code.RedirectURI {
+		tokenErrorResponse(w, "redirect validate", ErrInvalidRequest)
+		return
+	}
+
+	if dto.clientSecret != client.ClientSecret {
+		tokenErrorResponse(w, "cliend secret validate", ErrInvalidClient)
+		return
+	}
+
+	if !VerifyCodeChallenge(dto.codeVerifier, code.CodeChallenge, code.CodeChallengeMethod) {
+		tokenErrorResponse(w, "PKCE failed", ErrInvalidGrant)
+		return
+	}
+
+	accToken, refToken, err := generateTokens(code)
+	if err != nil {
+		tokenErrorResponse(w, "generate tokens", err)
+		return
+	}
+
+	s.tokens[accToken.AccessToken] = accToken
+	s.refreshTokens[refToken.RefreshToken] = refToken
+	tokenResponse(w, accToken, refToken)
+
+}
+
+func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenRequestDTO) {
+
+}
+
+func generateTokens(code *AuthorizationCode) (*Token, *RefreshToken, error) {
+	tokenStr, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate token string %w", err)
+	}
+	reftokenStr, err := GenerateRandomString(32)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate token string %w", err)
+	}
+
+	return &Token{
+			AccessToken: tokenStr,
+			ClientID:    code.ClientID,
+			UserID:      code.UserID,
+			Scopes:      code.Scopes,
+			ExpiresAt:   time.Now().Add(time.Hour),
+		},
+		&RefreshToken{
+			RefreshToken: reftokenStr,
+			ClientID:     code.ClientID,
+			UserID:       code.UserID,
+			Scopes:       code.Scopes,
+			ExpiresAt:    time.Now().Add(24 * time.Hour),
+		}, nil
+
 }
 
 // ValidateToken validates an access token
@@ -363,7 +542,15 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 // VerifyCodeChallenge verifies a PKCE code challenge
 func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
 	// TODO: Implement PKCE verification
-	return false
+	if method != "S256" {
+		return false
+	}
+	hash := sha256.Sum256([]byte(codeVerifier))
+	challenge := base64.RawURLEncoding.EncodeToString(hash[:])
+	if codeChallenge != challenge {
+		return false
+	}
+	return true
 }
 
 // StartServer starts the OAuth2 server
