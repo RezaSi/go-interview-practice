@@ -49,6 +49,7 @@
 | KirthiInfra | 6 | 6 |
 | KishanPipariya | 6 | 6 |
 | Kosench | 6 | 6 |
+| Lezhni | 6 | 6 |
 | Linqi-Qin | 6 | 6 |
 | LouisChen-TW | 6 | 6 |
 | MYK12397 | 6 | 6 |
@@ -70,6 +71,8 @@
 | Sairaviteja27 | 6 | 6 |
 | SemenTretyakov | 6 | 6 |
 | Seokky | 6 | 6 |
+| Shalu-Kushwaha | 6 | 6 |
+| Shopticks | 6 | 6 |
 | Spiridonov-KA | 6 | 6 |
 | Stevo-S | 6 | 6 |
 | TOomaAh | 6 | 6 |
@@ -83,6 +86,7 @@
 | Z4za01 | 6 | 6 |
 | ZaharBorisenko | 6 | 6 |
 | ZakirAvrora | 6 | 6 |
+| Zezezknight | 6 | 6 |
 | abhishek622 | 6 | 6 |
 | adi041518 | 6 | 6 |
 | affandisy | 6 | 6 |
@@ -127,6 +131,7 @@
 | eksly | 6 | 6 |
 | elecycele | 6 | 6 |
 | es-codigo | 6 | 6 |
+| ezra-gocci | 6 | 6 |
 | flaviogf | 6 | 6 |
 | fleimkeipa | 6 | 6 |
 | foreverosemary | 6 | 6 |
@@ -253,6 +258,7 @@
 | wxai2324 | 6 | 6 |
 | x890c | 6 | 6 |
 | xavi5r | 6 | 6 |
+| xuanphu2701 | 6 | 6 |
 | xyersh | 6 | 6 |
 | y1hao | 6 | 6 |
 | ymonn | 6 | 6 |

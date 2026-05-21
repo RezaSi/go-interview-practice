@@ -20,6 +20,7 @@
 | Johrespi | 35 | 35 |
 | JunLog | 35 | 35 |
 | KhaledMosaad | 35 | 35 |
+| Lezhni | 35 | 35 |
 | MYK12397 | 35 | 35 |
 | MuraliMohan-2000 | 35 | 35 |
 | Mxn-ptr | 35 | 35 |
@@ -89,6 +90,7 @@
 | xyersh | 35 | 35 |
 | y1hao | 35 | 35 |
 | yz4230 | 35 | 35 |
+| zero-shubham | 35 | 35 |
 | zylbeyondlimits | 35 | 35 |
 | ashwinipatankar | 33 | 35 |
 | VFarsiyants | 24 | 26 |
