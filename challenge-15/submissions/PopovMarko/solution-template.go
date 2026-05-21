@@ -280,7 +280,7 @@ func authRedirectResponse(w http.ResponseWriter, r *http.Request, code *Authoriz
 }
 func authResponse(w http.ResponseWriter, r *http.Request, redirectUri string, response map[string]string) {
 	uri, _ := url.Parse(redirectUri)
-	val := r.URL.Query()
+	val := uri.Query()
 	for k, v := range response {
 		val.Set(k, v)
 	}
