@@ -482,7 +482,6 @@ func (s *OAuth2Server) handleAccessRequest(w http.ResponseWriter, dto *TokenRequ
 	defer s.mu.Unlock()
 
 	code, codeExists := s.authCodes[dto.code]
-	delete(s.authCodes, code.Code)
 
 	client, clientExists := s.clients[dto.clientID]
 
@@ -514,6 +513,8 @@ func (s *OAuth2Server) handleAccessRequest(w http.ResponseWriter, dto *TokenRequ
 		tokenErrorResponse(w, "PKCE verification failed", ErrInvalidGrant)
 		return
 	}
+
+	delete(s.authCodes, code.Code)
 
 	accToken, refToken, err := generateTokens(code.ClientID, code.UserID, code.Scopes)
 	if err != nil {
