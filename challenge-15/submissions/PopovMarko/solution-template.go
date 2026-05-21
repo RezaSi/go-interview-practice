@@ -297,6 +297,9 @@ func getAuthRequestParams(r *http.Request) AuthRequestDTO {
 	query := r.URL.Query()
 
 	userID, _ := r.Context().Value("user_id").(string)
+	if userID == "" {
+		userID = "user1"
+	}
 
 	method := query.Get("code_challenge_method")
 	if method == "" {
