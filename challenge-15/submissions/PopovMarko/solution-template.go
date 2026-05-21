@@ -687,7 +687,7 @@ func (c *OAuth2Client) GetAuthorizationURL(state string, codeChallenge string, c
 func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) error {
 	// TODO: Implement token exchange
 	params := url.Values{}
-	params.Add("grant_type", "")
+	params.Add("grant_type", "authorization_code")
 	params.Add("code", code)
 	params.Add("redirect_uri", c.Config.RedirectURI)
 	params.Add("client_id", c.Config.ClientID)
@@ -699,29 +699,80 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 		return fmt.Errorf("Exchange code for token request: %w", err)
 	}
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	httpClient := &http.Client{
+
+	if err := c.HandleTokenResponse(r); err != nil {
+		return fmt.Errorf("handle token response %w", err)
+	}
+
+	return nil
+}
+
+// RefreshToken refreshes the access token using the refresh token
+func (c *OAuth2Client) DoRefreshToken() error {
+	// TODO: Implement token refresh
+	params := url.Values{}
+	params.Add("grant_type", "refresh_token")
+	params.Add("refresh_token", c.RefreshToken)
+	params.Add("client_id", c.Config.ClientID)
+	params.Add("client_secret", c.Config.ClientSecret)
+
+	r, err := http.NewRequest(http.MethodPost, c.Config.AuthorizationEndpoint, strings.NewReader(params.Encode()))
+	if err != nil {
+		return fmt.Errorf("Exchange code for token request: %w", err)
+	}
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	if err := c.HandleTokenResponse(r); err != nil {
+		return fmt.Errorf("handle token response: %w", err)
+	}
+
+	return nil
+}
+
+// MakeAuthenticatedRequest makes a request with the access token
+func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*http.Response, error) {
+	// TODO: Implement authenticated request
+	r, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("make authenticated request %w", err)
+	}
+	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.AccessToken))
+	r.Header.Set("Accept", "application/json")
+	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	response, err := httpClient.Do(r)
-	if err != nil {
-		return fmt.Errorf("http client error: %w", err)
-	}
+	return client.Do(r)
+}
+
+func (c *OAuth2Client) HandleTokenResponse(r *http.Request) error {
 	type ResponseDTO struct {
 		AccessToken  string        `json:"asserr_token"`
 		TokenType    string        `json:"token_type"`
 		ExpiresIn    time.Duration `json:"expires_in"`
 		RefreshToken string        `json:"refresh_token"`
 	}
+	var responseDTO ResponseDTO
+
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	response, err := httpClient.Do(r)
+	if err != nil {
+		return fmt.Errorf("http client error: %w", err)
+	}
+
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("server response %d", response.StatusCode)
 	}
 
-	var responseDTO ResponseDTO
-	if err := json.NewDecoder(r.Body).Decode(&responseDTO); err != nil {
+	if err := json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
 		return fmt.Errorf("json decode request body: %w", err)
 	}
-	r.Body.Close()
 
+	response.Body.Close()
+
+	// Response validation
 	if responseDTO.TokenType != "Bearer" {
 		return fmt.Errorf("Wrong token type")
 	}
@@ -730,20 +781,7 @@ func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) er
 	c.RefreshToken = responseDTO.RefreshToken
 	c.TokenExpiry = time.Now().Add(responseDTO.ExpiresIn)
 
-	return errors.New("not implemented")
-
-}
-
-// RefreshToken refreshes the access token using the refresh token
-func (c *OAuth2Client) DoRefreshToken() error {
-	// TODO: Implement token refresh
-	return errors.New("not implemented")
-}
-
-// MakeAuthenticatedRequest makes a request with the access token
-func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*http.Response, error) {
-	// TODO: Implement authenticated request
-	return nil, errors.New("not implemented")
+	return nil
 }
 
 func main() {
