@@ -297,9 +297,6 @@ func getAuthRequestParams(r *http.Request) AuthRequestDTO {
 	query := r.URL.Query()
 
 	userID, _ := r.Context().Value("user_id").(string)
-	if userID == "" {
-		userID = "user1"
-	}
 
 	method := query.Get("code_challenge_method")
 	if method == "" {
@@ -323,6 +320,9 @@ func getAuthRequestParams(r *http.Request) AuthRequestDTO {
 func (s *OAuth2Server) validAuthRequestParams(dto AuthRequestDTO) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	if dto.userID == "" {
+		return fmt.Errorf("user not authenticated: %w", ErrInvalidRequest)
+	}
 	if _, exists := s.users[dto.userID]; !exists {
 		return fmt.Errorf("user not found %w", ErrInvalidRequest)
 	}
@@ -610,23 +610,26 @@ func generateTokens(clientID, userID string, scopes []string) (*Token, *RefreshT
 func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 	s.mu.RLock()
 	accToken, ok := s.tokens[token]
-	s.mu.RUnlock()
 	if !ok {
+		s.mu.RUnlock()
 		return nil, fmt.Errorf("token not found: %w", ErrInvalidRequest)
 	}
 	if accToken.ExpiresAt.Before(time.Now()) {
+		s.mu.RUnlock()
 		return nil, fmt.Errorf("token expired: %w", ErrInvalidGrant)
 	}
-	return accToken, nil
+	out := cloneToken(accToken)
+	s.mu.RUnlock()
+	return out, nil
 }
 
 // RefreshAccessToken rotates the supplied refresh token for a new
 // access + refresh token pair. The previous refresh token is revoked.
 // Returns ErrInvalidGrant if the token is unknown or expired.
 func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
-	s.mu.RLock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	refToken, ok := s.refreshTokens[refreshToken]
-	s.mu.RUnlock()
 	if !ok {
 		return nil, nil, fmt.Errorf("refresh token not found: %w", ErrInvalidGrant)
 	}
@@ -639,13 +642,11 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *Refresh
 		return nil, nil, err
 	}
 
-	s.mu.Lock()
 	delete(s.refreshTokens, refreshToken)
 	s.tokens[accToken.AccessToken] = accToken
 	s.refreshTokens[newRefToken.RefreshToken] = newRefToken
-	s.mu.Unlock()
 
-	return accToken, newRefToken, nil
+	return cloneToken(accToken), cloneRefreshToken(newRefToken), nil
 }
 
 // RevokeToken revokes an access or refresh token. The isRefreshToken flag
@@ -698,6 +699,24 @@ func (s *OAuth2Server) StartServer(port int) error {
 	// Start the server
 	fmt.Printf("Starting OAuth2 server on port %d\n", port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+}
+
+func cloneToken(t *Token) *Token {
+	if t == nil {
+		return nil
+	}
+	cp := *t
+	cp.Scopes = append([]string(nil), t.Scopes...)
+	return &cp
+}
+
+func cloneRefreshToken(t *RefreshToken) *RefreshToken {
+	if t == nil {
+		return nil
+	}
+	cp := *t
+	cp.Scopes = append([]string(nil), t.Scopes...)
+	return &cp
 }
 
 // =================================
