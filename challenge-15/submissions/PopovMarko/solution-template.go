@@ -26,6 +26,27 @@ var (
 	ErrUnsupportedGrantType    = errors.New("unsupported_grant_type")
 )
 
+func oauthErrorCode(err error) string {
+	switch {
+	case errors.Is(err, ErrInvalidClient):
+		return ErrInvalidClient.Error()
+	case errors.Is(err, ErrInvalidRequest):
+		return ErrInvalidRequest.Error()
+	case errors.Is(err, ErrInvalidScope):
+		return ErrInvalidScope.Error()
+	case errors.Is(err, ErrInvalidGrant):
+		return ErrInvalidGrant.Error()
+	case errors.Is(err, ErrUnauthorizedClient):
+		return ErrUnauthorizedClient.Error()
+	case errors.Is(err, ErrUnsupportedResponseType):
+		return ErrUnsupportedResponseType.Error()
+	case errors.Is(err, ErrUnsupportedGrantType):
+		return ErrUnsupportedGrantType.Error()
+	default:
+		return ErrInvalidRequest.Error()
+	}
+}
+
 // OAuth2Config contains configuration for the OAuth2 server
 type OAuth2Config struct {
 	// AuthorizationEndpoint is the endpoint for authorization requests
@@ -221,7 +242,7 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.validAuthRequestParams(requestDTO); err != nil {
 		if errors.Is(err, ErrUnsupportedResponseType) {
-			authErrorRedirectResponse(w, r, err.Error(), requestDTO)
+			authErrorRedirectResponse(w, r, oauthErrorCode(err), requestDTO)
 			return
 		}
 		authErrorResponse(w, err.Error())
@@ -259,14 +280,15 @@ func authRedirectResponse(w http.ResponseWriter, r *http.Request, code *Authoriz
 }
 func authResponse(w http.ResponseWriter, r *http.Request, redirectUri string, response map[string]string) {
 	uri, _ := url.Parse(redirectUri)
-	val := url.Values{}
+	val := r.URL.Query()
 	for k, v := range response {
-		val.Add(k, v)
+		val.Set(k, v)
 	}
 	uri.RawQuery = val.Encode()
 	http.Redirect(w, r, uri.String(), http.StatusFound)
 
 }
+
 // getAuthRequestParams reads OAuth2 authorization parameters from the request's
 // URL query and pulls the logged-in user id off the request context. A missing
 // context value falls back to "user1" so the demo flow works end-to-end without
@@ -279,6 +301,10 @@ func getAuthRequestParams(r *http.Request) AuthRequestDTO {
 		userID = "user1"
 	}
 
+	method := query.Get("code_challenge_method")
+	if method == "" {
+		method = "plain"
+	}
 	return AuthRequestDTO{
 		userID:              userID,
 		clientID:            query.Get("client_id"),
@@ -287,7 +313,7 @@ func getAuthRequestParams(r *http.Request) AuthRequestDTO {
 		scope:               query.Get("scope"),
 		state:               query.Get("state"),
 		codeChallenge:       query.Get("code_challenge"),
-		codeChallengeMethod: query.Get("code_challenge_method"),
+		codeChallengeMethod: method,
 	}
 }
 
@@ -318,6 +344,9 @@ func (s *OAuth2Server) validAuthRequestParams(dto AuthRequestDTO) error {
 	}
 	if dto.codeChallenge == "" {
 		return fmt.Errorf("code challenge is required %w", ErrInvalidRequest)
+	}
+	if dto.codeChallengeMethod != "plain" && dto.codeChallengeMethod != "S256" {
+		return fmt.Errorf("unsupported code challenge method: %w", ErrInvalidRequest)
 	}
 	return nil
 }
@@ -400,7 +429,7 @@ func tokenErrorResponse(w http.ResponseWriter, msg string, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(map[string]string{
-		"error":             err.Error(),
+		"error":             oauthErrorCode(err),
 		"error_description": msg,
 	})
 }
@@ -443,15 +472,19 @@ func GetTokenRequestParam(r *http.Request) (*TokenRequestDTO, error) {
 		refreshToken: r.PostFormValue("refresh_token"),
 	}, nil
 }
+
 // handleAccessRequest implements the authorization_code grant: it exchanges
 // a previously issued authorization code for an access + refresh token pair.
 // The auth code is consumed only after all validation succeeds, so a failed
 // exchange does not invalidate a usable code.
 func (s *OAuth2Server) handleAccessRequest(w http.ResponseWriter, dto *TokenRequestDTO) {
-	s.mu.RLock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	code, codeExists := s.authCodes[dto.code]
+	delete(s.authCodes, code.Code)
+
 	client, clientExists := s.clients[dto.clientID]
-	s.mu.RUnlock()
 
 	if !codeExists {
 		tokenErrorResponse(w, "auth code not found", ErrInvalidGrant)
@@ -488,11 +521,8 @@ func (s *OAuth2Server) handleAccessRequest(w http.ResponseWriter, dto *TokenRequ
 		return
 	}
 
-	s.mu.Lock()
-	delete(s.authCodes, code.Code)
 	s.tokens[accToken.AccessToken] = accToken
 	s.refreshTokens[refToken.RefreshToken] = refToken
-	s.mu.Unlock()
 
 	tokenResponse(w, accToken, refToken)
 }
@@ -501,13 +531,16 @@ func (s *OAuth2Server) handleAccessRequest(w http.ResponseWriter, dto *TokenRequ
 // supplied refresh token for a fresh access + refresh token pair. The old
 // refresh token is revoked atomically with the issuance of the new one.
 func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenRequestDTO) {
-	s.mu.RLock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	refreshToken, tokenExists := s.refreshTokens[dto.refreshToken]
+
 	var client *OAuth2ClientInfo
+
 	if tokenExists {
 		client = s.clients[refreshToken.ClientID]
 	}
-	s.mu.RUnlock()
 
 	if !tokenExists {
 		tokenErrorResponse(w, "refresh token not found", ErrInvalidGrant)
@@ -521,6 +554,9 @@ func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenReq
 		tokenErrorResponse(w, "client no longer registered", ErrInvalidClient)
 		return
 	}
+	if dto.clientID != client.ClientID {
+		tokenErrorResponse(w, "client not found", ErrInvalidClient)
+	}
 	if dto.clientSecret != client.ClientSecret {
 		tokenErrorResponse(w, "bad client secret", ErrInvalidClient)
 		return
@@ -532,11 +568,9 @@ func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenReq
 		return
 	}
 
-	s.mu.Lock()
 	delete(s.refreshTokens, refreshToken.RefreshToken)
 	s.tokens[accToken.AccessToken] = accToken
 	s.refreshTokens[refToken.RefreshToken] = refToken
-	s.mu.Unlock()
 
 	tokenResponse(w, accToken, refToken)
 }
