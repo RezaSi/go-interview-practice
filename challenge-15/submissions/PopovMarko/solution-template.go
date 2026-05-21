@@ -665,13 +665,73 @@ func NewOAuth2Client(config OAuth2Config) *OAuth2Client {
 // GetAuthorizationURL returns the URL to redirect the user for authorization
 func (c *OAuth2Client) GetAuthorizationURL(state string, codeChallenge string, codeChallengeMethod string) (string, error) {
 	// TODO: Implement building the authorization URL
-	return "", errors.New("not implemented")
+	parsedPath, err := url.Parse(c.Config.AuthorizationEndpoint)
+	if err != nil {
+		return "", fmt.Errorf("Auth URL: %w", err)
+	}
+	v := url.Values{}
+	v.Add("response_type", "code")
+	v.Add("client_id", c.Config.ClientID)
+	v.Add("redirect_uri", c.Config.RedirectURI)
+	v.Add("scope", strings.Join(c.Config.Scopes, " "))
+	v.Add("state", state)
+	v.Add("codeChallenge", codeChallenge)
+	v.Add("codeChallengeMethod", codeChallengeMethod)
+
+	parsedPath.RawQuery = v.Encode()
+
+	return parsedPath.String(), nil
 }
 
 // ExchangeCodeForToken exchanges an authorization code for tokens
 func (c *OAuth2Client) ExchangeCodeForToken(code string, codeVerifier string) error {
 	// TODO: Implement token exchange
+	params := url.Values{}
+	params.Add("grant_type", "")
+	params.Add("code", code)
+	params.Add("redirect_uri", c.Config.RedirectURI)
+	params.Add("client_id", c.Config.ClientID)
+	params.Add("client_secret", c.Config.ClientSecret)
+	params.Add("codeVerifier", codeVerifier)
+
+	r, err := http.NewRequest(http.MethodPost, c.Config.AuthorizationEndpoint, strings.NewReader(params.Encode()))
+	if err != nil {
+		return fmt.Errorf("Exchange code for token request: %w", err)
+	}
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	httpClient := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	response, err := httpClient.Do(r)
+	if err != nil {
+		return fmt.Errorf("http client error: %w", err)
+	}
+	type ResponseDTO struct {
+		AccessToken  string        `json:"asserr_token"`
+		TokenType    string        `json:"token_type"`
+		ExpiresIn    time.Duration `json:"expires_in"`
+		RefreshToken string        `json:"refresh_token"`
+	}
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("server response %d", response.StatusCode)
+	}
+
+	var responseDTO ResponseDTO
+	if err := json.NewDecoder(r.Body).Decode(&responseDTO); err != nil {
+		return fmt.Errorf("json decode request body: %w", err)
+	}
+	r.Body.Close()
+
+	if responseDTO.TokenType != "Bearer" {
+		return fmt.Errorf("Wrong token type")
+	}
+
+	c.AccessToken = responseDTO.AccessToken
+	c.RefreshToken = responseDTO.RefreshToken
+	c.TokenExpiry = time.Now().Add(responseDTO.ExpiresIn)
+
 	return errors.New("not implemented")
+
 }
 
 // RefreshToken refreshes the access token using the refresh token
