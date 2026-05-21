@@ -557,6 +557,7 @@ func (s *OAuth2Server) handleRefreshRequest(w http.ResponseWriter, dto *TokenReq
 	}
 	if dto.clientID != client.ClientID {
 		tokenErrorResponse(w, "client not found", ErrInvalidClient)
+		return
 	}
 	if dto.clientSecret != client.ClientSecret {
 		tokenErrorResponse(w, "bad client secret", ErrInvalidClient)
@@ -669,7 +670,6 @@ func (s *OAuth2Server) RevokeToken(token string, isRefreshToken bool) error {
 
 // VerifyCodeChallenge verifies a PKCE code challenge
 func VerifyCodeChallenge(codeVerifier, codeChallenge, method string) bool {
-	// TODO: Implement PKCE verification
 	switch method {
 	case "S256":
 		hash := sha256.Sum256([]byte(codeVerifier))
