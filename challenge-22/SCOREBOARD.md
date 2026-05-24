@@ -47,6 +47,7 @@
 | inok94 | 23 | 23 |
 | jeffreyyjp | 23 | 23 |
 | john-otienoh | 23 | 23 |
+| jrbarbati | 23 | 23 |
 | kiramux | 23 | 23 |
 | krypton-io | 23 | 23 |
 | kuzminprog | 23 | 23 |
@@ -57,6 +58,7 @@
 | mick4711 | 23 | 23 |
 | micos7 | 23 | 23 |
 | muhammedkucukaslan | 23 | 23 |
+| mvsouza | 23 | 23 |
 | n0l3r | 23 | 23 |
 | ne0phyte | 23 | 23 |
 | nzamulov | 23 | 23 |
@@ -72,4 +74,5 @@
 | xyersh | 23 | 23 |
 | y1hao | 23 | 23 |
 | yz4230 | 23 | 23 |
+| zero-shubham | 23 | 23 |
 | zylbeyondlimits | 23 | 23 |
