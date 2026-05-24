@@ -32,6 +32,7 @@
 | Hikitak | 7 | 7 |
 | Huansock | 7 | 7 |
 | IBraveMonkey | 7 | 7 |
+| ImHotDog | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
 | Johrespi | 7 | 7 |
