@@ -2,22 +2,20 @@
 package challenge11
 
 import (
+	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 	"golang.org/x/time/rate"
+	// Add any necessary imports here
 )
 
-// Interfaces
-// ===========
 // ContentFetcher defines an interface for fetching content from URLs
 type ContentFetcher interface {
 	Fetch(ctx context.Context, url string) ([]byte, error)
@@ -26,26 +24,6 @@ type ContentFetcher interface {
 // ContentProcessor defines an interface for processing raw content
 type ContentProcessor interface {
 	Process(ctx context.Context, content []byte) (ProcessedData, error)
-}
-
-// Custom errors
-// =============
-var (
-	ErrBadParam        = errors.New("bad parameter")
-	ErrNilReceiver     = errors.New("nil receiver")
-	ErrBadUrl          = errors.New("bad or empty url")
-	ErrShutdown        = errors.New("aggregator is shut down")
-	ErrTooManyFailures = errors.New("too many failures")
-)
-
-// HTTPStatusError reports a non-success HTTP response code.
-type HTTPStatusError struct {
-	StatusCode int
-	URL        string
-}
-
-func (e *HTTPStatusError) Error() string {
-	return fmt.Sprintf("unexpected status code %d for %s", e.StatusCode, e.URL)
 }
 
 // ProcessedData represents structured data extracted from raw content
@@ -57,54 +35,19 @@ type ProcessedData struct {
 	Source      string
 }
 
-// MultiError preserves all errors produced during concurrent processing.
-type MultiError struct {
-	errs []error
-}
-
-func (m MultiError) Error() string {
-	if len(m.errs) == 0 {
-		return ""
-	}
-	if len(m.errs) == 1 {
-		return m.errs[0].Error()
-	}
-
-	var b strings.Builder
-	b.WriteString("multiple errors:")
-	for _, err := range m.errs {
-		if err == nil {
-			continue
-		}
-		b.WriteString("\n- ")
-		b.WriteString(err.Error())
-	}
-
-	return b.String()
-}
-
-func (m MultiError) Unwrap() []error {
-	return m.errs
-
-}
-func (m MultiError) HasErrors() bool {
-	return len(m.errs) > 0
-}
-
-// Aggregator - the main orchestrator
-// =================================
 // ContentAggregator manages the concurrent fetching and processing of content
 type ContentAggregator struct {
 	fetcher           ContentFetcher
 	processor         ContentProcessor
 	workerCount       int
 	requestsPerSecond int
+	mu                sync.Mutex
+	wg                sync.WaitGroup
 	limiter           *rate.Limiter
-	activeRuns        sync.WaitGroup
-	mu                sync.RWMutex
-	shutdown          bool
-	shutdownCh        chan struct{}
-	closeOnce         sync.Once
+	shutdownCtx       context.Context
+	shutdownCtxCancel context.CancelFunc
+	shutdownOnce      sync.Once
+	done              chan struct{}
 }
 
 // NewContentAggregator creates a new ContentAggregator with the specified configuration
@@ -117,9 +60,12 @@ func NewContentAggregator(
 	if fetcher == nil || processor == nil {
 		return nil
 	}
+
 	if workerCount <= 0 || requestsPerSecond <= 0 {
 		return nil
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	return &ContentAggregator{
 		fetcher:           fetcher,
@@ -127,117 +73,95 @@ func NewContentAggregator(
 		workerCount:       workerCount,
 		requestsPerSecond: requestsPerSecond,
 		limiter:           rate.NewLimiter(rate.Limit(requestsPerSecond), requestsPerSecond),
-		shutdownCh:        make(chan struct{}),
+		shutdownCtx:       ctx,
+		shutdownCtxCancel: cancel,
+		done:              make(chan struct{}),
 	}
 }
 
-// Aggregator methods
-// ==================
 // FetchAndProcess concurrently fetches and processes content from multiple URLs
 func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, error) {
-	if err := ca.validate(); err != nil {
-		return nil, err
+	if ca.shutdownCtx.Err() != nil {
+		return []ProcessedData{}, errors.New("ErrShutdown")
 	}
-
-	if len(urls) == 0 {
-		return []ProcessedData{}, nil
-	}
-
-	ca.mu.RLock()
-	if ca.shutdown {
-		ca.mu.RUnlock()
-		return nil, fmt.Errorf("aggregator error: %w", ErrShutdown)
-	}
-	ca.activeRuns.Add(1)
-	ca.mu.RUnlock()
-	defer ca.activeRuns.Done()
-
-	runCtx, cancel := context.WithCancel(ctx)
+	ca.wg.Add(1)
+	defer ca.wg.Done()
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
 		select {
-		case <-ca.shutdownCh:
+		case <-ctx.Done():
+			return
+		case <-ca.shutdownCtx.Done():
 			cancel()
-		case <-runCtx.Done():
+			return
 		}
 	}()
 
 	jobs := make(chan string)
 	results := make(chan ProcessedData)
-	errCh := make(chan error)
+	errs := make(chan error)
 
-	// Write jobs (URLs) into jobs channel
-	ca.activeRuns.Add(1)
 	go func() {
-		defer ca.activeRuns.Done()
+		defer close(jobs)
 		for _, url := range urls {
 			select {
-			case <-runCtx.Done():
-				close(jobs)
+			case <-ctx.Done():
 				return
 			case jobs <- url:
 			}
+
 		}
-		close(jobs)
 	}()
 
-	ca.workerPool(runCtx, jobs, results, errCh)
+	ca.workerPool(ctx, jobs, results, errs)
 
-	collected := make([]ProcessedData, 0, len(urls))
-	var allErrs MultiError
-	doneCh := runCtx.Done()
-	var cancelErr error
-
-	for {
-		if results == nil && errCh == nil {
-			if cancelErr != nil {
-				allErrs.errs = append(allErrs.errs, cancelErr)
-			}
-			if allErrs.HasErrors() {
-				return collected, allErrs
-			}
-			return collected, nil
+	var (
+		allResults []ProcessedData
+		allErrors  []error
+	)
+	wg1 := &sync.WaitGroup{}
+	wg1.Add(2)
+	go func() {
+		defer wg1.Done()
+		for res := range results {
+			allResults = append(allResults, res)
 		}
-
-		select {
-		case res, ok := <-results:
-			if !ok {
-				results = nil
-				continue
-			}
-			collected = append(collected, res)
-		case err, ok := <-errCh:
-			if !ok {
-				errCh = nil
-				continue
-			}
-			if err != nil {
-				allErrs.errs = append(allErrs.errs, err)
-			}
-		case <-doneCh:
-			cancelErr = runCtx.Err()
-			doneCh = nil
+	}()
+	go func() {
+		defer wg1.Done()
+		for err := range errs {
+			allErrors = append(allErrors, err)
 		}
+	}()
+
+	wg1.Wait()
+	if len(allErrors) > 0 {
+		return allResults, errors.New("Data fetched or processed with errors")
 	}
+	return allResults, nil
 }
 
 // Shutdown performs cleanup and ensures all resources are properly released
 func (ca *ContentAggregator) Shutdown() error {
-	if err := ca.validate(); err != nil {
-		return err
+	go func() {
+		ca.shutdownOnce.Do(func() {
+			ca.shutdownCtxCancel()
+			ca.wg.Wait()
+			close(ca.done)
+		})
+	}()
+	t := time.NewTimer(10 * time.Second)
+	defer t.Stop()
+	select {
+	case <-ca.done:
+		return nil
+	case <-t.C:
+		return errors.New("shutdown time out error")
 	}
-
-	ca.closeOnce.Do(func() {
-		ca.mu.Lock()
-		ca.shutdown = true
-		close(ca.shutdownCh)
-		ca.mu.Unlock()
-	})
-	ca.activeRuns.Wait()
-	return nil
 }
 
 // workerPool implements a worker pool pattern for processing content
@@ -245,520 +169,183 @@ func (ca *ContentAggregator) workerPool(
 	ctx context.Context,
 	jobs <-chan string,
 	results chan<- ProcessedData,
-	errors chan<- error,
+	errs chan<- error,
 ) {
-	if err := ca.validate(); err != nil {
-		select {
-		case <-ctx.Done():
-			return
-		case errors <- err:
-			return
-		}
-	}
-	var wg sync.WaitGroup
-	for i := 0; i < ca.workerCount; i++ {
-		wg.Add(1)
+	wg2 := &sync.WaitGroup{}
+	for range ca.workerCount {
+		wg2.Add(1)
 		go func() {
-			defer wg.Done()
-			for {
-				var job string
-				var ok bool
-				select {
-				case <-ctx.Done():
-					return
-				case job, ok = <-jobs:
-					if !ok {
+			defer wg2.Done()
+			for url := range jobs {
+				if err := ca.limiter.Wait(ctx); err != nil {
+					errs <- err
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 						return
-					}
-				}
-
-				if ca.limiter != nil {
-					if err := ca.limiter.Wait(ctx); err != nil {
-						select {
-						case <-ctx.Done():
-							return
-						case errors <- err:
-						}
-						return
-					}
-				}
-
-				content, err := ca.fetcher.Fetch(ctx, job)
-				if err != nil {
-					select {
-					case <-ctx.Done():
-						return
-					case errors <- err:
 					}
 					continue
 				}
-				processedContent, err := ca.processor.Process(ctx, content)
+				data, err := ca.fetcher.Fetch(ctx, url)
 				if err != nil {
-					select {
-					case <-ctx.Done():
+					errs <- err
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 						return
-					case errors <- err:
 					}
 					continue
 				}
-				if processedContent.Source == "" {
-					processedContent.Source = job
+				processed, err := ca.processor.Process(ctx, data)
+				if err != nil {
+					errs <- err
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+						return
+					}
+					continue
 				}
-				if processedContent.Timestamp.IsZero() {
-					processedContent.Timestamp = time.Now().UTC()
-				}
-				select {
-				case <-ctx.Done():
-					return
-				case results <- processedContent:
-				}
+				results <- processed
 			}
 		}()
 	}
 	go func() {
-		wg.Wait()
+		wg2.Wait()
 		close(results)
-		close(errors)
+		close(errs)
 	}()
 }
 
 // fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
-// workerCount ignored in this method due to the worker number defined by the number of URLs.
-// The method is not used in the main flow but can be used for testing or as an alternative approach to workerPool
-func (ca *ContentAggregator) fanOut(
-	ctx context.Context,
-	urls []string,
-) ([]ProcessedData, []error) {
-	if err := ca.validate(); err != nil {
-		return nil, []error{err}
-	}
-	if len(urls) == 0 {
-		return []ProcessedData{}, nil
-	}
+// func (ca *ContentAggregator) fanOut(
+// 	ctx context.Context,
+// 	urls []string,
+// ) ([]ProcessedData, []error) {
+// 	out := make([]chan ProcessedData, len(urls))
+// 	var res []ProcessedData
+//
+// 	go func() {
+// 		for i, url := range urls {
+// 			out[i] = func(url string) chan ProcessedData {
+// 				ch := make(chan ProcessedData)
+// 				go func() {
+// 					data, err := ca.fetcher.Fetch(ctx, url)
+// 					if err != nil {
+// 						return
+// 					}
+// 					processed, err := ca.processor.Process(ctx, data)
+// 					if err != nil {
+// 						return
+// 					}
+// 					ch <- processed
+// 				}()
+// 				return ch
+// 			}(url)
+// 		}
+// 	}()
+//
+// 	for _, c := range out {
+// 		go func() {
+// 			res = append(res, <-c)
+// 		}()
+// 	}
+// 	return res, nil
+// }
 
-	resChan := make(chan ProcessedData, len(urls))
-	errs := make(chan error, len(urls))
-	var wg sync.WaitGroup
-
-	for _, url := range urls {
-		url := url
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			if ca.limiter != nil {
-				if err := ca.limiter.Wait(ctx); err != nil {
-					select {
-					case <-ctx.Done():
-						return
-					case errs <- err:
-						return
-					}
-				}
-			}
-			content, err := ca.fetcher.Fetch(ctx, url)
-			if err != nil {
-				select {
-				case <-ctx.Done():
-				case errs <- err:
-				}
-				return
-			}
-
-			processedContent, err := ca.processor.Process(ctx, content)
-			if err != nil {
-				select {
-				case <-ctx.Done():
-				case errs <- err:
-				}
-				return
-			}
-			if processedContent.Source == "" {
-				processedContent.Source = url
-			}
-			if processedContent.Timestamp.IsZero() {
-				processedContent.Timestamp = time.Now().UTC()
-			}
-			select {
-			case <-ctx.Done():
-			case resChan <- processedContent:
-			}
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(resChan)
-		close(errs)
-	}()
-
-	processedData := make([]ProcessedData, 0, len(urls))
-	for res := range resChan {
-		processedData = append(processedData, res)
-	}
-
-	errList := make([]error, 0)
-	for err := range errs {
-		errList = append(errList, err)
-	}
-
-	if ctx.Err() != nil {
-		errList = append(errList, ctx.Err())
-	}
-
-	return processedData, errList
-}
-
-func (ca *ContentAggregator) validate() error {
-	if ca == nil {
-		return fmt.Errorf("aggregator error: %w", ErrNilReceiver)
-	}
-	if ca.fetcher == nil || ca.processor == nil || ca.workerCount <= 0 || ca.requestsPerSecond <= 0 || ca.shutdownCh == nil {
-		return fmt.Errorf("aggregator error: %w", ErrBadParam)
-	}
-	return nil
-}
-
-// Fetcher
-// ========
 // HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
 type HTTPFetcher struct {
-	Client      *http.Client
-	MaxBuffSize int64
+	Client *http.Client
+	// TODO: Add fields for rate limiting, etc.
 }
 
-// Fetch retrieves content from a URL via HTTP not exceeding rate limit
+// Fetch retrieves content from a URL via HTTP
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
-	// Validation input parameters
-	if hf == nil {
-		return nil, fmt.Errorf("fetcher error: %w", ErrNilReceiver)
-	}
-	if url == "" {
-		return nil, fmt.Errorf("fetcher error: %w", ErrBadUrl)
-	}
-	client := hf.Client
-	if client == nil {
-		client = http.DefaultClient
-	}
-
-	// New request with context added
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("fetcher error: %w: %v", ErrBadUrl, err)
+		return nil, err
 	}
-
-	resp, err := client.Do(req)
+	response, err := hf.Client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("get request: %w", err)
+		return []byte{}, err
 	}
 
-	// Request body defer close
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, &HTTPStatusError{
-			StatusCode: resp.StatusCode,
-			URL:        url,
-		}
+	if response.StatusCode != http.StatusOK {
+		return []byte{}, errors.New("status code" + response.Status)
 	}
 
-	// Read the body of request
-	maxBuffSize := hf.MaxBuffSize
-	if maxBuffSize <= 0 {
-		maxBuffSize = 4 << 10
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBuffSize+1))
+	res, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("response body: %w", err)
+		return nil, err
 	}
-	// if int64(len(body)) > hf.MaxBuffSize {
-	// 	return nil, fmt.Errorf("response body too large")
-	// }
 
-	//Return body as []byte
-	return body, nil
+	return res, nil
 }
 
-// processor
-// =========
 // HTMLProcessor is a basic implementation of ContentProcessor for HTML content
 type HTMLProcessor struct {
 }
 
-var standardHTMLElements = map[string]struct{}{
-	"a":          {},
-	"abbr":       {},
-	"address":    {},
-	"area":       {},
-	"article":    {},
-	"aside":      {},
-	"audio":      {},
-	"b":          {},
-	"base":       {},
-	"bdi":        {},
-	"bdo":        {},
-	"blockquote": {},
-	"body":       {},
-	"br":         {},
-	"button":     {},
-	"canvas":     {},
-	"caption":    {},
-	"cite":       {},
-	"code":       {},
-	"col":        {},
-	"colgroup":   {},
-	"data":       {},
-	"datalist":   {},
-	"dd":         {},
-	"del":        {},
-	"details":    {},
-	"dfn":        {},
-	"dialog":     {},
-	"div":        {},
-	"dl":         {},
-	"dt":         {},
-	"em":         {},
-	"embed":      {},
-	"fieldset":   {},
-	"figcaption": {},
-	"figure":     {},
-	"footer":     {},
-	"form":       {},
-	"h1":         {},
-	"h2":         {},
-	"h3":         {},
-	"h4":         {},
-	"h5":         {},
-	"h6":         {},
-	"head":       {},
-	"header":     {},
-	"hgroup":     {},
-	"hr":         {},
-	"html":       {},
-	"i":          {},
-	"iframe":     {},
-	"img":        {},
-	"input":      {},
-	"ins":        {},
-	"kbd":        {},
-	"label":      {},
-	"legend":     {},
-	"li":         {},
-	"link":       {},
-	"main":       {},
-	"map":        {},
-	"mark":       {},
-	"meta":       {},
-	"meter":      {},
-	"nav":        {},
-	"noscript":   {},
-	"object":     {},
-	"ol":         {},
-	"optgroup":   {},
-	"option":     {},
-	"output":     {},
-	"p":          {},
-	"picture":    {},
-	"pre":        {},
-	"progress":   {},
-	"q":          {},
-	"rp":         {},
-	"rt":         {},
-	"ruby":       {},
-	"s":          {},
-	"samp":       {},
-	"script":     {},
-	"search":     {},
-	"section":    {},
-	"select":     {},
-	"slot":       {},
-	"small":      {},
-	"source":     {},
-	"span":       {},
-	"strong":     {},
-	"style":      {},
-	"sub":        {},
-	"summary":    {},
-	"sup":        {},
-	"table":      {},
-	"tbody":      {},
-	"td":         {},
-	"template":   {},
-	"textarea":   {},
-	"tfoot":      {},
-	"th":         {},
-	"thead":      {},
-	"time":       {},
-	"title":      {},
-	"tr":         {},
-	"track":      {},
-	"u":          {},
-	"ul":         {},
-	"var":        {},
-	"video":      {},
-	"wbr":        {},
-}
-
 // Process extracts structured data from HTML content
 func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (ProcessedData, error) {
-	// Input parameter validation
-	if hp == nil {
-		return ProcessedData{}, fmt.Errorf("processor error: %w", ErrNilReceiver)
-	}
 	if len(content) == 0 {
-		return ProcessedData{}, fmt.Errorf("processor error: %w", ErrBadParam)
-	}
-	if err := validateHTML(content); err != nil {
-		return ProcessedData{}, fmt.Errorf("processor error: %w", err)
+		return ProcessedData{}, errors.New("empty content")
 	}
 
-	// Data processing
-	var res ProcessedData
-	r := strings.NewReader(string(content))
-	doc, err := goquery.NewDocumentFromReader(r)
-	if err != nil {
-		return ProcessedData{}, err
-	}
-	title := doc.Find("title").Text()
-	res.Title = title
-	doc.Find("meta").Each(func(i int, s *goquery.Selection) {
-		name, _ := s.Attr("name")
-		content, _ := s.Attr("content")
-		switch {
-		case name == "description":
-			res.Description = content
-		case name == "keywords":
-			for _, keyword := range strings.Split(content, ",") {
-				keyword = strings.TrimSpace(keyword)
-				if keyword != "" {
-					res.Keywords = append(res.Keywords, keyword)
-
-				}
-			}
-		}
-	})
-	return res, nil
-
-}
-
-func validateHTML(content []byte) error {
-	if len(strings.TrimSpace(string(content))) == 0 {
-		return ErrBadParam
-	}
-
-	if _, err := html.Parse(strings.NewReader(string(content))); err != nil {
-		return err
-	}
-
-	tokenizer := html.NewTokenizer(strings.NewReader(string(content)))
-	foundRecognizedElement := false
+	z := html.NewTokenizer(bytes.NewReader(content))
+	var (
+		data    ProcessedData
+		inTitle bool
+	)
 
 	for {
-		switch tokenizer.Next() {
+		switch z.Next() {
 		case html.ErrorToken:
-			err := tokenizer.Err()
-			if errors.Is(err, io.EOF) {
-				if !foundRecognizedElement {
-					return ErrBadParam
+			if z.Err() == io.EOF {
+				if data.Title == "" {
+					return ProcessedData{}, errors.New("no title found")
 				}
-				return nil
+				return data, nil
 			}
-			return err
-		case html.StartTagToken:
-			token := tokenizer.Token()
-			if isRecognizedHTMLElement(token.Data) {
-				foundRecognizedElement = true
+			return ProcessedData{}, z.Err()
+
+		case html.StartTagToken, html.SelfClosingTagToken:
+			name, hasAttr := z.TagName()
+			switch string(name) {
+			case "title":
+				inTitle = true
+			case "meta":
+				if !hasAttr {
+					continue
+				}
+				var nameVal, contentVal string
+				for {
+					key, val, more := z.TagAttr()
+					switch string(key) {
+					case "name":
+						nameVal = string(val)
+					case "content":
+						contentVal = string(val)
+					}
+					if !more {
+						break
+					}
+				}
+				switch nameVal {
+				case "description":
+					data.Description = contentVal
+				case "keywords":
+					data.Keywords = strings.Split(contentVal, ",")
+				}
 			}
-		case html.SelfClosingTagToken:
-			token := tokenizer.Token()
-			if isRecognizedHTMLElement(token.Data) {
-				foundRecognizedElement = true
+
+		case html.TextToken:
+			if inTitle {
+				data.Title = strings.TrimSpace(string(z.Text()))
+			}
+
+		case html.EndTagToken:
+			name, _ := z.TagName()
+			if string(name) == "title" {
+				inTitle = false
 			}
 		}
 	}
 }
 
-func isRecognizedHTMLElement(tag string) bool {
-	tag = strings.ToLower(tag)
-	if _, ok := standardHTMLElements[tag]; ok {
-		return true
-	}
-
-	// Custom elements must contain a hyphen by HTML spec.
-	return strings.Contains(tag, "-")
-}
-
-// Circuit breaker
-// ===============
-// CircuitBreaker struct represents simple circuit breaker
-type CircuitBreaker struct {
-	failMax      int           // Max failes to open breaker
-	failCount    int           // fail counter
-	resetTime    time.Duration // Time before breaker close
-	lastFailTime time.Time     // Time to start resetTime
-	mu           sync.Mutex    // Mutex
-}
-
-func NewCircuitBreaker(failMax int, resetTime time.Duration) *CircuitBreaker {
-	if failMax <= 0 {
-		failMax = 3
-	}
-	if resetTime <= 0 {
-		resetTime = 1 * time.Second
-	}
-	return &CircuitBreaker{
-		failMax:   failMax,
-		resetTime: resetTime,
-	}
-}
-
-// Execute check circuit breaker state and execute callback func
-func (cb *CircuitBreaker) Execute(
-	ctx context.Context,
-	url string,
-	operate func(context.Context, string) ([]byte, error),
-) (
-	[]byte, error) {
-	if cb == nil {
-		return nil, fmt.Errorf("circuit breaker error: %w", ErrNilReceiver)
-	}
-	if operate == nil {
-		return nil, fmt.Errorf("circuit breaker error: %w", ErrBadParam)
-	}
-
-	cb.mu.Lock()
-	// Check for circuit braker state
-	if cb.failCount >= cb.failMax {
-		if time.Since(cb.lastFailTime) > cb.resetTime {
-			cb.failCount = 0
-		} else {
-			// If open returns error
-			cb.mu.Unlock()
-			return nil, fmt.Errorf("circuit breaker: %w", ErrTooManyFailures)
-		}
-	}
-	// If closed, execute callback
-	cb.mu.Unlock()
-	res, err := operate(ctx, url)
-	// If operate returns error renew fail counter and time of last fail
-	if err != nil {
-		if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-			cb.mu.Lock()
-			cb.failCount++
-			cb.lastFailTime = time.Now()
-			cb.mu.Unlock()
-		}
-	} else {
-		cb.mu.Lock()
-		cb.failCount = 0
-		cb.mu.Unlock()
-	}
-	// Returns result of callback
-	return res, err
-}
