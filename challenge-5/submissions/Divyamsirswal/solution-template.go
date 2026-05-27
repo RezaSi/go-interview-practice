@@ -11,43 +11,25 @@ const validToken = "secret"
 // If it's "secret", call the next handler.
 // Otherwise, respond with 401 Unauthorized.
 func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Implement the logic:
-		//  1) Grab the "X-Auth-Token" header
-		//  2) Compare against validToken
-		//  3) If mismatch or missing, respond with 401
-		//  4) Otherwise pass to next handler
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        token := r.Header.Get("X-Auth-Token")
 
-		token := r.Header.Get("x-auth-token")
+        if token == "" || token != validToken {
+            w.WriteHeader(http.StatusUnauthorized) 
+            return
+        }
 
-		if token == "" || token != validToken {
-			http.Error(w, "", 401)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+        next.ServeHTTP(w, r)
+    })
 }
 
 // helloHandler returns "Hello!" on GET /hello
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	fmt.Fprint(w, "Hello!")
 }
 
 // secureHandler returns "You are authorized!" on GET /secure
 func secureHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	fmt.Fprint(w, "You are authorized!")
 }
 
