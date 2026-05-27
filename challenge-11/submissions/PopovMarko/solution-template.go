@@ -13,20 +13,27 @@ import (
 
 	"golang.org/x/net/html"
 	"golang.org/x/time/rate"
-	// Add any necessary imports here
 )
 
-// ContentFetcher defines an interface for fetching content from URLs
+// ContentFetcher fetches raw bytes from a URL.
+//
+// Implementations must honor ctx for cancellation and deadlines, and return a
+// non-nil error if the URL cannot be retrieved.
 type ContentFetcher interface {
 	Fetch(ctx context.Context, url string) ([]byte, error)
 }
 
-// ContentProcessor defines an interface for processing raw content
+// ContentProcessor turns raw fetched bytes into a structured ProcessedData.
+//
+// Implementations must honor ctx for cancellation and return an error for
+// inputs they cannot interpret.
 type ContentProcessor interface {
 	Process(ctx context.Context, content []byte) (ProcessedData, error)
 }
 
-// ProcessedData represents structured data extracted from raw content
+// ProcessedData is the structured result extracted from a single fetched
+// source. Which fields are populated depends on the ContentProcessor
+// implementation used.
 type ProcessedData struct {
 	Title       string
 	Description string
@@ -35,13 +42,17 @@ type ProcessedData struct {
 	Source      string
 }
 
-// ContentAggregator manages the concurrent fetching and processing of content
+// ContentAggregator coordinates concurrent fetching and processing of URLs.
+//
+// It owns a worker pool sized by workerCount and rate-limits outbound requests
+// at requestsPerSecond. The aggregator's lifetime is bounded by an internal
+// shutdown context: once Shutdown is called, in-flight FetchAndProcess calls
+// are cancelled and subsequent calls fail fast.
 type ContentAggregator struct {
 	fetcher           ContentFetcher
 	processor         ContentProcessor
 	workerCount       int
 	requestsPerSecond int
-	mu                sync.Mutex
 	wg                sync.WaitGroup
 	limiter           *rate.Limiter
 	shutdownCtx       context.Context
@@ -50,7 +61,11 @@ type ContentAggregator struct {
 	done              chan struct{}
 }
 
-// NewContentAggregator creates a new ContentAggregator with the specified configuration
+// NewContentAggregator constructs a ContentAggregator with the given fetcher,
+// processor, and pool configuration.
+//
+// It returns nil if fetcher or processor is nil, or if workerCount or
+// requestsPerSecond is non-positive.
 func NewContentAggregator(
 	fetcher ContentFetcher,
 	processor ContentProcessor,
@@ -79,7 +94,14 @@ func NewContentAggregator(
 	}
 }
 
-// FetchAndProcess concurrently fetches and processes content from multiple URLs
+// FetchAndProcess fetches and processes each URL concurrently and returns the
+// successfully-processed results.
+//
+// The returned slice contains every ProcessedData the workers emitted. If any
+// fetch or process step failed, FetchAndProcess additionally returns a non-nil
+// aggregate error. Both ctx and the aggregator's shutdown context cancel
+// in-flight work; after Shutdown has been called, this method returns
+// immediately with an error.
 func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
 	urls []string,
@@ -145,7 +167,12 @@ func (ca *ContentAggregator) FetchAndProcess(
 	return allResults, nil
 }
 
-// Shutdown performs cleanup and ensures all resources are properly released
+// Shutdown cancels the aggregator's internal context to signal all in-flight
+// FetchAndProcess calls to stop, then waits for them to drain.
+//
+// It is safe to call concurrently and repeatedly: the cancellation runs
+// exactly once and every caller observes the same completion signal. Returns
+// an error if in-flight work does not finish within 10 seconds.
 func (ca *ContentAggregator) Shutdown() error {
 	go func() {
 		ca.shutdownOnce.Do(func() {
@@ -164,7 +191,13 @@ func (ca *ContentAggregator) Shutdown() error {
 	}
 }
 
-// workerPool implements a worker pool pattern for processing content
+// workerPool spawns workerCount goroutines that consume URLs from jobs,
+// throttle on the aggregator's rate limiter, fetch and process each URL, and
+// emit results or errors on the corresponding channels.
+//
+// The function returns once all workers are started. A separate goroutine
+// closes results and errs after every worker has exited, so callers can range
+// over both channels until they drain.
 func (ca *ContentAggregator) workerPool(
 	ctx context.Context,
 	jobs <-chan string,
@@ -211,49 +244,17 @@ func (ca *ContentAggregator) workerPool(
 	}()
 }
 
-// fanOut implements a fan-out, fan-in pattern for processing multiple items concurrently
-// func (ca *ContentAggregator) fanOut(
-// 	ctx context.Context,
-// 	urls []string,
-// ) ([]ProcessedData, []error) {
-// 	out := make([]chan ProcessedData, len(urls))
-// 	var res []ProcessedData
-//
-// 	go func() {
-// 		for i, url := range urls {
-// 			out[i] = func(url string) chan ProcessedData {
-// 				ch := make(chan ProcessedData)
-// 				go func() {
-// 					data, err := ca.fetcher.Fetch(ctx, url)
-// 					if err != nil {
-// 						return
-// 					}
-// 					processed, err := ca.processor.Process(ctx, data)
-// 					if err != nil {
-// 						return
-// 					}
-// 					ch <- processed
-// 				}()
-// 				return ch
-// 			}(url)
-// 		}
-// 	}()
-//
-// 	for _, c := range out {
-// 		go func() {
-// 			res = append(res, <-c)
-// 		}()
-// 	}
-// 	return res, nil
-// }
-
-// HTTPFetcher is a simple implementation of ContentFetcher that uses HTTP
+// HTTPFetcher is a ContentFetcher backed by an *http.Client.
 type HTTPFetcher struct {
 	Client *http.Client
-	// TODO: Add fields for rate limiting, etc.
 }
 
-// Fetch retrieves content from a URL via HTTP
+// Fetch issues an HTTP GET against url using the configured client and returns
+// the response body bytes.
+//
+// It returns an error if the request cannot be constructed, the client fails,
+// the response status is not 200 OK, or the body cannot be read. The response
+// body is always closed before Fetch returns.
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -278,11 +279,17 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	return res, nil
 }
 
-// HTMLProcessor is a basic implementation of ContentProcessor for HTML content
+// HTMLProcessor is a ContentProcessor that extracts a Title, Description, and
+// Keywords from HTML content by walking its tokens.
 type HTMLProcessor struct {
 }
 
-// Process extracts structured data from HTML content
+// Process tokenizes the HTML content and populates a ProcessedData with the
+// document's <title> text and any <meta name="description"> /
+// <meta name="keywords"> values it encounters.
+//
+// It returns an error for empty input, when the tokenizer fails before EOF,
+// or when no <title> is present in the parsed document.
 func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (ProcessedData, error) {
 	if len(content) == 0 {
 		return ProcessedData{}, errors.New("empty content")
@@ -348,4 +355,3 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 		}
 	}
 }
-
