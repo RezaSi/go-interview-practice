@@ -53,6 +53,7 @@ type ContentAggregator struct {
 	processor         ContentProcessor
 	workerCount       int
 	requestsPerSecond int
+	mu                sync.Mutex
 	wg                sync.WaitGroup
 	limiter           *rate.Limiter
 	shutdownCtx       context.Context
@@ -106,10 +107,13 @@ func (ca *ContentAggregator) FetchAndProcess(
 	ctx context.Context,
 	urls []string,
 ) ([]ProcessedData, error) {
+	ca.mu.Lock()
 	if ca.shutdownCtx.Err() != nil {
+		ca.mu.Unlock()
 		return []ProcessedData{}, errors.New("ErrShutdown")
 	}
 	ca.wg.Add(1)
+	ca.mu.Unlock()
 	defer ca.wg.Done()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -174,13 +178,15 @@ func (ca *ContentAggregator) FetchAndProcess(
 // exactly once and every caller observes the same completion signal. Returns
 // an error if in-flight work does not finish within 10 seconds.
 func (ca *ContentAggregator) Shutdown() error {
-	go func() {
-		ca.shutdownOnce.Do(func() {
-			ca.shutdownCtxCancel()
+	ca.mu.Lock()
+	ca.shutdownOnce.Do(func() {
+		ca.shutdownCtxCancel()
+		ca.mu.Unlock()
+		go func() {
 			ca.wg.Wait()
 			close(ca.done)
-		})
-	}()
+		}()
+	})
 	t := time.NewTimer(10 * time.Second)
 	defer t.Stop()
 	select {
@@ -205,7 +211,7 @@ func (ca *ContentAggregator) workerPool(
 	errs chan<- error,
 ) {
 	wg2 := &sync.WaitGroup{}
-	for range ca.workerCount {
+	for i := 0; i < ca.workerCount; i++ {
 		wg2.Add(1)
 		go func() {
 			defer wg2.Done()
@@ -233,6 +239,14 @@ func (ca *ContentAggregator) workerPool(
 					}
 					continue
 				}
+
+				if processed.Timestamp.IsZero() {
+					processed.Timestamp = time.Now()
+				}
+
+				if processed.Source == "" {
+					processed.Source = url
+				}
 				results <- processed
 			}
 		}()
@@ -259,6 +273,9 @@ func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
+	}
+	if hf.Client == nil {
+		hf.Client = http.DefaultClient
 	}
 	response, err := hf.Client.Do(r)
 	if err != nil {
