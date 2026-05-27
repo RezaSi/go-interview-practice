@@ -31,11 +31,23 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 // helloHandler returns "Hello!" on GET /hello
 func helloHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	fmt.Fprint(w, "Hello!")
 }
 
 // secureHandler returns "You are authorized!" on GET /secure
 func secureHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	fmt.Fprint(w, "You are authorized!")
 }
 
