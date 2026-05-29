@@ -101,10 +101,10 @@ func (q *Queue) Pop() (int, error) {
 // BreadthFirstSearch implements BFS for unweighted graphs to find shortest paths
 // from a source vertex to all other vertices.
 // Returns:
-// - distances: slice where distances[i] is the shortest distance from source to vertex i
-//   (1e9 sentinel value if vertex i is unreachable).
-// - predecessors: slice where predecessors[i] is the vertex that comes before i in the
-//   shortest path (-1 if i is the source or unreachable).
+//   - distances: slice where distances[i] is the shortest distance from source to vertex i
+//     (1e9 sentinel value if vertex i is unreachable).
+//   - predecessors: slice where predecessors[i] is the vertex that comes before i in the
+//     shortest path (-1 if i is the source or unreachable).
 func BreadthFirstSearch(graph [][]int, source int) ([]int, []int) {
 	l := len(graph)
 
@@ -227,15 +227,12 @@ func Dijkstra(graph [][]int, weights [][]int, source int) ([]int, []int) {
 
 	queue := PriorityQueue{}
 
-	// visited marks vertices whose shortest distance has already been finalised.
+	// visited marks vertices whose shortest distance has been finalised (popped).
 	visited := make(map[int]struct{})
 
-	visited[source] = struct{}{}
-
 	// Seed the priority queue with the source at distance 0.
-	vertex := NewPriorityVertex(source, 0)
 	heap.Init(&queue)
-	heap.Push(&queue, vertex)
+	heap.Push(&queue, NewPriorityVertex(source, 0))
 
 	for len(queue) > 0 {
 		// Pop the vertex with the smallest tentative distance.
@@ -243,23 +240,24 @@ func Dijkstra(graph [][]int, weights [][]int, source int) ([]int, []int) {
 		vertex := x.(*Vertex)
 
 		v := vertex.graphIndex
+		//Finalize v only when popped; skip state duplicate heap entries.
+		if _, done := visited[v]; done {
+			continue
+		}
+		visited[v] = struct{}{}
 
 		// Relax each outgoing edge of v.
 		for i, nextV := range graph[v] {
-			if _, exists := visited[nextV]; exists {
+			if _, done := visited[nextV]; done {
 				continue
 			}
-			visited[nextV] = struct{}{}
 			distance := distances[v] + weights[v][i]
-
-			nextVertex := NewPriorityVertex(nextV, distances[v])
 
 			if distances[nextV] > distance {
 				distances[nextV] = distance
-				nextVertex.distance = distance
 				predecessors[nextV] = v
+				heap.Push(&queue, NewPriorityVertex(nextV, distance))
 			}
-			heap.Push(&queue, nextVertex)
 		}
 	}
 	return distances, predecessors
