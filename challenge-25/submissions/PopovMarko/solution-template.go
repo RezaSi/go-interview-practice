@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"errors"
 	"fmt"
 )
@@ -132,14 +133,97 @@ func BreadthFirstSearch(graph [][]int, source int) ([]int, []int) {
 	return distances, predecessors
 }
 
+// ===============================
+type PriorityQueue []*Vertex
+type Vertex struct {
+	graphIndex int
+	distance   int
+	index      int
+}
+
+func NewPriorityVertex(graphIndex, distance int) *Vertex {
+	return &Vertex{
+		graphIndex: graphIndex,
+		distance:   distance,
+	}
+}
+func (q PriorityQueue) Len() int {
+	return len(q)
+}
+func (q PriorityQueue) Less(i, j int) bool {
+	return q[i].distance < q[j].distance
+}
+func (q PriorityQueue) Swap(i, j int) {
+	q[i], q[j] = q[j], q[i]
+	q[i].index = i
+	q[j].index = j
+}
+func (q *PriorityQueue) Push(x interface{}) {
+	n := len(*q)
+	vertex := x.(*Vertex)
+	vertex.index = n
+	*q = append(*q, vertex)
+}
+func (q *PriorityQueue) Pop() interface{} {
+	n := len(*q)
+	c := *q
+	v := c[n-1]
+	c[n-1] = nil
+	*q = c[:n-1]
+	return v
+}
+
 // Dijkstra implements Dijkstra's algorithm for weighted graphs with non-negative weights
 // to find shortest paths from a source vertex to all other vertices.
 // Returns:
 // - distances: slice where distances[i] is the shortest distance from source to vertex i
 // - predecessors: slice where predecessors[i] is the vertex that comes before i in the shortest path
 func Dijkstra(graph [][]int, weights [][]int, source int) ([]int, []int) {
-	// TODO: Implement this function
-	return nil, nil
+	l := len(graph)
+
+	predecessors := make([]int, l)
+	distances := make([]int, l)
+	for i, _ := range distances {
+		distances[i] = 1000000000
+		predecessors[i] = -1
+	}
+
+	distances[source] = 0
+
+	queue := PriorityQueue{}
+
+	visited := make(map[int]struct{})
+
+	visited[source] = struct{}{}
+
+	vertex := NewPriorityVertex(source, 0)
+	heap.Init(&queue)
+	heap.Push(&queue, vertex)
+
+	for len(queue) > 0 {
+		x := heap.Pop(&queue)
+		vertex := x.(*Vertex)
+
+		v := vertex.graphIndex
+
+		for i, nextV := range graph[v] {
+			if _, exists := visited[nextV]; exists {
+				continue
+			}
+			visited[nextV] = struct{}{}
+			distance := distances[v] + weights[v][i]
+
+			nextVertex := NewPriorityVertex(nextV, distances[v])
+
+			if distances[nextV] > distance {
+				distances[nextV] = distance
+				nextVertex.distance = distance
+				predecessors[nextV] = v
+			}
+			heap.Push(&queue, nextVertex)
+		}
+	}
+	return distances, predecessors
 }
 
 // BellmanFord implements the Bellman-Ford algorithm for weighted graphs that may contain
