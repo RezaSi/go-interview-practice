@@ -248,7 +248,8 @@ func createProduct(c *gin.Context) {
 
 	// TODO: Sanitize input data
 	sanitizeProduct(&product)
-
+    mu.Lock()
+    defer mu.Unlock()
 	// TODO: Set ID and add to products slice
 	product.ID = nextProductID
 	nextProductID++
@@ -295,9 +296,11 @@ func createProductsBulk(c *gin.Context) {
 			})
 		} else {
 			sanitizeProduct(&product)
+			mu.Lock()
 			product.ID = nextProductID
 			nextProductID++
 			products = append(products, product)
+			mu.Unlock()
 
 			results = append(results, BulkResult{
 				Index:   i,
@@ -339,6 +342,7 @@ func createCategory(c *gin.Context) {
 			Success: false,
 			Message: "Invalid slug format",
 		})
+		return
 	}
 	// - Check parent category exists if specified
 	// - Ensure category name is unique
@@ -387,6 +391,8 @@ func validateSKUEndpoint(c *gin.Context) {
 		return
 	}
 	// - Check uniqueness against existing products
+	mu.RLock()
+	defer mu.RUnlock()
 	for _, product := range products {
 		if strings.EqualFold(product.SKU, request.SKU) {
 			c.JSON(http.StatusOK, APIResponse{
