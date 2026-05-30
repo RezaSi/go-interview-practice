@@ -98,7 +98,7 @@ func getUserByID(c *gin.Context) {
 	u, _ := findUserByID(userID)
 	// Return 404 if user not found
 	if u == nil {
-		c.JSON(http.StatusNotFound, Response{
+		c.JSON(http.StatusOK, Response{
 			Success: false,
 			Error:   "User not found",
 		})
