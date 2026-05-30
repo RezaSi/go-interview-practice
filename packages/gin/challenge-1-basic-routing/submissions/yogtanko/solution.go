@@ -66,18 +66,10 @@ func getAllUsers(c *gin.Context) {
 	mu.RLock()
 	defer mu.RUnlock()
 	// TODO: Return all users
-	if len(users) > 0 {
-		c.JSON(http.StatusOK, Response{
+	c.JSON(http.StatusOK, Response{
 			Success: true,
 			Data:    users,
 		})
-	} else {
-		c.JSON(http.StatusOK, Response{
-			Success: false,
-			Error:   "User not found",
-		})
-		return
-	}
 }
 
 // getUserByID handles GET /users/:id
@@ -149,7 +141,7 @@ func updateUser(c *gin.Context) {
 	paramId := c.Param("id")
 	id, err := strconv.Atoi(paramId)
 	if err != nil {
-		c.JSON(400, Response{
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
@@ -165,7 +157,7 @@ func updateUser(c *gin.Context) {
 		return
 	}
 	if err = validateUser(user); err != nil {
-		c.JSON(http.StatusInternalServerError, Response{
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
@@ -197,7 +189,7 @@ func deleteUser(c *gin.Context) {
 	paramId := c.Param("id")
 	id, err := strconv.Atoi(paramId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, Response{
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
