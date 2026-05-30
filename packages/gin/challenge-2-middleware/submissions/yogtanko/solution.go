@@ -211,18 +211,22 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
 	// Return 429 if rate limit exceeded
 	clients := sync.Map{}
-	go func() {
-		for {
-			time.Sleep(1 * time.Minute)
-			clients.Range(func(key, value any) bool {
-				client := value.(*IPClient)
-				if time.Since(time.Unix(0, client.lastSeen.Load())) > 3*time.Minute {
-					clients.Delete(key)
-				}
-				return true
-			})
-		}
-	}()
+	var once sync.Once
+	once.Do(func() {
+		go func() {
+			for {
+				time.Sleep(1 * time.Minute)
+				clients.Range(func(key, value any) bool {
+					client := value.(*IPClient)
+					if time.Since(time.Unix(0, client.lastSeen.Load())) > 3*time.Minute {
+						clients.Delete(key)
+					}
+					return true
+				})
+			}
+		}()
+	})
+
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 
