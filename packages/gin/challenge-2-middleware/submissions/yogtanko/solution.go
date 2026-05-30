@@ -203,6 +203,8 @@ type IPClient struct {
 	lastSeen atomic.Int64
 }
 
+var clients sync.Map
+var once sync.Once
 // RateLimitMiddleware implements rate limiting per IP
 func RateLimitMiddleware() gin.HandlerFunc {
 	// TODO: Implement rate limiting
@@ -210,8 +212,6 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	// Use golang.org/x/time/rate package
 	// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
 	// Return 429 if rate limit exceeded
-	clients := sync.Map{}
-	var once sync.Once
 	once.Do(func() {
 		go func() {
 			for {
