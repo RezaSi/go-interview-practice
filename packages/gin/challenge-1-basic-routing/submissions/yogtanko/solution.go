@@ -1,9 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,7 +37,7 @@ var users = []User{
 var nextID = 4
 var mu sync.RWMutex
 
-func main() {
+func BasicRouting() {
 	// TODO: Create Gin router
 	router := gin.Default()
 	// TODO: Setup routes
@@ -67,12 +67,12 @@ func getAllUsers(c *gin.Context) {
 	defer mu.RUnlock()
 	// TODO: Return all users
 	if len(users) > 0 {
-		c.JSON(200, Response{
+		c.JSON(http.StatusOK, Response{
 			Success: true,
 			Data:    users,
 		})
 	} else {
-		c.JSON(404, Response{
+		c.JSON(http.StatusOK, Response{
 			Success: false,
 			Error:   "User not found",
 		})
@@ -86,9 +86,8 @@ func getUserByID(c *gin.Context) {
 	id := c.Param("id")
 	// Handle invalid ID format
 	userID, err := strconv.Atoi(id)
-	// Return 404 if user not found
 	if err != nil {
-		c.JSON(400, Response{
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   "Invalid ID",
 		})
@@ -96,42 +95,36 @@ func getUserByID(c *gin.Context) {
 	}
 	mu.RLock()
 	defer mu.RUnlock()
-	var u User
-	for _, user := range users {
-		if userID == user.ID {
-			u = user
-		}
-	}
-	if u != (User{}) {
-		c.JSON(200, Response{
-			Success: true,
-			Data:    u,
+	u, _ := findUserByID(userID)
+	// Return 404 if user not found
+	if u == nil {
+		c.JSON(http.StatusNotFound, Response{
+			Success: false,
+			Error:   "User not found",
 		})
 		return
 	}
-	c.JSON(404, Response{
-		Success: false,
-		Error:   "User not found",
+	c.JSON(http.StatusOK, Response{
+		Success: true,
+		Data:    u,
 	})
+
 }
 
 // createUser handles POST /users
 func createUser(c *gin.Context) {
 	// TODO: Parse JSON request body
 	user := User{}
-	decoder := json.NewDecoder(c.Request.Body)
-	err := decoder.Decode(&user)
-	if err != nil {
-		c.JSON(500, Response{
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
 		return
 	}
 	// Validate required fields
-	err = validateUser(user)
-	if err != nil {
-		c.JSON(400, Response{
+	if err := validateUser(user); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
@@ -144,7 +137,7 @@ func createUser(c *gin.Context) {
 	nextID++
 	users = append(users, user)
 	// Return created user
-	c.JSON(201, Response{
+	c.JSON(http.StatusCreated, Response{
 		Success: true,
 		Data:    user,
 	})
@@ -163,18 +156,16 @@ func updateUser(c *gin.Context) {
 		return
 	}
 	// Parse JSON request body
-	user := &User{}
-	decoder := json.NewDecoder(c.Request.Body)
-	err = decoder.Decode(user)
-	if err != nil {
-		c.JSON(500, Response{
+	user := User{}
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
 		return
 	}
-	if err = validateUser(*user); err != nil {
-		c.JSON(500, Response{
+	if err = validateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
@@ -183,20 +174,20 @@ func updateUser(c *gin.Context) {
 	mu.Lock()
 	defer mu.Unlock()
 	// Find and update user
-	u, i := findUserByID(id)
+	_, i := findUserByID(id)
 	if i == -1 {
-		c.JSON(404, Response{
+		c.JSON(http.StatusNotFound, Response{
 			Success: false,
 			Message: "User not found",
 		})
 		return
 	}
-	users[i] = *user
+	users[i] = user
 	users[i].ID = id
 	// Return updated user
-	c.JSON(200, Response{
+	c.JSON(http.StatusOK, Response{
 		Success: true,
-		Data:    u,
+		Data:    users[i],
 	})
 }
 
@@ -206,7 +197,7 @@ func deleteUser(c *gin.Context) {
 	paramId := c.Param("id")
 	id, err := strconv.Atoi(paramId)
 	if err != nil {
-		c.JSON(404, Response{
+		c.JSON(http.StatusNotFound, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
@@ -217,7 +208,7 @@ func deleteUser(c *gin.Context) {
 	// Find and remove user
 	_, i := findUserByID(id)
 	if i == -1 {
-		c.JSON(404, Response{
+		c.JSON(http.StatusNotFound, Response{
 			Success: false,
 			Message: "User not found",
 		})
@@ -225,9 +216,9 @@ func deleteUser(c *gin.Context) {
 	}
 	users = append(users[:i], users[i+1:]...)
 	// Return success message
-	c.JSON(200, Response{
+	c.JSON(http.StatusOK, Response{
 		Success: true,
-		Message: fmt.Sprintf("User ID = %d Succesfuly Deleted", id),
+		Message: fmt.Sprintf("User ID = %d Successfully Deleted", id),
 	})
 }
 
@@ -236,14 +227,14 @@ func searchUsers(c *gin.Context) {
 	// TODO: Get name query parameter
 	name := c.Query("name")
 	if name == "" {
-		c.JSON(400, Response{
+		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   "Need param name",
 		})
 		return
 	}
-	mu.Lock()
-	defer mu.Unlock()
+	mu.RLock()
+	defer mu.RUnlock()
 	// Filter users by name (case-insensitive)
 	newUsers := []User{}
 	for _, u := range users {
@@ -252,7 +243,7 @@ func searchUsers(c *gin.Context) {
 		}
 	}
 	// Return matching users
-	c.JSON(200, Response{
+	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Data:    newUsers,
 	})
