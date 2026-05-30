@@ -98,7 +98,7 @@ func getUserByID(c *gin.Context) {
 	u, _ := findUserByID(userID)
 	// Return 404 if user not found
 	if u == nil {
-		c.JSON(http.StatusOK, Response{
+		c.JSON(http.StatusNotFound, Response{
 			Success: false,
 			Error:   "User not found",
 		})
@@ -149,7 +149,7 @@ func updateUser(c *gin.Context) {
 	paramId := c.Param("id")
 	id, err := strconv.Atoi(paramId)
 	if err != nil {
-		c.JSON(500, Response{
+		c.JSON(400, Response{
 			Success: false,
 			Error:   err.Error(),
 		})
