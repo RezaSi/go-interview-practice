@@ -17,10 +17,10 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID             int        `json:"id"`
-	Username       string     `json:"username" binding:"required,min=3,max=30"`
-	Email          string     `json:"email" binding:"required,email"`
-	Password       string     `json:"-"` // Never return in JSON
+	ID       int    `json:"id"`
+	Username string `json:"username" binding:"required,min=3,max=30"`
+	Email    string `json:"email" binding:"required,email"`
+	// Password       string     `json:"-"` // Never return in JSON
 	PasswordHash   string     `json:"-"`
 	FirstName      string     `json:"first_name" binding:"required,min=2,max=50"`
 	LastName       string     `json:"last_name" binding:"required,min=2,max=50"`
@@ -298,9 +298,9 @@ func isAccountLocked(user *User) bool {
 		return false
 	}
 	if time.Now().Compare(*user.LockedUntil) == 1 {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 // TODO: Implement failed attempt tracking
@@ -389,10 +389,10 @@ func register(c *gin.Context) {
 	mu.Lock()
 	// TODO: Create user and add to users slice
 	users = append(users, User{
-		ID:             nextUserID,
-		Username:       req.Username,
-		Email:          req.Email,
-		Password:       req.Password,
+		ID:       nextUserID,
+		Username: req.Username,
+		Email:    req.Email,
+		// Password:       req.Password,
 		PasswordHash:   hashedPassword,
 		FirstName:      req.FirstName,
 		LastName:       req.LastName,
@@ -438,8 +438,8 @@ func login(c *gin.Context) {
 
 	// TODO: Check if account is locked
 	if isAccountLocked(user) {
-		c.JSON(http.StatusOK, APIResponse{
-			Success: true,
+		c.JSON(http.StatusForbidden, APIResponse{
+			Success: false,
 			Error:   "Account is temporarily locked",
 		})
 		return
@@ -449,7 +449,7 @@ func login(c *gin.Context) {
 	if !verifyPassword(req.Password, user.PasswordHash) {
 		recordFailedAttempt(user)
 		c.JSON(http.StatusUnauthorized, APIResponse{
-			Success: true,
+			Success: false,
 			Error:   "Invalid credentials",
 		})
 		return
@@ -505,7 +505,11 @@ func logout(c *gin.Context) {
 	// TODO: Add token to blacklist
 	blacklistedTokens[parts[1]] = true
 	// TODO: Remove refresh token from store
-	delete(refreshTokens, parts[1])
+	for k, v := range refreshTokens {
+		if v == c.GetInt("user_id") {
+			delete(refreshTokens, k)
+		}
+	}
 
 	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
@@ -536,8 +540,17 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
+	mu.RLock()
 	// TODO: Get user ID from refresh token store
-	userId := refreshTokens[req.RefreshToken]
+	userId, exists := refreshTokens[req.RefreshToken]
+	mu.RUnlock()
+	if !exists {
+		c.JSON(http.StatusUnauthorized, APIResponse{
+			Success: false,
+			Error:   "Invalid refresh token",
+		})
+		return
+	}
 	// TODO: Find user by ID
 	user := findUserByID(userId)
 	// TODO: Generate new access token
@@ -610,6 +623,7 @@ func requireRole(roles ...string) gin.HandlerFunc {
 		for i := range roles {
 			if roles[i] == userRole {
 				c.Next()
+				return
 			}
 		}
 		// TODO: Return 403 if not authorized
@@ -623,9 +637,8 @@ func requireRole(roles ...string) gin.HandlerFunc {
 // GET /user/profile - Get current user profile
 func getUserProfile(c *gin.Context) {
 	// TODO: Get user ID from context (set by authMiddleware)
-	userIdContext := c.GetString("user_id")
-	userId, err := strconv.Atoi(userIdContext)
-	if err != nil {
+	userId := c.GetInt("user_id")
+	if userId == 0 {
 		c.JSON(http.StatusOK, APIResponse{
 			Success: false,
 			Error:   "Unauthorized",
@@ -739,7 +752,7 @@ func changePassword(c *gin.Context) {
 		})
 		return
 	}
-	user.Password = req.NewPassword
+	// user.Password = req.NewPassword
 	user.PasswordHash = hashedPassword
 
 	c.JSON(http.StatusOK, APIResponse{
@@ -752,15 +765,11 @@ func changePassword(c *gin.Context) {
 func listUsers(c *gin.Context) {
 	// TODO: Get pagination parameters
 	// TODO: Return list of users (without sensitive data)
-	userAdmins := []User{}
-	for i := range users {
-		if users[i].Role == RoleAdmin {
-			userAdmins = append(userAdmins, users[i])
-		}
-	}
+	mu.RLock()
+	defer mu.RUnlock()
 	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
-		Data:    userAdmins, // TODO: Filter sensitive data
+		Data:    users, // TODO: Filter sensitive data
 		Message: "Users retrieved successfully",
 	})
 }
@@ -816,6 +825,7 @@ func changeUserRole(c *gin.Context) {
 			Error:   "Bad Request",
 			Message: "User not found",
 		})
+		return
 	}
 	// TODO: Update user role
 	user.Role = req.Role
