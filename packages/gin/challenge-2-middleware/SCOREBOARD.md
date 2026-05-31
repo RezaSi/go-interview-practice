@@ -16,3 +16,5 @@
 | odelbos | 16 | 16 |
 | q1ngy | 16 | 16 |
 | shansing | 16 | 16 |
+| sweet-boby | 16 | 16 |
+| yogtanko | 16 | 16 |
