@@ -501,12 +501,21 @@ func logout(c *gin.Context) {
 		return
 	}
 	mu.Lock()
-	defer mu.Unlock()
 	// TODO: Add token to blacklist
 	blacklistedTokens[parts[1]] = true
+	mu.Unlock()
 	// TODO: Remove refresh token from store
+	claims, err := validateToken(parts[1])
+	if err != nil {
+		c.JSON(http.StatusOK, APIResponse{
+			Success: true,
+			Message: "Logout successful",
+		})
+		return
+	}
+
 	for k, v := range refreshTokens {
-		if v == c.GetInt("user_id") {
+		if v == claims.UserID {
 			delete(refreshTokens, k)
 		}
 	}
@@ -828,8 +837,9 @@ func changeUserRole(c *gin.Context) {
 		return
 	}
 	// TODO: Update user role
+	mu.Lock()
 	user.Role = req.Role
-
+	mu.Unlock()
 	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
 		Message: "User role updated successfully",
