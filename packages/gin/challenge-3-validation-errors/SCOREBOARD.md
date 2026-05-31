@@ -10,3 +10,5 @@
 | imankhodadi | 58 | 58 |
 | odelbos | 58 | 58 |
 | q1ngy | 58 | 58 |
+| sweet-boby | 58 | 58 |
+| yogtanko | 58 | 58 |
