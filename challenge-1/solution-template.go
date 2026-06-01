@@ -15,7 +15,7 @@ func main() {
 	const min = -1000_000_000
 	const max = 1000_000_000
 	if a < min || a > max || b < min || b > max {
-		fmt.Println("invalid inputs: ", err)
+		fmt.Println("invalid inputs")
 		return
 	}
 
