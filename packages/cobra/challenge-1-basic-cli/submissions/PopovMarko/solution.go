@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
+const (
 	// Application metadata
 	version = "1.0.0"
 	appName = "taskcli"
@@ -23,6 +23,7 @@ A simple and powerful command-line tool for managing your daily tasks.
 Built with Go and Cobra for optimal performance and ease of use.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Help(); err != nil {
+			fmt.Fprintf(os.Stdout, "Error displaing help: %v\n", err)
 			return
 		}
 	},
@@ -34,7 +35,7 @@ var versionCmd = &cobra.Command{
 	Short: "Show version information",
 	Long:  `Show version information Display the current version of the Task Manager CLI application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Printf("taskcli version %s\n", version)
+		cmd.Printf("%s version %s\n", appName, version)
 		cmd.Println("Built with ❤️ using Cobra")
 	},
 }
@@ -45,7 +46,7 @@ var aboutCmd = &cobra.Command{
 	Short: "About this application",
 	Long:  `About this application Display detailed information about the Task Manager CLI application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Printf("Task Manager CLI v1.0.0\n\nA simple and efficient task management tool built with Go and Cobra.\nPerfect for managing your daily tasks from the command line.\n\nAuthor: Your Name\nRepository: https://github.com/example/taskcli\nLicense: MIT")
+		cmd.Printf("Task Manager CLI v%s\n\nA simple and efficient task management tool built with Go and Cobra.\nPerfect for managing your daily tasks from the command line.\n\nAuthor: Your Name\nRepository: https://github.com/example/taskcli\nLicense: MIT", version)
 	},
 }
 
@@ -57,7 +58,7 @@ func init() {
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Printf("root cmd error %s", err.Error())
+		fmt.Fprintf(os.Stdout, "root cmd error %s\n", err.Error())
 		os.Exit(1)
 	}
 }
