@@ -15,36 +15,38 @@ type Manager struct {
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
-    m.Employees = append(m.Employees,e)
+	m.Employees = append(m.Employees, e)
 }
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-	for i,e := range m.Employees{
-	    if e.ID == id{
-	        m.Employees = append(m.Employees[:i],m.Employees[i+1:]...)
-	    }
+	flitered := make([]Employee, 0)
+	for _, e := range m.Employees {
+		if e.ID != id {
+			flitered = append(flitered, e)
+		}
 	}
+	m.Employees = flitered
 }
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-    if len(m.Employees) == 0 {
+	if len(m.Employees) == 0 {
 		return 0
 	}
-    totalSalaries := 0.0
-	for _,e := range m.Employees{
-	   totalSalaries += e.Salary
+	totalSalaries := 0.0
+	for _, e := range m.Employees {
+		totalSalaries += e.Salary
 	}
 	return totalSalaries / float64(len(m.Employees))
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for _,e := range m.Employees{
-	    if e.ID == id{
-	        return &e
-	    }
+	for i := range m.Employees {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
+		}
 	}
 	return nil
 }
