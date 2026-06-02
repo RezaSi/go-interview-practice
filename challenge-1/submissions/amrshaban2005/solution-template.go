@@ -12,9 +12,10 @@ func main() {
 		fmt.Println("Error reading input:", err)
 		return
 	}
-	
-	if a < -10^9 || b > 10^9 {
-	    fmt.Println("Error reading input:", err)
+	const min = -1000_000_000
+	const max = 1000_000_000
+	if a < min || a > max || b < min || b > max {
+		fmt.Println("invalid inputs")
 		return
 	}
 
@@ -25,8 +26,5 @@ func main() {
 
 // Sum returns the sum of a and b.
 func Sum(a int, b int) int {
-	// TODO: Implement the function
-	
-	
-	return a + b 
+	return a + b
 }
