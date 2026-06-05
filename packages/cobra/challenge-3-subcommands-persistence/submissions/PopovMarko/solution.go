@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"text/tabwriter"
@@ -173,6 +175,7 @@ var productUpdateCmd = &cobra.Command{
 		inventory.Products[index] = *product
 		if err := SaveInventory(); err != nil {
 			cmd.PrintErrf("fatal error %v", err)
+			return
 		}
 		cmd.Printf("Product with ID %d updated successfully\n", id)
 	},
@@ -274,10 +277,11 @@ var searchCmd = &cobra.Command{
 		if cmd.Flag("category").Value.String() != "" && cmd.Flag("category").Changed {
 			params["category"] = cmd.Flag("category").Value.String()
 		}
-		if f, _ := cmd.Flags().GetFloat64("min-price"); f != 0.0 && cmd.Flag("min-price").Changed {
+		if cmd.Flag("min-price").Changed {
 			params["minPrice"], _ = cmd.Flags().GetFloat64("min-price")
+
 		}
-		if f, _ := cmd.Flags().GetFloat64("max-price"); f != 0.0 && cmd.Flag("max-price").Changed {
+		if cmd.Flag("max-price").Changed {
 			params["maxPrice"], _ = cmd.Flags().GetFloat64("max-price")
 		}
 
@@ -416,6 +420,14 @@ var statsCmd = &cobra.Command{
 	},
 }
 
+func newInventory() *Inventory {
+	return &Inventory{
+		Products:   []Product{},
+		Categories: []Category{},
+		NextID:     1,
+	}
+}
+
 // LoadInventory loads the inventory from the JSON file into the global
 // inventory variable. When the file does not exist it initializes an empty
 // inventory instead of returning an error.
@@ -423,17 +435,18 @@ func LoadInventory() error {
 	data, err := os.Open(inventoryFile)
 	if err != nil {
 		if os.IsNotExist(err) {
-			inventory = &Inventory{
-				Products:   []Product{},
-				Categories: []Category{},
-				NextID:     1,
-			}
+			inventory = newInventory()
 			return nil
 		}
 		return err
 	}
+
 	defer data.Close()
 	if err := json.NewDecoder(data).Decode(&inventory); err != nil {
+		if errors.Is(err, io.EOF) {
+			inventory = newInventory()
+			return nil
+		}
 		return err
 	}
 	return nil
