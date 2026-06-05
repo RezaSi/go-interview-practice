@@ -11,74 +11,65 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Product represents a product in the inventory
+// Product represents a single product stored in the inventory.
 type Product struct {
-	ID       int     `json:"id"`
-	Name     string  `json:"name"`
-	Price    float64 `json:"price"`
-	Category string  `json:"category"`
-	Stock    int     `json:"stock"`
+	ID       int     `json:"id"`       // Unique, auto-incremented identifier.
+	Name     string  `json:"name"`     // Human-readable product name.
+	Price    float64 `json:"price"`    // Unit price in the local currency.
+	Category string  `json:"category"` // Name of the category the product belongs to.
+	Stock    int     `json:"stock"`    // Number of units currently in stock.
 }
 
-// Category represents a product category
+// Category represents a product category used to group products.
 type Category struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string `json:"name"`        // Unique category name.
+	Description string `json:"description"` // Optional human-readable description.
 }
 
-// Inventory represents the complete inventory data
+// Inventory is the complete, persisted state of the application: all products,
+// all categories and the next ID to assign to a newly created product.
 type Inventory struct {
 	Products   []Product  `json:"products"`
 	Categories []Category `json:"categories"`
 	NextID     int        `json:"next_id"`
 }
 
+// inventoryFile is the path of the JSON file used to persist the inventory.
 const inventoryFile = "inventory.json"
 
-// Global inventory instance
+// inventory is the in-memory inventory shared by every command. It is loaded
+// from disk in init and saved after each mutating operation.
 var inventory *Inventory
 
-// TODO: Create the root command for the inventory CLI
-// Command name: "inventory"
-// Description: "Inventory Management CLI - Manage your products and categories"
+// rootCmd is the top-level "inventory" command. With no subcommand it prints
+// the help text describing the available subcommands.
 var rootCmd = &cobra.Command{
-	// TODO: Implement root command
 	Use:   "inventory",
 	Short: "Inventory Management CLI - Manage your products and categories",
-	Long:  "Inventory Management CLI - system for manageing your products",
+	Long:  "Inventory Management CLI - system for managing your products",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Help(); err != nil {
-			fmt.Fprintf(os.Stdout, "fatal error %v", err)
+			cmd.PrintErrf("fatal error %v", err)
 			os.Exit(1)
 		}
 	},
 }
 
-// TODO: Create product parent command
-// Command name: "product"
-// Description: "Manage products in inventory"
+// productCmd is the parent command grouping every product-related subcommand.
 var productCmd = &cobra.Command{
-	// TODO: Implement product command
 	Use:   "product",
 	Short: "Manage products in inventory",
 }
 
-// TODO: Create product add command
-// Command name: "add"
-// Description: "Add a new product to inventory"
-// Flags: --name, --price, --category, --stock
+// productAddCmd adds a new product from the --name, --price, --category and
+// --stock flags, auto-creating the category when it does not yet exist, and
+// persists the result.
 var productAddCmd = &cobra.Command{
-	// TODO: Implement product add command
 	Use:   "add",
 	Short: "Add a new product to inventory",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Get flag values and add product
-		// TODO: Save inventory to file
-		// TODO: Print success message
-		if !cmd.Flags().HasFlags() {
-			cmd.Println("all flags are required")
-			return
-		}
+		defer resetProductAddUpdateFlags(cmd)
+
 		id := inventory.NextID
 		name := cmd.Flag("name").Value.String()
 		price, _ := cmd.Flags().GetFloat64("price")
@@ -103,45 +94,36 @@ var productAddCmd = &cobra.Command{
 
 		inventory.Products = append(inventory.Products, product)
 		if err := SaveInventory(); err != nil {
-			fmt.Fprintf(os.Stdout, "fatal error %v", err)
+			cmd.PrintErrf("fatal error %v", err)
 			os.Exit(1)
 		}
 		cmd.Printf("Product added successfully with ID %d\n", product.ID)
 		cmd.Printf("ID: %d, Name: %s, Price: %.2f, Category: %s, Stock: %d\n",
 			product.ID, product.Name, product.Price, product.Category, product.Stock,
 		)
-
 	},
 }
 
-// TODO: Create product list command
-// Command name: "list"
-// Description: "List all products"
+// productListCmd prints every product in a table.
 var productListCmd = &cobra.Command{
-	// TODO: Implement product list command
 	Use:   "list",
-	Short: "list all products",
+	Short: "List all products",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Display products in table format
 		PrintProducts(cmd, inventory.Products)
 	},
 }
 
-// TODO: Create product get command
-// Command name: "get"
-// Description: "Get product by ID"
-// Args: product ID
+// productGetCmd looks up a single product by the ID passed as its argument and
+// prints its details, or a not-found message when the ID is unknown.
 var productGetCmd = &cobra.Command{
-	// TODO: Implement product get command
 	Use:   "get",
 	Short: "Get product by ID",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Parse ID and find product
-		// TODO: Display product details
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
 			cmd.Printf("Invalid product ID: %s\n", args[0])
+			return
 		}
 
 		p, index := FindProductByID(id)
@@ -151,27 +133,22 @@ var productGetCmd = &cobra.Command{
 			return
 		}
 
-		cmd.Printf("ID: %d, Name: %s, Price: %.2f, Catigory: %s, Stock: %d\n", p.ID, p.Name, p.Price, p.Category, p.Stock)
+		cmd.Printf("ID: %d, Name: %s, Price: %.2f, Category: %s, Stock: %d\n", p.ID, p.Name, p.Price, p.Category, p.Stock)
 	},
 }
 
-// TODO: Create product update command
-// Command name: "update"
-// Description: "Update an existing product"
-// Args: product ID
-// Flags: --name, --price, --category, --stock
+// productUpdateCmd updates the product identified by its argument. Only the
+// fields whose flags were explicitly set are changed; the result is persisted.
 var productUpdateCmd = &cobra.Command{
-	// TODO: Implement product update command
 	Use:   "update",
 	Short: "Update an existing product",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Parse ID, update product fields
-		// TODO: Save inventory to file
-		// TODO: Print success message
+		defer resetProductAddUpdateFlags(cmd)
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
 			cmd.Printf("Invalid product ID: %s\n", args[0])
+			return
 		}
 
 		product, index := FindProductByID(id)
@@ -179,44 +156,39 @@ var productUpdateCmd = &cobra.Command{
 			cmd.Printf("Product with ID %d not found\n", id)
 			return
 		}
-		if cmd.HasFlags() && cmd.Flag("name").Changed {
+		if cmd.Flag("name").Changed {
 			product.Name = cmd.Flag("name").Value.String()
 		}
-		if cmd.HasFlags() && cmd.Flag("price").Changed {
+		if cmd.Flag("price").Changed {
 			price, _ := cmd.Flags().GetFloat64("price")
 			product.Price = price
 		}
-		if cmd.HasFlags() && cmd.Flag("category").Changed {
+		if cmd.Flag("category").Changed {
 			product.Category = cmd.Flag("category").Value.String()
 		}
-		if cmd.HasFlags() && cmd.Flag("stock").Changed {
+		if cmd.Flag("stock").Changed {
 			stock, _ := cmd.Flags().GetInt("stock")
 			product.Stock = stock
 		}
 		inventory.Products[index] = *product
 		if err := SaveInventory(); err != nil {
-			fmt.Fprintf(os.Stdout, "fatal error %v", err)
+			cmd.PrintErrf("fatal error %v", err)
 		}
 		cmd.Printf("Product with ID %d updated successfully\n", id)
 	},
 }
 
-// TODO: Create product delete command
-// Command name: "delete"
-// Description: "Delete a product from inventory"
-// Args: product ID
+// productDeleteCmd removes the product identified by its argument from the
+// inventory and persists the change.
 var productDeleteCmd = &cobra.Command{
-	// TODO: Implement product delete command
 	Use:   "delete",
 	Short: "Delete a product from inventory",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Parse ID and delete product
-		// TODO: Save inventory to file
-		// TODO: Print success message
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
 			cmd.Printf("Invalid product ID: %s\n", args[0])
+			return
 		}
 
 		p, index := FindProductByID(id)
@@ -226,38 +198,34 @@ var productDeleteCmd = &cobra.Command{
 			return
 		}
 
-		// inventory.Products[index] = nil
 		inventory.Products = append(inventory.Products[:index], inventory.Products[index+1:]...)
+		if err := SaveInventory(); err != nil {
+			cmd.PrintErrf("fatal error: %v", err)
+			os.Exit(1)
+		}
 		cmd.Printf("Product with ID: %d deleted successfully\n", p.ID)
 	},
 }
 
-// TODO: Create category parent command
-// Command name: "category"
-// Description: "Manage categories"
+// categoryCmd is the parent command grouping every category-related subcommand.
 var categoryCmd = &cobra.Command{
-	// TODO: Implement category command
 	Use:   "category",
 	Short: "Manage categories",
 }
 
-// TODO: Create category add command
-// Command name: "add"
-// Description: "Add a new category"
-// Flags: --name, --description
+// categoryAddCmd adds a new category from the --name and --description flags,
+// rejecting duplicates, and persists the result.
 var categoryAddCmd = &cobra.Command{
-	// TODO: Implement category add command
 	Use:   "add",
 	Short: "Add a new category",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Get flag values and add category
-		// TODO: Save inventory to file
-		// TODO: Print success message
+		defer resetCategoryAddFlags(cmd)
+
 		name := cmd.Flag("name").Value.String()
 		description := cmd.Flag("description").Value.String()
 
 		if CategoryExists(name) {
-			cmd.Printf("Category with name: %s alreadi exists", name)
+			cmd.Printf("Category with name: %s already exists", name)
 			return
 		}
 
@@ -268,7 +236,7 @@ var categoryAddCmd = &cobra.Command{
 
 		inventory.Categories = append(inventory.Categories, category)
 		if err := SaveInventory(); err != nil {
-			fmt.Fprintf(os.Stdout, "fatal error %v", err)
+			cmd.PrintErrf("fatal error %v", err)
 			os.Exit(1)
 		}
 
@@ -276,15 +244,11 @@ var categoryAddCmd = &cobra.Command{
 	},
 }
 
-// TODO: Create category list command
-// Command name: "list"
-// Description: "List all categories"
+// categoryListCmd prints every category in a table.
 var categoryListCmd = &cobra.Command{
-	// TODO: Implement category list command
 	Use:   "list",
-	Short: "list all categories",
+	Short: "List all categories",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Display categories
 		tw := tabwriter.NewWriter(cmd.OutOrStdout(), 6, 3, 3, ' ', tabwriter.AlignRight)
 		fmt.Fprintln(tw, "Name |\tDescription\t")
 		fmt.Fprintln(tw, "---- |\t-----------\t")
@@ -295,17 +259,12 @@ var categoryListCmd = &cobra.Command{
 	},
 }
 
-// TODO: Create search command
-// Command name: "search"
-// Description: "Search products by various criteria"
-// Flags: --name, --category, --min-price, --max-price
+// searchCmd filters products by the --name, --category, --min-price and
+// --max-price flags and prints the matches.
 var searchCmd = &cobra.Command{
-	// TODO: Implement search command
 	Use:   "search",
-	Short: "search products by various criteria",
+	Short: "Search products by various criteria",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Filter products based on flags
-		// TODO: Display matching products
 		defer resetSearchFlags(cmd)
 		params := make(map[string]interface{})
 
@@ -327,6 +286,10 @@ var searchCmd = &cobra.Command{
 	},
 }
 
+// FilterProducts returns the products matching every criterion present in
+// params. Supported keys are "name", "category" (exact match), "minPrice" and
+// "maxPrice" (inclusive bounds). Absent keys are ignored, so an empty params
+// map returns all products.
 func FilterProducts(params map[string]interface{}) []Product {
 	var (
 		results []Product
@@ -348,16 +311,6 @@ func FilterProducts(params map[string]interface{}) []Product {
 			match = false
 		}
 
-		// switch {
-		// case params["name"] != nil && p.Name != params["name"].(string):
-		// 	match = false
-		// case params["category"] != nil && p.Category != params["category"].(string):
-		// 	match = false
-		// case params["minPrice"] != nil && p.Price < params["minPrice"].(float64):
-		// 	match = false
-		// case params["maxPrice"] != nil && p.Price > params["maxPrice"].(float64):
-		// 	match = false
-		// }
 		if match {
 			results = append(results, p)
 		}
@@ -366,17 +319,65 @@ func FilterProducts(params map[string]interface{}) []Product {
 	return results
 }
 
+// resetSearchFlags clears the search flags and their "changed" state so that
+// values do not leak between successive invocations of the shared command.
 func resetSearchFlags(cmd *cobra.Command) {
-	cmd.Flags().Set("name", "")
-	cmd.Flags().Set("category", "")
-	cmd.Flags().Set("min-price", "0")
-	cmd.Flags().Set("max-price", "0")
+	for _, pair := range [][2]string{
+		{"name", ""},
+		{"category", ""},
+		{"min-price", "0"},
+		{"max-price", "0"},
+	} {
+		if err := cmd.Flags().Set(pair[0], pair[1]); err != nil {
+			cmd.PrintErrf("fatal error: %v", err)
+		}
+	}
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		f.Changed = false
 	})
 }
 
+// resetProductAddUpdateFlags clears the product add/update flags and their
+// "changed" state so that values do not leak between successive invocations of
+// the shared command.
+func resetProductAddUpdateFlags(cmd *cobra.Command) {
+	for _, pair := range [][2]string{
+		{"name", ""},
+		{"category", ""},
+		{"price", "0"},
+		{"stock", "0"},
+	} {
+		if err := cmd.Flags().Set(pair[0], pair[1]); err != nil {
+			cmd.PrintErrf("fatal error: %v", err)
+		}
+	}
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		f.Changed = false
+	})
+}
+
+// resetCategoryAddFlags clears the category add flags and their "changed" state
+// so that values do not leak between successive invocations of the shared
+// command.
+func resetCategoryAddFlags(cmd *cobra.Command) {
+	for _, pair := range [][2]string{
+		{"name", ""},
+		{"description", ""},
+	} {
+		if err := cmd.Flags().Set(pair[0], pair[1]); err != nil {
+			cmd.PrintErrf("fatal error: %v", err)
+		}
+	}
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		f.Changed = false
+	})
+}
+
+// PrintProducts writes the given products as an aligned table to the command's
+// output writer.
 func PrintProducts(cmd *cobra.Command, products []Product) {
 	tw := tabwriter.NewWriter(cmd.OutOrStdout(), 6, 3, 3, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(tw, "ID |\tName |\tPrice |\tCategory |\tStock |\t")
@@ -387,15 +388,12 @@ func PrintProducts(cmd *cobra.Command, products []Product) {
 	tw.Flush()
 }
 
-// TODO: Create stats command
-// Command name: "stats"
-// Description: "Show inventory statistics"
+// statsCmd prints aggregate statistics about the inventory: product and
+// category counts, total stock value, and low/out-of-stock counts.
 var statsCmd = &cobra.Command{
-	// TODO: Implement stats command
 	Use:   "stats",
 	Short: "Show inventory statistics",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Calculate and display statistics
 		totalProducts := len(inventory.Products)
 		totalCategories := len(inventory.Categories)
 		totalValue := 0.0
@@ -418,9 +416,11 @@ var statsCmd = &cobra.Command{
 	},
 }
 
-// LoadInventory loads inventory data from JSON file
+// LoadInventory loads the inventory from the JSON file into the global
+// inventory variable. When the file does not exist it initializes an empty
+// inventory instead of returning an error.
 func LoadInventory() error {
-	data, err := os.OpenFile(inventoryFile, os.O_RDWR, 0644)
+	data, err := os.Open(inventoryFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			inventory = &Inventory{
@@ -429,9 +429,8 @@ func LoadInventory() error {
 				NextID:     1,
 			}
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 	defer data.Close()
 	if err := json.NewDecoder(data).Decode(&inventory); err != nil {
@@ -440,34 +439,34 @@ func LoadInventory() error {
 	return nil
 }
 
-// SaveInventory saves inventory data to JSON file
+// SaveInventory writes the current global inventory to the JSON file,
+// truncating any previous contents.
 func SaveInventory() error {
-	data, err := os.OpenFile(inventoryFile, os.O_CREATE|os.O_WRONLY, 0644)
+	data, err := os.Create(inventoryFile)
 	if err != nil {
 		return err
 	}
 	defer data.Close()
+
 	if err := json.NewEncoder(data).Encode(inventory); err != nil {
 		return err
 	}
 	return nil
 }
 
-// FindProductByID finds a product by its ID
+// FindProductByID returns a pointer to the product with the given ID and its
+// index in the slice, or nil and -1 when no product matches.
 func FindProductByID(id int) (*Product, int) {
-	// TODO: Implement finding product by ID
-	// TODO: Return product and index, or nil and -1 if not found
-	for i, p := range inventory.Products {
-		if p.ID == id {
-			return &p, i
+	for i := range inventory.Products {
+		if inventory.Products[i].ID == id {
+			return &inventory.Products[i], i
 		}
 	}
 	return nil, -1
 }
 
-// CategoryExists checks if a category exists
+// CategoryExists reports whether a category with the given name exists.
 func CategoryExists(name string) bool {
-	// TODO: Implement checking if category exists
 	for _, c := range inventory.Categories {
 		if c.Name == name {
 			return true
@@ -476,6 +475,8 @@ func CategoryExists(name string) bool {
 	return false
 }
 
+// init wires the command hierarchy, registers flags and loads the inventory
+// from disk before any command runs.
 func init() {
 	rootCmd.AddCommand(productCmd)
 
@@ -514,18 +515,20 @@ func init() {
 	searchCmd.Flags().String("name", "", "Name to filter by")
 	searchCmd.Flags().String("category", "", "Category to filter by")
 	searchCmd.Flags().Float64("min-price", 0.0, "Min price to filter by")
-	searchCmd.Flags().Float64("max-price", 0.0, "Max price to fiter by")
+	searchCmd.Flags().Float64("max-price", 0.0, "Max price to filter by")
 
 	rootCmd.AddCommand(statsCmd)
 
-	// TODO: Load inventory on startup
 	if err := LoadInventory(); err != nil {
-		fmt.Fprintf(os.Stdout, "fatal error %v", err)
+		fmt.Fprintf(os.Stderr, "fatal error %v", err)
 		os.Exit(1)
 	}
 }
 
+// main executes the root command and exits with a non-zero status on failure.
 func main() {
-	// TODO: Execute root command and handle errors
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "fatal error: %v", err)
+		os.Exit(1)
+	}
 }
