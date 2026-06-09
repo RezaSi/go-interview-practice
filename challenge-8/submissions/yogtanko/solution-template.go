@@ -22,22 +22,23 @@ type Client struct {
 func (c *Client) Send(message string) {
 	// TODO: Implement this method
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	if c.isDisconnected {
+		c.mu.Unlock()
 		return
 	}
-	c.Message <- message
+	c.mu.Unlock()
+	select {
+	case c.Message <- message:
+	default:
+	}
 	// Hint: thread-safe, non-blocking send
 }
 
 // Receive returns the next message for the client (blocking)
 func (c *Client) Receive() string {
 	// TODO: Implement this method
-	for m := range c.Message {
-		return m
-	}
 	// Hint: read from channel, handle closed channel
-	return ""
+	return <-c.Message
 }
 
 // ChatServer manages client connections and message routing
@@ -68,7 +69,7 @@ func (s *ChatServer) Connect(username string) (*Client, error) {
 	newClient := &Client{
 		Username:       username,
 		isDisconnected: false,
-		Message:        make(chan string),
+		Message:        make(chan string, 100),
 	}
 	s.clients[username] = newClient
 	return newClient, nil
@@ -105,10 +106,10 @@ func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message st
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	sender.mu.Lock()
+	defer sender.mu.Unlock()
 	if sender.isDisconnected {
 		return ErrClientDisconnected
 	}
-	sender.mu.Unlock()
 	if s.clients[recipient] != nil {
 		go s.clients[recipient].Send((fmt.Sprintf("%s : %s", sender.Username, message)))
 		return nil
