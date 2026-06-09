@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"slices"
 )
 
 func main() {
@@ -37,36 +36,30 @@ func MinCoins(amount int, denominations []int) int {
 		return -1
 	}
 
-	coinsList := slices.Clone(denominations)
-	slices.Sort(coinsList)
-	if coinsList[0] > amount {
-		return -1
-	}
-
-	slices.Reverse(coinsList)
-
-	coins := 0
-	for _, denomination := range coinsList {
-		if denomination <= 0 {
+	for _, d := range denominations {
+		if d <= 0 {
 			return -1
 		}
-
-		if amount >= denomination {
-			localCoins := amount / denomination
-			amount = amount - (denomination * localCoins)
-			coins += localCoins
-		}
-
-		if amount == 0 {
-			break
-		}
 	}
 
-	if amount != 0 {
+	const inf = int(^uint(0) >> 1)
+	dp := make([]int, amount+1)
+
+	for i := 1; i <= amount; i++ {
+		dp[i] = inf
+	}
+
+	for a := 1; a <= amount; a++ {
+		for _, d := range denominations {
+			if d <= a && dp[a-d] != inf && dp[a-d]+1 < dp[a] {
+				dp[a] = dp[a-d] + 1
+			}
+		}
+	}
+	if dp[amount] == inf {
 		return -1
 	}
-
-	return coins
+	return dp[amount]
 }
 
 // CoinCombination returns a map with the specific combination of coins that gives
@@ -74,40 +67,43 @@ func MinCoins(amount int, denominations []int) int {
 // coins used for each denomination.
 // If the amount cannot be made with the given denominations, return an empty map.
 func CoinCombination(amount int, denominations []int) map[int]int {
-	if amount == 0 {
+	if amount <= 0 || len(denominations) == 0 {
 		return map[int]int{}
 	}
-	if amount < 0 || len(denominations) == 0 {
-		return map[int]int{}
-	}
-
-	coinsList := slices.Clone(denominations)
-	slices.Sort(coinsList)
-	if coinsList[0] > amount {
-		return map[int]int{}
-	}
-	slices.Reverse(coinsList)
-
-	results := make(map[int]int)
-	for _, denomination := range coinsList {
-		if denomination <= 0 {
+	for _, d := range denominations {
+		if d <= 0 {
 			return map[int]int{}
 		}
-
-		if amount >= denomination {
-			localCoins := amount / denomination
-			amount = amount - (denomination * localCoins)
-			results[denomination] = localCoins
-		}
-		
-		if amount == 0 {
-			break
-		}
 	}
 
-	if amount != 0 {
+	const inf = int(^uint(0) >> 1)
+	dp := make([]int, amount+1)
+	pick := make([]int, amount+1)
+	for i := 1; i <= amount; i++ {
+		dp[i] = inf
+		pick[i] = -1
+	}
+
+	for a := 1; a <= amount; a++ {
+		for _, d := range denominations {
+			if d <= a && dp[a-d] != inf && dp[a-d]+1 < dp[a] {
+				dp[a] = dp[a-d] + 1
+				pick[a] = d
+			}
+		}
+	}
+	if dp[amount] == inf {
 		return map[int]int{}
 	}
 
-	return results
+	res := map[int]int{}
+	for a := amount; a > 0; {
+		d := pick[a]
+		if d <= 0 {
+			return map[int]int{}
+		}
+		res[d]++
+		a -= d
+	}
+	return res
 }
