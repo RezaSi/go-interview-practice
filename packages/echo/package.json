@@ -1,0 +1,27 @@
+{
+  "name": "echo",
+  "display_name": "Echo Web Framework",
+  "description": "High performance, extensible, minimalist Go web framework",
+  "version": "v4.12.0",
+  "github_url": "https://github.com/labstack/echo",
+  "documentation_url": "https://echo.labstack.com/",
+  "stars": 29000,
+  "category": "web",
+  "difficulty": "beginner_to_advanced",
+  "prerequisites": ["basic_go", "http_concepts"],
+  "learning_path": [
+    "challenge-1-basic-routing",
+    "challenge-2-middleware", 
+    "challenge-3-validation-errors",
+    "challenge-4-authentication"
+  ],
+  "tags": ["web", "http", "api", "rest", "middleware", "minimalist", "performance"],
+  "estimated_time": "4-6 hours",
+  "real_world_usage": [
+    "REST APIs",
+    "Microservices", 
+    "High-performance backends",
+    "API gateways"
+  ]
+}
+

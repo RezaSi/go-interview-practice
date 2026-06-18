@@ -1,0 +1,50 @@
+{
+  "title": "Indexing & Performance Optimization",
+  "description": "Optimize a high-traffic blog platform by implementing MongoDB indexes, analyzing query performance, and applying advanced optimization techniques for production-scale applications.",
+  "short_description": "Master MongoDB performance by optimizing a high-traffic blog platform",
+  "difficulty": "Intermediate",
+  "estimated_time": "60-75 min",
+  "learning_objectives": [
+    "Create and manage MongoDB indexes for optimal performance",
+    "Analyze query performance using explain() and profiling",
+    "Implement compound indexes and understand index strategies",
+    "Use text indexes for full-text search capabilities",
+    "Apply geospatial indexes for location-based queries",
+    "Optimize queries and understand index selection"
+  ],
+  "prerequisites": [
+    "Completed Challenge 3 (Aggregation Pipeline)",
+    "Understanding of database performance concepts",
+    "Knowledge of query optimization principles",
+    "Familiarity with production database challenges"
+  ],
+  "tags": [
+    "mongodb",
+    "indexing",
+    "performance",
+    "optimization",
+    "scaling",
+    "production"
+  ],
+  "real_world_connection": "Performance optimization is critical for high-traffic applications like Medium, WordPress, and news platforms. This challenge teaches the indexing and optimization skills used by database administrators and backend engineers at scale.",
+  "requirements": [
+    "Implement BlogService with performance-optimized methods",
+    "Create indexes for frequently queried fields",
+    "Implement query performance analysis tools",
+    "Build text search with MongoDB text indexes",
+    "Create compound indexes for complex queries",
+    "Implement query optimization recommendations",
+    "Monitor and measure query performance",
+    "Handle index management and maintenance"
+  ],
+  "bonus_points": [
+    "Implement query profiling and monitoring",
+    "Add index usage statistics and recommendations",
+    "Create automated index optimization",
+    "Build performance benchmarking tools",
+    "Add query plan analysis and optimization",
+    "Implement index maintenance strategies"
+  ],
+  "icon": "bi-speedometer2",
+  "order": 4
+}

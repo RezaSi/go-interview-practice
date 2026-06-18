@@ -1,0 +1,52 @@
+{
+  "title": "Aggregation Pipeline & E-commerce Analytics",
+  "description": "Build a comprehensive e-commerce analytics dashboard using MongoDB's powerful aggregation pipeline. Learn to process, transform, and analyze data to generate business insights and reports.",
+  "short_description": "Master MongoDB aggregation by building an e-commerce analytics dashboard",
+  "difficulty": "Intermediate",
+  "estimated_time": "75-90 min",
+  "learning_objectives": [
+    "Master MongoDB aggregation pipeline stages ($match, $group, $project, $sort)",
+    "Implement complex data transformations and calculations",
+    "Work with arrays and nested documents using $unwind and $lookup",
+    "Create business analytics and reporting functions",
+    "Use aggregation operators ($sum, $avg, $max, $min, $count)",
+    "Build multi-stage pipelines for complex data processing"
+  ],
+  "prerequisites": [
+    "Completed Challenge 2 (Advanced Queries & Filtering)",
+    "Understanding of MongoDB collections and documents",
+    "Basic knowledge of data analytics concepts",
+    "Familiarity with business metrics and KPIs"
+  ],
+  "tags": [
+    "mongodb",
+    "aggregation",
+    "analytics",
+    "pipeline",
+    "business-intelligence",
+    "reporting"
+  ],
+  "real_world_connection": "Aggregation pipelines power the analytics dashboards of major e-commerce platforms like Amazon, Shopify, and eBay. This challenge teaches the data processing skills used for sales reports, customer analytics, inventory management, and business intelligence systems.",
+  "requirements": [
+    "Implement AnalyticsService with aggregation-based methods",
+    "Create GetSalesByCategory to calculate total sales per category",
+    "Build GetTopSellingProducts using grouping and sorting",
+    "Implement GetCustomerAnalytics with customer behavior metrics",
+    "Create GetRevenueByMonth for time-based revenue analysis",
+    "Build GetProductPerformance with rating and sales correlation",
+    "Implement GetInventoryReport with stock analysis",
+    "Use $lookup for joining related collections",
+    "Handle complex calculations with aggregation operators",
+    "Return formatted analytics data with proper structure"
+  ],
+  "bonus_points": [
+    "Implement real-time analytics with change streams",
+    "Add geospatial analytics for location-based insights",
+    "Create cohort analysis for customer retention",
+    "Build recommendation engine using aggregation",
+    "Add time-series analysis for trend detection",
+    "Optimize aggregation performance with indexes"
+  ],
+  "icon": "bi-graph-up",
+  "order": 3
+}

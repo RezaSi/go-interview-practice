@@ -116,6 +116,7 @@ type PackageScoreboardEntry struct {
 	ExecutionMs int64     `json:"execution_ms"`
 	TestsPassed int       `json:"tests_passed"`
 	TestsTotal  int       `json:"tests_total"`
+	IsSponsor   bool      `json:"isSponsor"`
 }
 
 // Type aliases for collections

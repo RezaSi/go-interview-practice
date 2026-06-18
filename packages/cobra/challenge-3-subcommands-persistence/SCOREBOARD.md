@@ -2,4 +2,7 @@
 
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| PolinaSvet | 14 | 14 |
+| PopovMarko | 14 | 14 |
 | ashwinipatankar | 14 | 14 |
+| odelbos | 14 | 14 |

@@ -1,0 +1,42 @@
+{
+  "title": "Middleware & Request Handling",
+  "description": "Learn to implement and use middleware in Echo for cross-cutting concerns like logging, authentication, CORS, and request validation.",
+  "short_description": "Master Echo middleware for logging, authentication, and request processing",
+  "difficulty": "Intermediate",
+  "estimated_time": "45-60 min",
+  "learning_objectives": [
+    "Understand middleware concepts in web frameworks",
+    "Implement custom middleware functions",
+    "Use built-in Echo middleware",
+    "Handle request/response pipeline",
+    "Implement logging and authentication middleware"
+  ],
+  "prerequisites": [
+    "Basic Echo routing",
+    "HTTP request/response cycle",
+    "Go functions and closures"
+  ],
+  "tags": [
+    "middleware",
+    "logging",
+    "authentication",
+    "request-pipeline",
+    "cors"
+  ],
+  "real_world_connection": "Middleware is essential in production APIs for logging, security, rate limiting, and cross-cutting concerns that apply to multiple endpoints.",
+  "requirements": [
+    "Implement custom logging middleware",
+    "Create authentication middleware",
+    "Add CORS middleware",
+    "Implement request timing middleware",
+    "Chain multiple middleware functions",
+    "Handle middleware errors properly"
+  ],
+  "bonus_points": [
+    "Add rate limiting middleware",
+    "Implement request ID generation",
+    "Add response compression middleware"
+  ],
+  "icon": "bi-layers",
+  "order": 2
+}

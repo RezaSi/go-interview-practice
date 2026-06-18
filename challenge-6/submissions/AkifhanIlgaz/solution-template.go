@@ -31,6 +31,10 @@ func CountWordFrequency(text string) map[string]int {
 			return !unicode.IsDigit(r) && !unicode.IsLetter(r)
 		})
 
+		if word == "" {
+			continue
+		}
+
 		frequencyMap[word]++
 	}
 

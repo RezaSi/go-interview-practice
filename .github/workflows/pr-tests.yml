@@ -11,6 +11,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
 
 jobs:
   validate-submission-security:
@@ -150,19 +151,30 @@ jobs:
           done
           
           # Check for strict security violations (modifying other users' submissions)
+          # Skip this check if manual approval is granted
           if [ -n "$INVALID_DIRS" ] || [ -n "$INVALID_FILES" ]; then
-            if [ -n "$INVALID_DIRS" ]; then
-              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+            if [ "$MANUAL_APPROVAL_GRANTED" == "true" ]; then
+              echo "✅ Manual approval granted - bypassing submission directory security checks"
+              echo "⚠️  WARNING: User '$USERNAME' modified submission directories for other users:$INVALID_DIRS"
+              if [ -n "$INVALID_FILES" ]; then
+                echo "⚠️  WARNING: User '$USERNAME' modified files in other users' submission directories:"
+                echo "$INVALID_FILES"
+              fi
+              echo "🔓 Manual approval allows bypassing normal security restrictions"
+            else
+              if [ -n "$INVALID_DIRS" ]; then
+                echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify submission directories for other users:$INVALID_DIRS"
+              fi
+              if [ -n "$INVALID_FILES" ]; then
+                echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify files in other users' submission directories:"
+                echo "$INVALID_FILES"
+              fi
+              echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
+              echo "✅ Allowed directories: challenge-*/submissions/$USERNAME or packages/*/challenge-*/submissions/$USERNAME"
+              echo "validation_passed=false" >> $GITHUB_OUTPUT
+              echo "validation_needed=true" >> $GITHUB_OUTPUT
+              exit 1
             fi
-            if [ -n "$INVALID_FILES" ]; then
-              echo "❌ STRICT SECURITY VIOLATION: User '$USERNAME' attempted to modify files in other users' submission directories:"
-              echo "$INVALID_FILES"
-            fi
-            echo "✅ You can only modify submissions in directories named after your GitHub username: $USERNAME"
-            echo "✅ Allowed directories: challenge-*/submissions/$USERNAME or packages/*/challenge-*/submissions/$USERNAME"
-            echo "validation_passed=false" >> $GITHUB_OUTPUT
-            echo "validation_needed=true" >> $GITHUB_OUTPUT
-            exit 1
           fi
           
           # Check if manual approval is needed and not granted
@@ -171,7 +183,12 @@ jobs:
             echo "validation_passed=false" >> $GITHUB_OUTPUT
             echo "validation_needed=true" >> $GITHUB_OUTPUT
           else
-            echo "✅ Security validation passed"
+            if [ "$MANUAL_APPROVAL_GRANTED" == "true" ]; then
+              echo "✅ Manual approval granted - security validation bypassed"
+              echo "🔓 All security checks bypassed due to manual approval"
+            else
+              echo "✅ Security validation passed"
+            fi
             echo "validation_passed=true" >> $GITHUB_OUTPUT
             echo "validation_needed=false" >> $GITHUB_OUTPUT
           fi
@@ -196,6 +213,7 @@ jobs:
           echo ""
           echo "⚠️  SECURITY: Only approve changes you trust!"
           echo "❌ This workflow will block until manual approval is granted"
+          exit 1
 
   no-challenges-changed:
     runs-on: ubuntu-latest
@@ -227,7 +245,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25.0'
 
       - name: Run Tests for ${{ matrix.challenge }}
         working-directory: ${{ matrix.challenge }}
@@ -299,3 +317,52 @@ jobs:
               echo "No submission found for $USERNAME in ${{ matrix.challenge }}"
             fi
           fi
+
+  # Final gatekeeper job - this is the single required status check for branch protection
+  pr-status:
+    runs-on: ubuntu-latest
+    needs: [validate-submission-security, manual-approval-status, no-challenges-changed, test-submissions]
+    if: always()
+    
+    steps:
+      - name: Check all job results
+        run: |
+          echo "Checking results of all jobs..."
+          echo ""
+          echo "validate-submission-security: ${{ needs.validate-submission-security.result }}"
+          echo "manual-approval-status: ${{ needs.manual-approval-status.result }}"
+          echo "no-challenges-changed: ${{ needs.no-challenges-changed.result }}"
+          echo "test-submissions: ${{ needs.test-submissions.result }}"
+          echo ""
+          
+          # Check if security validation failed
+          if [ "${{ needs.validate-submission-security.result }}" == "failure" ]; then
+            echo "❌ Security validation failed"
+            exit 1
+          fi
+          
+          # Check if manual approval is required but not granted (job failed with exit 1)
+          if [ "${{ needs.manual-approval-status.result }}" == "failure" ]; then
+            echo "❌ Manual approval is required for this PR"
+            echo "Add the 'manual-approval-granted' label and re-run the workflow"
+            exit 1
+          fi
+          
+          # Check if tests failed
+          if [ "${{ needs.test-submissions.result }}" == "failure" ]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          
+          # If no-challenges-changed ran successfully, that's fine
+          # If test-submissions ran successfully, that's fine
+          # Both being skipped means something unexpected happened
+          if [ "${{ needs.no-challenges-changed.result }}" == "skipped" ] && [ "${{ needs.test-submissions.result }}" == "skipped" ]; then
+            # This could happen if validation_passed is false
+            if [ "${{ needs.validate-submission-security.outputs.validation_passed }}" != "true" ]; then
+              echo "❌ Validation did not pass"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ All checks passed - PR is ready for merge"

@@ -1,0 +1,53 @@
+{
+  "title": "Advanced Queries & Product Filtering System",
+  "description": "Build a sophisticated product search and filtering system using MongoDB's powerful query operators. Learn complex queries, sorting, pagination, and field projection to create production-ready search functionality.",
+  "short_description": "Master MongoDB queries by building a product search system with advanced filtering",
+  "difficulty": "Beginner",
+  "estimated_time": "60-75 min",
+  "learning_objectives": [
+    "Master MongoDB query operators ($gt, $lt, $in, $regex, $and, $or)",
+    "Implement sorting and pagination for large datasets",
+    "Use field projection to optimize data transfer",
+    "Handle complex filtering with multiple criteria",
+    "Implement text search and pattern matching",
+    "Optimize queries for performance and scalability"
+  ],
+  "prerequisites": [
+    "Completed Challenge 1 (MongoDB Connection & CRUD)",
+    "Understanding of MongoDB collections and documents",
+    "Basic knowledge of JSON and data structures",
+    "Familiarity with e-commerce product data"
+  ],
+  "tags": [
+    "mongodb",
+    "queries",
+    "filtering",
+    "search",
+    "pagination",
+    "sorting",
+    "operators"
+  ],
+  "real_world_connection": "Product search and filtering systems are essential for e-commerce platforms, content management systems, and data analytics applications. This challenge teaches the query skills used by Amazon, eBay, Shopify, and countless online stores to help users find exactly what they're looking for.",
+  "requirements": [
+    "Implement ProductService with advanced query methods",
+    "Create GetProductsByCategory with filtering support",
+    "Implement GetProductsByPriceRange using comparison operators",
+    "Build SearchProductsByName with regex pattern matching",
+    "Create GetProductsWithPagination for large datasets",
+    "Implement GetProductsSorted with multiple sort criteria",
+    "Build FilterProducts with complex multi-field filtering",
+    "Use field projection to optimize data transfer",
+    "Handle case-insensitive searches properly",
+    "Return paginated results with total count information"
+  ],
+  "bonus_points": [
+    "Implement full-text search with MongoDB text indexes",
+    "Add geospatial queries for location-based filtering",
+    "Create advanced aggregation-based search",
+    "Implement search suggestions and autocomplete",
+    "Add faceted search with category counts",
+    "Optimize queries with proper indexing strategies"
+  ],
+  "icon": "bi-search",
+  "order": 2
+}

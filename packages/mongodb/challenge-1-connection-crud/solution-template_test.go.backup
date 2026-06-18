@@ -1,0 +1,741 @@
+package main
+
+import (
+	"context"
+	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+// MockCollection simulates MongoDB collection for testing with REAL validation
+type MockCollection struct {
+	users   []User
+	failOps bool // Set to true to simulate database errors
+}
+
+func NewMockCollection() *MockCollection {
+	return &MockCollection{
+		users: []User{},
+	}
+}
+
+func (mc *MockCollection) InsertOne(ctx context.Context, document interface{}) (*MockInsertOneResult, error) {
+	if mc.failOps {
+		return nil, &MockError{Message: "Database connection failed"}
+	}
+
+	user := document.(User)
+	if user.ID.IsZero() {
+		user.ID = primitive.NewObjectID()
+	}
+	mc.users = append(mc.users, user)
+
+	return &MockInsertOneResult{InsertedID: user.ID}, nil
+}
+
+func (mc *MockCollection) FindOne(ctx context.Context, filter interface{}) *MockSingleResult {
+	if mc.failOps {
+		return &MockSingleResult{err: &MockError{Message: "Database connection failed"}}
+	}
+
+	// Validate filter format - must be bson.M or bson.D
+	var filterMap map[string]interface{}
+	
+	switch f := filter.(type) {
+	case bson.M:
+		filterMap = f
+	case bson.D:
+		filterMap = make(map[string]interface{})
+		for _, elem := range f {
+			filterMap[elem.Key] = elem.Value
+		}
+	case map[string]interface{}:
+		filterMap = f
+	default:
+		return &MockSingleResult{err: &MockError{Message: "Invalid filter format - must use bson.M or bson.D"}}
+	}
+
+	// Find matching user
+	for _, user := range mc.users {
+		if mc.matchesFilter(user, filterMap) {
+			return &MockSingleResult{user: &user}
+		}
+	}
+
+	return &MockSingleResult{err: mongo.ErrNoDocuments}
+}
+
+func (mc *MockCollection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*MockUpdateResult, error) {
+	if mc.failOps {
+		return nil, &MockError{Message: "Database connection failed"}
+	}
+
+	// Validate filter format
+	var filterMap map[string]interface{}
+	switch f := filter.(type) {
+	case bson.M:
+		filterMap = f
+	case bson.D:
+		filterMap = make(map[string]interface{})
+		for _, elem := range f {
+			filterMap[elem.Key] = elem.Value
+		}
+	default:
+		return nil, &MockError{Message: "Invalid filter format - must use bson.M or bson.D"}
+	}
+
+	// Validate update format - must use $set operator
+	var updateMap map[string]interface{}
+	switch u := update.(type) {
+	case bson.M:
+		updateMap = u
+	case bson.D:
+		updateMap = make(map[string]interface{})
+		for _, elem := range u {
+			updateMap[elem.Key] = elem.Value
+		}
+	default:
+		return nil, &MockError{Message: "Invalid update format - must use bson.M or bson.D"}}
+
+	// Check for $set operator
+	setData, hasSet := updateMap["$set"]
+	if !hasSet {
+		return nil, &MockError{Message: "Update must use $set operator"}}
+
+	setMap, ok := setData.(map[string]interface{})
+	if !ok {
+		// Try bson.M
+		if setBsonM, ok := setData.(bson.M); ok {
+			setMap = setBsonM
+		} else {
+			return nil, &MockError{Message: "$set value must be a map"}
+		}
+	}
+
+	// Find and update user
+	for i, user := range mc.users {
+		if mc.matchesFilter(user, filterMap) {
+			// Apply updates
+			if name, exists := setMap["name"]; exists {
+				if nameStr, ok := name.(string); ok {
+					mc.users[i].Name = nameStr
+				}
+			}
+			if email, exists := setMap["email"]; exists {
+				if emailStr, ok := email.(string); ok {
+					mc.users[i].Email = emailStr
+				}
+			}
+			if age, exists := setMap["age"]; exists {
+				if ageInt, ok := age.(int); ok {
+					mc.users[i].Age = ageInt
+				}
+			}
+			return &MockUpdateResult{ModifiedCount: 1}, nil
+		}
+	}
+
+	return &MockUpdateResult{ModifiedCount: 0}, nil
+}
+
+func (mc *MockCollection) DeleteOne(ctx context.Context, filter interface{}) (*MockDeleteResult, error) {
+	if mc.failOps {
+		return nil, &MockError{Message: "Database connection failed"}
+	}
+
+	// Validate filter format
+	var filterMap map[string]interface{}
+	switch f := filter.(type) {
+	case bson.M:
+		filterMap = f
+	case bson.D:
+		filterMap = make(map[string]interface{})
+		for _, elem := range f {
+			filterMap[elem.Key] = elem.Value
+		}
+	default:
+		return nil, &MockError{Message: "Invalid filter format - must use bson.M or bson.D"}
+	}
+
+	// Find and delete user
+	for i, user := range mc.users {
+		if mc.matchesFilter(user, filterMap) {
+			mc.users = append(mc.users[:i], mc.users[i+1:]...)
+			return &MockDeleteResult{DeletedCount: 1}, nil
+		}
+	}
+
+	return &MockDeleteResult{DeletedCount: 0}, nil
+}
+
+func (mc *MockCollection) Find(ctx context.Context, filter interface{}) (*MockCursor, error) {
+	if mc.failOps {
+		return nil, &MockError{Message: "Database connection failed"}
+	}
+
+	// Validate filter format
+	var filterMap map[string]interface{}
+	switch f := filter.(type) {
+	case bson.M:
+		filterMap = f
+	case bson.D:
+		filterMap = make(map[string]interface{})
+		for _, elem := range f {
+			filterMap[elem.Key] = elem.Value
+		}
+	default:
+		return nil, &MockError{Message: "Invalid filter format - must use bson.M or bson.D"}
+	}
+
+	var results []User
+	for _, user := range mc.users {
+		if mc.matchesFilter(user, filterMap) {
+			results = append(results, user)
+		}
+	}
+
+	return &MockCursor{users: results}, nil
+}
+
+func (mc *MockCollection) matchesFilter(user User, filter map[string]interface{}) bool {
+	for field, value := range filter {
+		switch field {
+		case "_id":
+			if user.ID != value {
+				return false
+			}
+		case "name":
+			if user.Name != value {
+				return false
+			}
+		case "email":
+			if user.Email != value {
+				return false
+			}
+		case "age":
+			// Handle age range queries
+			if ageFilter, ok := value.(map[string]interface{}); ok {
+				if gte, exists := ageFilter["$gte"]; exists {
+					if gteVal, ok := gte.(int); ok && user.Age < gteVal {
+						return false
+					}
+				}
+				if lte, exists := ageFilter["$lte"]; exists {
+					if lteVal, ok := lte.(int); ok && user.Age > lteVal {
+						return false
+					}
+				}
+			} else if user.Age != value {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// Mock types for testing
+type MockInsertOneResult struct {
+	InsertedID interface{}
+}
+
+type MockUpdateResult struct {
+	ModifiedCount int64
+}
+
+type MockDeleteResult struct {
+	DeletedCount int64
+}
+
+type MockSingleResult struct {
+	user *User
+	err  error
+}
+
+func (msr *MockSingleResult) Decode(v interface{}) error {
+	if msr.err != nil {
+		return msr.err
+	}
+	if user, ok := v.(*User); ok {
+		*user = *msr.user
+	}
+	return nil
+}
+
+type MockCursor struct {
+	users []User
+}
+
+func (mc *MockCursor) All(ctx context.Context, results interface{}) error {
+	if users, ok := results.(*[]User); ok {
+		*users = mc.users
+	}
+	return nil
+}
+
+func (mc *MockCursor) Close(ctx context.Context) error {
+	return nil
+}
+
+type MockError struct {
+	Message string
+}
+
+func (me *MockError) Error() string {
+	return me.Message
+}
+
+// Test setup function
+func setupUserService() *UserService {
+	mockCollection := NewMockCollection()
+	// We need to cast the mock to the interface that UserService expects
+	// For testing, we'll create a wrapper
+	return &UserService{Collection: &MockCollectionWrapper{mock: mockCollection}}
+}
+
+// MockCollectionWrapper wraps our mock to satisfy the mongo.Collection interface
+type MockCollectionWrapper struct {
+	mock *MockCollection
+}
+
+func (mcw *MockCollectionWrapper) InsertOne(ctx context.Context, document interface{}, opts ...*mongo.InsertOneOptions) (*mongo.InsertOneResult, error) {
+	result, err := mcw.mock.InsertOne(ctx, document)
+	if err != nil {
+		return nil, err
+	}
+	return &mongo.InsertOneResult{InsertedID: result.InsertedID}, nil
+}
+
+func (mcw *MockCollectionWrapper) FindOne(ctx context.Context, filter interface{}, opts ...*mongo.FindOneOptions) *mongo.SingleResult {
+	// This is tricky - we need to return a mongo.SingleResult
+	// For testing purposes, we'll use a different approach
+	return nil
+}
+
+// Comprehensive tests that validate actual user implementation
+func TestCreateUser(t *testing.T) {
+	userService := setupUserService()
+
+	tests := []struct {
+		name    string
+		request CreateUserRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "Valid user creation",
+			request: CreateUserRequest{
+				Name:  "John Doe",
+				Email: "john@example.com",
+				Age:   30,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Empty name should fail",
+			request: CreateUserRequest{
+				Name:  "",
+				Email: "john@example.com",
+				Age:   30,
+			},
+			wantErr: true,
+			errMsg:  "Name is required",
+		},
+		{
+			name: "Invalid email should fail",
+			request: CreateUserRequest{
+				Name:  "John Doe",
+				Email: "invalid-email",
+				Age:   30,
+			},
+			wantErr: true,
+			errMsg:  "Invalid email format",
+		},
+		{
+			name: "Negative age should fail",
+			request: CreateUserRequest{
+				Name:  "John Doe",
+				Email: "john@example.com",
+				Age:   -5,
+			},
+			wantErr: true,
+			errMsg:  "Age must be positive",
+		},
+		{
+			name: "Age over 150 should fail",
+			request: CreateUserRequest{
+				Name:  "John Doe",
+				Email: "john@example.com",
+				Age:   200,
+			},
+			wantErr: true,
+			errMsg:  "Age must be realistic",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := userService.CreateUser(context.Background(), tt.request)
+
+			if tt.wantErr {
+				if response.Success {
+					t.Errorf("Expected error but got success")
+				}
+				if response.Error == "" {
+					t.Errorf("Expected error message but got empty string")
+				}
+				// Validate specific error message if provided
+				if tt.errMsg != "" && response.Error != tt.errMsg {
+					t.Errorf("Expected error '%s', got '%s'", tt.errMsg, response.Error)
+				}
+			} else {
+				if !response.Success {
+					t.Errorf("Expected success but got error: %s", response.Error)
+				}
+				
+				// Validate response data
+				if user, ok := response.Data.(User); ok {
+					if user.Name != tt.request.Name {
+						t.Errorf("Expected name '%s', got '%s'", tt.request.Name, user.Name)
+					}
+					if user.Email != tt.request.Email {
+						t.Errorf("Expected email '%s', got '%s'", tt.request.Email, user.Email)
+					}
+					if user.Age != tt.request.Age {
+						t.Errorf("Expected age %d, got %d", tt.request.Age, user.Age)
+					}
+					if user.ID.IsZero() {
+						t.Error("Expected user ID to be set")
+					}
+				} else {
+					t.Error("Response data is not User type")
+				}
+			}
+		})
+	}
+}
+
+func TestGetUserByID(t *testing.T) {
+	userService := setupUserService()
+	
+	// Create a test user first
+	createReq := CreateUserRequest{
+		Name:  "Test User",
+		Email: "test@example.com",
+		Age:   25,
+	}
+	createResp := userService.CreateUser(context.Background(), createReq)
+	if !createResp.Success {
+		t.Fatalf("Failed to create test user: %s", createResp.Error)
+	}
+	
+	createdUser := createResp.Data.(User)
+
+	tests := []struct {
+		name    string
+		userID  string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "Valid user ID",
+			userID:  createdUser.ID.Hex(),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid ObjectID format",
+			userID:  "invalid-id",
+			wantErr: true,
+			errMsg:  "Invalid user ID format",
+		},
+		{
+			name:    "Non-existent user ID",
+			userID:  primitive.NewObjectID().Hex(),
+			wantErr: true,
+			errMsg:  "User not found",
+		},
+		{
+			name:    "Empty user ID",
+			userID:  "",
+			wantErr: true,
+			errMsg:  "User ID is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := userService.GetUserByID(context.Background(), tt.userID)
+
+			if tt.wantErr {
+				if response.Success {
+					t.Errorf("Expected error but got success")
+				}
+				if tt.errMsg != "" && response.Error != tt.errMsg {
+					t.Errorf("Expected error '%s', got '%s'", tt.errMsg, response.Error)
+				}
+			} else {
+				if !response.Success {
+					t.Errorf("Expected success but got error: %s", response.Error)
+				}
+				
+				if user, ok := response.Data.(User); ok {
+					if user.ID != createdUser.ID {
+						t.Errorf("Expected user ID %s, got %s", createdUser.ID.Hex(), user.ID.Hex())
+					}
+				} else {
+					t.Error("Response data is not User type")
+				}
+			}
+		})
+	}
+}
+
+func TestUpdateUser(t *testing.T) {
+	userService := setupUserService()
+	
+	// Create a test user first
+	createReq := CreateUserRequest{
+		Name:  "Original User",
+		Email: "original@example.com",
+		Age:   30,
+	}
+	createResp := userService.CreateUser(context.Background(), createReq)
+	if !createResp.Success {
+		t.Fatalf("Failed to create test user: %s", createResp.Error)
+	}
+	
+	createdUser := createResp.Data.(User)
+
+	tests := []struct {
+		name    string
+		userID  string
+		request UpdateUserRequest
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:   "Valid update",
+			userID: createdUser.ID.Hex(),
+			request: UpdateUserRequest{
+				Name:  "Updated User",
+				Email: "updated@example.com",
+				Age:   35,
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Partial update (name only)",
+			userID: createdUser.ID.Hex(),
+			request: UpdateUserRequest{
+				Name: "Partially Updated",
+			},
+			wantErr: false,
+		},
+		{
+			name:   "Invalid email format",
+			userID: createdUser.ID.Hex(),
+			request: UpdateUserRequest{
+				Email: "invalid-email",
+			},
+			wantErr: true,
+			errMsg:  "Invalid email format",
+		},
+		{
+			name:   "Invalid user ID",
+			userID: "invalid-id",
+			request: UpdateUserRequest{
+				Name: "Test",
+			},
+			wantErr: true,
+			errMsg:  "Invalid user ID format",
+		},
+		{
+			name:   "Non-existent user",
+			userID: primitive.NewObjectID().Hex(),
+			request: UpdateUserRequest{
+				Name: "Test",
+			},
+			wantErr: true,
+			errMsg:  "User not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := userService.UpdateUser(context.Background(), tt.userID, tt.request)
+
+			if tt.wantErr {
+				if response.Success {
+					t.Errorf("Expected error but got success")
+				}
+				if tt.errMsg != "" && response.Error != tt.errMsg {
+					t.Errorf("Expected error '%s', got '%s'", tt.errMsg, response.Error)
+				}
+			} else {
+				if !response.Success {
+					t.Errorf("Expected success but got error: %s", response.Error)
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteUser(t *testing.T) {
+	userService := setupUserService()
+	
+	// Create a test user first
+	createReq := CreateUserRequest{
+		Name:  "User to Delete",
+		Email: "delete@example.com",
+		Age:   25,
+	}
+	createResp := userService.CreateUser(context.Background(), createReq)
+	if !createResp.Success {
+		t.Fatalf("Failed to create test user: %s", createResp.Error)
+	}
+	
+	createdUser := createResp.Data.(User)
+
+	tests := []struct {
+		name    string
+		userID  string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "Valid deletion",
+			userID:  createdUser.ID.Hex(),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid user ID format",
+			userID:  "invalid-id",
+			wantErr: true,
+			errMsg:  "Invalid user ID format",
+		},
+		{
+			name:    "Non-existent user",
+			userID:  primitive.NewObjectID().Hex(),
+			wantErr: true,
+			errMsg:  "User not found",
+		},
+		{
+			name:    "Empty user ID",
+			userID:  "",
+			wantErr: true,
+			errMsg:  "User ID is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := userService.DeleteUser(context.Background(), tt.userID)
+
+			if tt.wantErr {
+				if response.Success {
+					t.Errorf("Expected error but got success")
+				}
+				if tt.errMsg != "" && response.Error != tt.errMsg {
+					t.Errorf("Expected error '%s', got '%s'", tt.errMsg, response.Error)
+				}
+			} else {
+				if !response.Success {
+					t.Errorf("Expected success but got error: %s", response.Error)
+				}
+			}
+		})
+	}
+}
+
+func TestListUsers(t *testing.T) {
+	userService := setupUserService()
+	
+	// Create multiple test users
+	users := []CreateUserRequest{
+		{Name: "Alice", Email: "alice@example.com", Age: 25},
+		{Name: "Bob", Email: "bob@example.com", Age: 30},
+		{Name: "Charlie", Email: "charlie@example.com", Age: 35},
+	}
+	
+	for _, user := range users {
+		resp := userService.CreateUser(context.Background(), user)
+		if !resp.Success {
+			t.Fatalf("Failed to create test user: %s", resp.Error)
+		}
+	}
+
+	t.Run("List all users", func(t *testing.T) {
+		response := userService.ListUsers(context.Background())
+
+		if !response.Success {
+			t.Errorf("Expected success but got error: %s", response.Error)
+		}
+
+		if userList, ok := response.Data.([]User); ok {
+			if len(userList) != len(users) {
+				t.Errorf("Expected %d users, got %d", len(users), len(userList))
+			}
+		} else {
+			t.Error("Response data is not []User type")
+		}
+	})
+}
+
+func TestDatabaseErrorHandling(t *testing.T) {
+	// Test with failing database operations
+	mockCollection := NewMockCollection()
+	mockCollection.failOps = true
+	
+	userService := &UserService{Collection: mockCollection}
+
+	t.Run("Create user with database error", func(t *testing.T) {
+		request := CreateUserRequest{
+			Name:  "Test User",
+			Email: "test@example.com",
+			Age:   30,
+		}
+		
+		response := userService.CreateUser(context.Background(), request)
+		
+		if response.Success {
+			t.Error("Expected error but got success")
+		}
+		
+		if response.Error == "" {
+			t.Error("Expected error message but got empty string")
+		}
+	})
+}
+
+func TestConnectMongoDB(t *testing.T) {
+	t.Run("Connect with valid URI", func(t *testing.T) {
+		// This should return an error since it's not implemented
+		client, err := ConnectMongoDB("mongodb://localhost:27017")
+		
+		if client != nil {
+			t.Error("Expected nil client for unimplemented function")
+		}
+		
+		if err == nil {
+			t.Error("Expected error for unimplemented function")
+		}
+		
+		expectedErr := "ConnectMongoDB not implemented"
+		if err.Error() != expectedErr {
+			t.Errorf("Expected error '%s', got '%s'", expectedErr, err.Error())
+		}
+	})
+	
+	t.Run("Connect with empty URI", func(t *testing.T) {
+		client, err := ConnectMongoDB("")
+		
+		if client != nil {
+			t.Error("Expected nil client for empty URI")
+		}
+		
+		if err == nil {
+			t.Error("Expected error for empty URI")
+		}
+	})
+}

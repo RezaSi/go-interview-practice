@@ -82,14 +82,21 @@ func NewMockTransformer(input, output []byte, err error) *MockTransformer {
 	}
 }
 
+var ErrUnexpectedTransform = errors.New("unexpected transform")
+
 func (mt *MockTransformer) Transform(data []byte) ([]byte, error) {
 	mt.transforms++
+
+	// If we have predefined error just return it - imitate error occurring during transformation
+	if mt.err != nil {
+		return nil, mt.err
+	}
 
 	if reflect.DeepEqual(data, mt.input) {
 		return mt.output, nil
 	}
 
-	return nil, mt.err
+	return nil, ErrUnexpectedTransform
 }
 
 func (mt *MockTransformer) GetTransformCount() int {
@@ -111,14 +118,21 @@ func NewMockWriter(expectedData []byte, err error) *MockWriter {
 	}
 }
 
-func (mw *MockWriter) Write(ctx context.Context, data []byte) error {
+var ErrUnexpectedWrite = errors.New("unexpected write")
+
+func (mw *MockWriter) Write(_ context.Context, data []byte) error {
 	mw.writes++
+
+	// If we have predefined error just return it - imitate error occurring during writing data to the destination
+	if mw.err != nil {
+		return mw.err
+	}
 
 	if reflect.DeepEqual(data, mw.expectedData) {
 		return nil
 	}
 
-	return mw.err
+	return ErrUnexpectedWrite
 }
 
 func (mw *MockWriter) GetWriteCount() int {
