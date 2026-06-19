@@ -233,14 +233,11 @@ func (c *LFUCache) evictLFU() {
 	}
 	c.metrics.evictions++
 	c.size--
-}
-func (c *LFUCache) Get(key string) (interface{}, bool) {
-	node, ok := c.cache[key]
-	if !ok {
-		c.metrics.misses++
-		return nil, false
+	if minGroup.head == nil && minGroup.tail == nil {
+		delete(c.freqGroups, c.minFreq)
 	}
-	c.metrics.hits++
+}
+func (c *LFUCache) promote(node *Node) {
 	oldFreq := node.frequency
 	oldGroup := c.freqGroups[oldFreq]
 	if node.prev != nil {
@@ -258,11 +255,11 @@ func (c *LFUCache) Get(key string) (interface{}, bool) {
 	node.prev = nil
 	node.next = nil
 	node.frequency++
-	newFreq := node.frequency
-	group := c.freqGroups[newFreq]
+
+	group := c.freqGroups[node.frequency]
 	if group == nil {
-		group = &FreqGroup{freq: newFreq}
-		c.freqGroups[newFreq] = group
+		group = &FreqGroup{freq: node.frequency}
+		c.freqGroups[node.frequency] = group
 	}
 	if group.head == nil {
 		group.head = node
@@ -272,14 +269,20 @@ func (c *LFUCache) Get(key string) (interface{}, bool) {
 		node.prev = group.head
 		group.head = node
 	}
-	if oldFreq == c.minFreq &&
-		oldGroup.head == nil &&
-		oldGroup.tail == nil {
+	if oldFreq == c.minFreq && oldGroup.head == nil && oldGroup.tail == nil {
 		c.minFreq++
 	}
-
 	c.pruneFreqGroup(oldFreq)
+}
 
+func (c *LFUCache) Get(key string) (interface{}, bool) {
+	node, ok := c.cache[key]
+	if !ok {
+		c.metrics.misses++
+		return nil, false
+	}
+	c.metrics.hits++
+	c.promote(node)
 	return node.value, true
 }
 
@@ -289,7 +292,7 @@ func (c *LFUCache) Put(key string, value interface{}) {
 	}
 	if node, ok := c.cache[key]; ok {
 		node.value = value
-		c.Get(key) // increment frequency
+		c.promote(node)
 		return
 	}
 	if c.size == c.capacity {
