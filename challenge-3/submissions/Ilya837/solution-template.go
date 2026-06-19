@@ -33,8 +33,7 @@ func (m *Manager) RemoveEmployee(id int) {
 	if ind == len(m.Employees) || m.Employees[ind].ID != id {
 		return
 	} else {
-		m.Employees[ind] = m.Employees[len(m.Employees)-1]
-		m.Employees = m.Employees[:len(m.Employees)-1]
+		m.Employees = append(m.Employees[:ind], m.Employees[ind+1:]...)
 		return
 	}
 
