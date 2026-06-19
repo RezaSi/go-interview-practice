@@ -379,19 +379,30 @@ func (c *LFUCache) Delete(key string) bool {
  	if !ok {
  		return false
  	}
-	c.size--
-	group := c.freqGroups[node.frequency]
+ 	c.size--
+	freq := node.frequency
+ 	group := c.freqGroups[node.frequency]
  	Prev, Next := node.prev, node.next
  	if Prev != nil {
  		Prev.next = Next
-	} else if group != nil {
-		group.tail = Next
+ 	} else if group != nil {
+ 		group.tail = Next
  	}
  	if Next != nil {
  		Next.prev = Prev
-	} else if group != nil {
-		group.head = Prev
+ 	} else if group != nil {
+ 		group.head = Prev
  	}
+	// Update minFreq if we emptied the minFreq group
+	if freq == c.minFreq && group != nil && group.head == nil {
+		// Find next non-empty group or reset
+		for c.minFreq <= len(c.freqGroups) {
+		if g, ok := c.freqGroups[c.minFreq]; ok && g.head != nil {
+				break
+			}
+			c.minFreq++
+		}
+	}
  	node.next = nil
  	node.prev = nil
  	node.value = nil
