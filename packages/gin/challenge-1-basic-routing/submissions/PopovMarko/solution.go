@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,6 +34,7 @@ var users = []User{
 	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
 }
 var nextID = 4
+var mu sync.RWMutex
 
 // main configures the routes and starts the HTTP server on port 8080.
 func main() {
@@ -59,7 +61,10 @@ func getAllUsers(c *gin.Context) {
 		)
 		return
 	}
-	successResponse(c, users, "Users retrieved successfully", http.StatusOK)
+	mu.RLock()
+	snapshot := append([]User{}, users...)
+	mu.RUnlock()
+	successResponse(c, snapshot, "Users retrieved successfully", http.StatusOK)
 }
 
 // getUserByID handles GET /users/:id and returns a single user by its ID.
@@ -95,19 +100,12 @@ func createUser(c *gin.Context) {
 		return
 	}
 
+	mu.Lock()
 	user.ID = nextID
-	newUser, err := saveUser(&user)
-	if err != nil {
-		errorResponse(
-			c,
-			"Failed to save user",
-			err.Error(),
-			http.StatusInternalServerError,
-		)
-		return
-	}
 	nextID++
-	successResponse(c, newUser, "User added successfully", http.StatusCreated)
+	users = append(users, user)
+	mu.Unlock()
+	successResponse(c, user, "User added successfully", http.StatusCreated)
 }
 
 // updateUser handles PUT /users/:id, applying any non-empty fields from the
@@ -124,21 +122,33 @@ func updateUser(c *gin.Context) {
 		errorResponse(c, "Failed to parse JSON", err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	mu.Lock()
+
 	user, _ := findUserByID(id)
 	if user == nil {
 		errorResponse(c, "User not found", "not found", http.StatusNotFound)
+		mu.Unlock()
 		return
 	}
+	candidateUser := *user
+
 	if userDataToUpdate.Email != "" {
-		user.Email = userDataToUpdate.Email
+		candidateUser.Email = userDataToUpdate.Email
 	}
 	if userDataToUpdate.Age != 0 {
-		user.Age = userDataToUpdate.Age
+		candidateUser.Age = userDataToUpdate.Age
 	}
 	if userDataToUpdate.Name != "" {
-		user.Name = userDataToUpdate.Name
+		candidateUser.Name = userDataToUpdate.Name
 	}
-	successResponse(c, *user, "User updated successfully", http.StatusOK)
+	if err := validateUser(candidateUser); err != nil {
+		errorResponse(c, "Bad user data", err.Error(), http.StatusBadRequest)
+		return
+	}
+	user = &candidateUser
+	mu.Unlock()
+	successResponse(c, candidateUser, "User updated successfully", http.StatusOK)
 }
 
 // deleteUser handles DELETE /users/:id and removes the matching user.
@@ -153,7 +163,9 @@ func deleteUser(c *gin.Context) {
 		errorResponse(c, "User not found", "not found", http.StatusNotFound)
 		return
 	}
+	mu.Lock()
 	users = append(users[:i], users[i+1:]...)
+	mu.Unlock()
 	successResponse(c, nil, "User deleted", http.StatusOK)
 }
 
@@ -167,11 +179,13 @@ func searchUsers(c *gin.Context) {
 	}
 	query := strings.ToLower(name)
 	responseUser := []User{}
+	mu.RLock()
 	for _, user := range users {
 		if strings.Contains(strings.ToLower(user.Name), query) {
 			responseUser = append(responseUser, user)
 		}
 	}
+	mu.RUnlock()
 	successResponse(c, responseUser, "Users retrieved successfully", http.StatusOK)
 }
 
@@ -213,6 +227,8 @@ func getUserIdFromPath(c *gin.Context) (int, error) {
 
 // saveUser appends the given user to the store and returns the persisted copy.
 func saveUser(user *User) (User, error) {
+	mu.Lock()
+	defer mu.Unlock()
 	if users == nil {
 		users = []User{}
 	}
