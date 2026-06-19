@@ -192,7 +192,6 @@ func (d *DefaultBookService) SearchBooksByAuthor(author string) ([]*Book, error)
 func (d *DefaultBookService) SearchBooksByTitle(title string) ([]*Book, error) {
 	return d.repo.SearchByTitle(title)
 }
-
 func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	encoded, err := json.Marshal(data)
 	if err != nil {
@@ -266,6 +265,11 @@ func (h *BookHandler) deleteBook(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	if err := h.Service.DeleteBook(id); err != nil {
 		writeError(w, http.StatusNotFound, err.Error())
+		// +		if errors.Is(err, ErrBookRepositoryIdNotFound) {
+		// +			writeError(w, http.StatusNotFound, err.Error())
+		// +		} else {
+		// +			writeError(w, http.StatusInternalServerError, err.Error())
+		// +		}
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Book deleted successfully"})
@@ -331,6 +335,17 @@ func NewBookHandler(service BookService) *BookHandler {
 	return h
 }
 
+/*The /api/books/{id} endpoint handles both "get by ID" and search operations. If query parameters (author or title) are provided alongside a path {id}, the query params take precedence and the path ID is ignored. This could lead to unexpected behavior.
+
+For example, GET /api/books/123?author=Smith would search by author rather than fetching book 123.
+
+Consider either:
+
+    Separating search endpoints (e.g., /api/books?author=X on the collection route)
+    Prioritizing the path ID when present
+    Returning an error if both path ID and query params are provided
+
+*/
 // this function signature is part of the assignment signature and cannot be deleted
 func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
