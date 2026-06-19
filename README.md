@@ -21,13 +21,15 @@
 
 Welcome to the **Go Interview Practice** repository! Master Go programming and ace your technical interviews with our interactive coding challenges.
 
-<a href="https://prodpath.dev" target="_blank">
+<!-- <a href="https://prodpath.dev" target="_blank">
           <p align="center">
   <img src="images/prodpath-banner.png" alt="Go Interview Practice Banner" width="100%">
 </p>
-</a>
+</a> -->
 
+<!--
 **Go Interview Practice is now part of [ProdPath](https://prodpath.dev)** — the complete platform for becoming a production-ready developer with Cloud Labs, System Design, and AI mentorship.
+-->
 
 Our interactive platform is live at **[app.gointerview.dev](https://app.gointerview.dev/)** 🎉 Explore challenges, track your progress, and elevate your Go skills with AI-powered mentorship.
 
@@ -95,14 +97,14 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
 | 🥇 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥈 | <img src="https://github.com/nzamulov.png" width="24" height="24" style="border-radius: 50%;"><br/>**[nzamulov](https://github.com/nzamulov)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥉 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 4 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **24**/30 | **80.0%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜✅✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜✅✅ |
-| 5 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
-| 6 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅✅✅⬜⬜✅ |
+| 🥈 | <img src="https://github.com/mvsouza.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mvsouza](https://github.com/mvsouza)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥉 | <img src="https://github.com/nzamulov.png" width="24" height="24" style="border-radius: 50%;"><br/>**[nzamulov](https://github.com/nzamulov)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 4 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **29**/30 | **96.7%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅⬜<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 5 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **29**/30 | **96.7%** | Master | ✅⬜✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 6 | <img src="https://github.com/mick4711.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mick4711](https://github.com/mick4711)** | **23**/30 | **76.7%** | Master | ✅✅✅✅✅✅✅✅✅✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜✅✅⬜⬜✅ |
 | 7 | <img src="https://github.com/imankhodadi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[imankhodadi](https://github.com/imankhodadi)** | **22**/30 | **73.3%** | Master | ✅✅✅✅✅✅✅⬜⬜✅✅⬜✅⬜✅<br/>✅✅✅✅✅✅✅⬜✅✅⬜✅⬜⬜✅ |
-| 8 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **21**/30 | **70.0%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
-| 9 | <img src="https://github.com/JackDalberg.png" width="24" height="24" style="border-radius: 50%;"><br/>**[JackDalberg](https://github.com/JackDalberg)** | **20**/30 | **66.7%** | Master | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>⬜✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
+| 8 | <img src="https://github.com/Gandook.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Gandook](https://github.com/Gandook)** | **21**/30 | **70.0%** | Master | ✅⬜✅✅✅✅✅✅✅✅⬜⬜✅⬜⬜<br/>⬜✅✅✅⬜✅✅✅✅✅✅✅⬜⬜✅ |
+| 9 | <img src="https://github.com/y1hao.png" width="24" height="24" style="border-radius: 50%;"><br/>**[y1hao](https://github.com/y1hao)** | **20**/30 | **66.7%** | Master | ✅⬜✅✅✅✅✅✅⬜✅⬜⬜✅✅⬜<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
 | 10 | <img src="https://github.com/Ali-Fartoot.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Ali-Fartoot](https://github.com/Ali-Fartoot)** | **19**/30 | **63.3%** | Expert | ✅✅✅✅✅✅✅✅⬜✅⬜⬜✅⬜⬜<br/>✅✅✅✅⬜✅✅✅⬜⬜⬜✅⬜⬜✅ |
 
 <div align="center">
@@ -118,7 +120,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 323
+- **Active Developers**: 357
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -155,8 +157,9 @@ Master Go packages through hands-on challenges! Each package offers a structured
 |:---:|:---:|:---:|:---|
 | 🥇 | **[PolinaSvet](https://github.com/PolinaSvet)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
 | 🥈 | **[odelbos](https://github.com/odelbos)** | 4/4 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% |
-| 🥉 | **[ashwinipatankar](https://github.com/ashwinipatankar)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
-| 4 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
+| 🥉 | **[PopovMarko](https://github.com/PopovMarko)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 4 | **[ashwinipatankar](https://github.com/ashwinipatankar)** | 3/4 | 🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 75% |
+| 5 | **[RezaSi](https://github.com/RezaSi)** | 1/4 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 25% |
 
 #### Echo Package
 
@@ -203,7 +206,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 26
-- **Active Package Learners**: 46
+- **Active Package Learners**: 51
 - **Available Packages**: 6 (cobra, echo, fiber, gin, gorm, mongodb)
 
 - **Most Package Challenges Solved**: 17 by odelbos
