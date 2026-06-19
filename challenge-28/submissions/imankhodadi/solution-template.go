@@ -225,9 +225,9 @@ func (c *LFUCache) evictLFU() {
 	}
 	victim := minGroup.tail
 	delete(c.cache, victim.key)
-	minGroup.tail = victim.prev
+	minGroup.tail = victim.next
 	if minGroup.tail != nil {
-		minGroup.tail.next = nil
+		minGroup.tail.prev = nil
 	} else {
 		minGroup.head = nil
 	}
@@ -323,7 +323,6 @@ func (c *LFUCache) Delete(key string) bool {
 		return false
 	}
 	c.size--
-	freq := node.frequency
 	group := c.freqGroups[node.frequency]
 	Prev, Next := node.prev, node.next
 	if Prev != nil {
@@ -335,16 +334,6 @@ func (c *LFUCache) Delete(key string) bool {
 		Next.prev = Prev
 	} else if group != nil {
 		group.head = Prev
-	}
-	// Update minFreq if we emptied the minFreq group
-	if freq == c.minFreq && group != nil && group.head == nil {
-		// Find next non-empty group or reset
-		for c.minFreq <= len(c.freqGroups) {
-			if g, ok := c.freqGroups[c.minFreq]; ok && g.head != nil {
-				break
-			}
-			c.minFreq++
-		}
 	}
 	node.next = nil
 	node.prev = nil
