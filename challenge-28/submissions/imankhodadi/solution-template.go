@@ -1,5 +1,5 @@
 // Challenge 28: Cache Implementation with Multiple Eviction Policies
-package cache
+package cache // fixed for submission
 
 import (
 	"fmt"
@@ -289,6 +289,7 @@ func (c *LFUCache) Put(key string, value interface{}) {
 	}
 	if node, ok := c.cache[key]; ok {
 		node.value = value
+		c.Get(key) // increment frequency
 		return
 	}
 	if c.size == c.capacity {
@@ -566,17 +567,12 @@ func NewCache(policy CachePolicy, capacity int) Cache {
 }
 
 // NewThreadSafeCacheWithPolicy creates a thread-safe cache with the specified policy
-func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {	
-	switch policy {
-	case LRU:
-		return NewThreadSafeCache(NewLRUCache(capacity))
-	case LFU:
-		return NewThreadSafeCache(NewLFUCache(capacity))
-	case FIFO:
-		return NewThreadSafeCache(NewFIFOCache(capacity))
-	default:
+func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
+	cache := NewCache(policy, capacity)
+	if cache == nil {
 		return nil
 	}
+	return NewThreadSafeCache(cache)
 }
 func main() {
 	cache := NewLFUCache(2)
