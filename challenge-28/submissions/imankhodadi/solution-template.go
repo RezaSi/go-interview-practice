@@ -239,7 +239,6 @@ type LFUCache struct {
 	metrics    CacheMetrics
 }
 
-
 func NewLFUCache(capacity int) *LFUCache {
 	return &LFUCache{
 		capacity:   capacity,
@@ -376,28 +375,35 @@ func (c *LFUCache) Put(key string, value interface{}) {
 }
 
 func (c *LFUCache) Delete(key string) bool {
-	node, ok := c.cache[key]
+ 	node, ok := c.cache[key]
+ 	if !ok {
+ 		return false
+ 	}
 	c.size--
-	if !ok {
-		return false
-	}
-	Prev, Next := node.prev, node.next
-	if Prev != nil {
-		Prev.next = Next
-	}
-	if Next != nil {
-		Next.prev = Prev
-	}
-	node.next = nil
-	node.prev = nil
-	node.value = nil
-	delete(c.cache, key)
-	return true
-}
+	group := c.freqGroups[node.frequency]
+ 	Prev, Next := node.prev, node.next
+ 	if Prev != nil {
+ 		Prev.next = Next
+	} else if group != nil {
+		group.tail = Next
+ 	}
+ 	if Next != nil {
+ 		Next.prev = Prev
+	} else if group != nil {
+		group.head = Prev
+ 	}
+ 	node.next = nil
+ 	node.prev = nil
+ 	node.value = nil
+ 	delete(c.cache, key)
+ 	return true
+ }
 
 func (c *LFUCache) Clear() {
 	clear(c.freqGroups)
 	clear(c.cache)
+	c.size = 0
+	c.minFreq = 0
 }
 
 func (c *LFUCache) Size() int {
