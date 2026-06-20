@@ -24,7 +24,7 @@ type RateLimiterMetrics struct {
 	TotalRequests   int64
 	AllowedRequests int64
 	DeniedRequests  int64
-	AverageWaitTime time.Duration //?
+	AverageWaitTime time.Duration
 }
 
 /*
@@ -100,6 +100,24 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	return false
 }
 
+func (tb *TokenBucketLimiter) tryAllowN(n int) bool {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	now := time.Now()
+	elapsed := now.Sub(tb.lastRefill).Seconds()
+	tb.tokens += elapsed * float64(tb.refillRate)
+	if tb.tokens > float64(tb.capacity) {
+		tb.tokens = float64(tb.capacity)
+	}
+	tb.lastRefill = now
+	if tb.tokens >= float64(n) {
+		tb.tokens -= float64(n)
+		return true
+	}
+	tb.metrics.DeniedRequests += int64(n)
+	return false
+}
+
 func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
 	return tb.WaitN(ctx, 1)
 }
@@ -110,10 +128,14 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	// 3. Use context timeout and cancellation
 	// 4. Update average wait time metrics
 	start := time.Now()
+	tb.mu.Lock()
+	tb.metrics.TotalRequests += int64(n)
+	tb.mu.Unlock()
 	for {
-		if tb.AllowN(n) {
+		if tb.tryAllowN(n) { // internal method that doesn't update metrics
 			waitTime := time.Since(start)
 			tb.mu.Lock()
+			tb.metrics.AllowedRequests += int64(n)
 			if tb.metrics.AllowedRequests == int64(n) {
 				tb.metrics.AverageWaitTime = waitTime
 			} else {
@@ -380,7 +402,7 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 				fw.metrics.AverageWaitTime = waitTime
 			} else {
 				fw.metrics.AverageWaitTime = time.Duration((int64(fw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
-		}
+			}
 			fw.mu.Unlock()
 			return nil
 		}
