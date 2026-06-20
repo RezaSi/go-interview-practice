@@ -317,7 +317,11 @@ func (h *BookHandler) getBookById(w http.ResponseWriter, r *http.Request) {
 	}
 	book, err := h.Service.GetBookByID(id)
 	if err != nil {
-		writeError(w, http.StatusNotFound, err.Error())
+		if errors.Is(err, ErrBookRepositoryIdNotFound) {
+			writeError(w, http.StatusNotFound, err.Error())
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	writeJSON(w, http.StatusOK, book)
