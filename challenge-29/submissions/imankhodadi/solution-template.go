@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -28,6 +29,7 @@ type RateLimiterMetrics struct {
 }
 
 type limiterEntry struct {
+	mu         sync.Mutex
 	limiter    RateLimiter
 	lastAccess time.Time
 }
@@ -83,6 +85,13 @@ func NewTokenBucketLimiter(refillRate int, capacity int) RateLimiter {
 func (tb *TokenBucketLimiter) Remaining() int {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
+	now := time.Now()
+	elapsed := now.Sub(tb.lastRefill).Seconds()
+	tb.tokens += elapsed * float64(tb.refillRate)
+	if tb.tokens > float64(tb.capacity) {
+		tb.tokens = float64(tb.capacity)
+	}
+	tb.lastRefill = now
 	return int(tb.tokens)
 }
 func (tb *TokenBucketLimiter) Allow() bool {
@@ -141,6 +150,9 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	// 4. Update average wait time metrics
 	if n <= 0 {
 		return fmt.Errorf("n must be > 0")
+	}
+	if n > tb.capacity {
+		return fmt.Errorf("n (%d) exceeds burst capacity (%d)", n, tb.capacity)
 	}
 	start := time.Now()
 	tb.mu.Lock()
@@ -344,6 +356,9 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 	if n <= 0 {
 		return fmt.Errorf("n must be > 0")
 	}
+	if n > sw.rate {
+		return fmt.Errorf("n (%d) exceeds rate/window capacity (%d)", n, sw.rate)
+	}
 	start := time.Now()
 	sw.mu.Lock()
 	sw.metrics.TotalRequests += int64(n)
@@ -505,6 +520,9 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	if n <= 0 {
 		return fmt.Errorf("n must be > 0")
 	}
+	if n > fw.rate {
+		return fmt.Errorf("n (%d) exceeds rate/window capacity (%d)", n, fw.rate)
+	}
 	start := time.Now()
 	fw.mu.Lock()
 	fw.metrics.TotalRequests += int64(n)
@@ -621,8 +639,10 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 
 			entries.Range(func(key, value any) bool {
 				entry := value.(*limiterEntry)
-
-				if now.Sub(entry.lastAccess) > idleTimeout {
+				entry.mu.Lock()
+				lastAccess := entry.lastAccess
+				entry.mu.Unlock()
+				if now.Sub(lastAccess) > idleTimeout {
 					entries.Delete(key)
 				}
 
@@ -648,7 +668,9 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 			}
 
 			entry := value.(*limiterEntry)
+			entry.mu.Lock()
 			entry.lastAccess = time.Now()
+			entry.mu.Unlock()
 
 			if !entry.limiter.Allow() {
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
