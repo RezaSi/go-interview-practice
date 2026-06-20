@@ -96,10 +96,10 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 	tb.lastRefill = now
 	if tb.tokens >= float64(n) {
 		tb.tokens -= float64(n)
-		tb.metrics.AllowedRequests++
+		tb.metrics.AllowedRequests += int64(n)
 		return true
 	}
-	tb.metrics.DeniedRequests += int64(n)
+	tb.metrics.DeniedRequests++
 	return false
 }
 
@@ -242,7 +242,7 @@ func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 		sw.metrics.AllowedRequests += int64(n)
 		return true
 	}
-	sw.metrics.DeniedRequests++
+	sw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -255,9 +255,15 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 	for {
 		if sw.AllowN(n) {
 			sw.mu.Lock()
-			defer sw.mu.Unlock()
+
 			waitTime := time.Since(start)
-			sw.metrics.AverageWaitTime += time.Duration(waitTime)
+			// Update average wait time
+			if sw.metrics.TotalRequests == 1 {
+				sw.metrics.AverageWaitTime = waitTime
+			} else {
+				sw.metrics.AverageWaitTime = time.Duration((int64(sw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
+			}
+			sw.mu.Unlock()
 			return nil
 		}
 		select {
@@ -357,10 +363,10 @@ func (fw *FixedWindowLimiter) AllowN(n int) bool {
 	// Check if request can be allowed
 	if fw.requestCount+n <= fw.rate {
 		fw.requestCount += n
-		fw.metrics.AllowedRequests++
+		fw.metrics.AllowedRequests += int64(n)
 		return true
 	}
-	fw.metrics.DeniedRequests++
+	fw.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -453,14 +459,19 @@ func (f *RateLimiterFactory) CreateLimiter(config RateLimiterConfig) (RateLimite
 
 // Per-IP rate limiting middleware
 func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterConfig) func(http.Handler) http.Handler {
+	// Validate config once at middleware creation
+	if _, err := factory.CreateLimiter(config); err != nil {
+		panic(fmt.Sprintf("invalid rate limiter config: %v", err))
+	}
 	limiters := sync.Map{}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
-			limiterInterface, _ := limiters.LoadOrStore(ip, func() RateLimiter {
+			limiterInterface, loaded := limiters.Load(ip)
+			if !loaded {
 				limiter, _ := factory.CreateLimiter(config)
-				return limiter
-			}())
+			limiterInterface, _ = limiters.LoadOrStore(ip, limiter)
+			}
 			limiter := limiterInterface.(RateLimiter)
 			if !limiter.Allow() {
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
