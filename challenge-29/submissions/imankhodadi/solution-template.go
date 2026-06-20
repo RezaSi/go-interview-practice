@@ -16,15 +16,15 @@ type RateLimiter interface {
 	WaitN(ctx context.Context, n int) error
 	Limit() int
 	Burst() int
-	Remaining() int
+	Remaining() int // added to correctly calculate X-RateLimit-Remaining
 	Reset()
 	GetMetrics() RateLimiterMetrics
 }
 type RateLimiterMetrics struct {
-	TotalRequests   int64
-	AllowedRequests int64
-	DeniedRequests  int64
-	WaitCount       int64
+	TotalRequests   int64 // assignment signature
+	AllowedRequests int64 // assignment signature
+	DeniedRequests  int64 // assignment signature
+	WaitCount       int64 // added to coorectly calculate average
 	AverageWaitTime time.Duration
 }
 
@@ -627,6 +627,11 @@ func (f *RateLimiterFactory) CreateLimiter(config RateLimiterConfig) (RateLimite
 
 // Per-IP rate limiting middleware
 func PerIPRateLimitMiddleware(ctx context.Context, factory *RateLimiterFactory, config RateLimiterConfig) func(http.Handler) http.Handler {
+	/*
+		if the middleware is created with context.Background(), the clean up goroutine will never exit,
+		causing a goroutine leak if the middleware is recreated multiple times (e.g., in tests).
+		the passed context should have a finite lifetime.
+	*/
 	// Validate config once at middleware creation
 	if _, err := factory.CreateLimiter(config); err != nil {
 		panic(fmt.Sprintf("invalid rate limiter config: %v", err))
@@ -635,9 +640,9 @@ func PerIPRateLimitMiddleware(ctx context.Context, factory *RateLimiterFactory, 
 	// periodic cleanup with a simple LRU eviction policy?
 	const idleTimeout = 30 * time.Minute
 	go func() {
+
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-
 		for {
 			select {
 			case <-ctx.Done():
@@ -645,7 +650,6 @@ func PerIPRateLimitMiddleware(ctx context.Context, factory *RateLimiterFactory, 
 			case <-ticker.C:
 			}
 			now := time.Now()
-
 			entries.Range(func(key, value any) bool {
 				entry, ok := value.(*limiterEntry)
 				if !ok {
@@ -657,7 +661,6 @@ func PerIPRateLimitMiddleware(ctx context.Context, factory *RateLimiterFactory, 
 				if now.Sub(lastAccess) > idleTimeout {
 					entries.Delete(key)
 				}
-
 				return true
 			})
 		}
