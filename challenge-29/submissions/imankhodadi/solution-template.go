@@ -87,12 +87,11 @@ func (tb *TokenBucketLimiter) Remaining() int {
 	defer tb.mu.Unlock()
 	now := time.Now()
 	elapsed := now.Sub(tb.lastRefill).Seconds()
-	tb.tokens += elapsed * float64(tb.refillRate)
-	if tb.tokens > float64(tb.capacity) {
-		tb.tokens = float64(tb.capacity)
+	projected := tb.tokens + elapsed*float64(tb.refillRate)
+	if projected > float64(tb.capacity) {
+		projected = float64(tb.capacity)
 	}
-	tb.lastRefill = now
-	return int(tb.tokens)
+	return int(projected)
 }
 func (tb *TokenBucketLimiter) Allow() bool {
 	return tb.AllowN(1)
@@ -359,6 +358,12 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 	sw.mu.Lock()
 	sw.metrics.TotalRequests += int64(n)
 	sw.mu.Unlock()
+	pollingInterval := time.Millisecond * 10
+	/*The 10ms pollingInterval is a fixed value. For high-rate limiters, this is reasonable, but for limiters with longer windows,
+	 it could cause unnecessary CPU cycles. For short windows, it might delay responsiveness.
+	Consider calculating the wait time based on when the oldest request will expire from the window, similar to how FixedWindowLimiter.WaitN
+	calculates waitTime to the next window boundary.
+	*/
 	for {
 		if sw.tryAllowN(n) {
 			sw.mu.Lock()
@@ -379,7 +384,8 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 			sw.metrics.DeniedRequests += int64(n)
 			sw.mu.Unlock()
 			return ctx.Err()
-		case <-time.After(time.Millisecond * 10):
+		case <-time.After(pollingInterval):
+
 		}
 	}
 }
@@ -726,6 +732,8 @@ func RateLimitMiddleware(limiter RateLimiter) func(http.Handler) http.Handler {
 			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", limiter.Remaining()))
 			if !allowed {
 				w.Header().Set("Retry-After", "1") // remove hardcoded Retry-After
+				// For token bucket, this could be calculated from the refill rate. For fixed/sliding window limiters, this could use time until window reset.
+				// Consider computing this dynamically for a better client experience.
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 				return
 			}
