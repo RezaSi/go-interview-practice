@@ -1,4 +1,23 @@
-
+// Challenge 29: Rate Limiter Implementation
+/*
+Why Rate Limiting Matters
+1. System Protection
+Prevents system overload and crashes
+Maintains service availability during traffic spikes
+Protects against denial-of-service (DoS) attacks
+2. Resource Management
+Ensures fair usage of computational resources
+Prevents any single user from monopolizing the system
+Maintains consistent performance for all users
+3. Cost Control
+Limits resource consumption and associated costs
+Prevents runaway processes from causing expensive operations
+Enables predictable infrastructure scaling
+4. Service Level Agreements (SLAs)
+Enforces agreed-upon usage limits
+Enables different service tiers with varying limits
+Provides measurable quality of service
+*/
 package main
 
 import (
@@ -99,7 +118,7 @@ func (tb *TokenBucketLimiter) AllowN(n int) bool {
 		tb.metrics.AllowedRequests += int64(n)
 		return true
 	}
-	tb.metrics.DeniedRequests++
+	tb.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -470,7 +489,7 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 			limiterInterface, loaded := limiters.Load(ip)
 			if !loaded {
 				limiter, _ := factory.CreateLimiter(config)
-			limiterInterface, _ = limiters.LoadOrStore(ip, limiter)
+				limiterInterface, _ = limiters.LoadOrStore(ip, limiter)
 			}
 			limiter := limiterInterface.(RateLimiter)
 			if !limiter.Allow() {
