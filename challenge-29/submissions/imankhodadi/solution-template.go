@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -25,6 +24,7 @@ type RateLimiterMetrics struct {
 	TotalRequests   int64
 	AllowedRequests int64
 	DeniedRequests  int64
+	WaitCount       int64
 	AverageWaitTime time.Duration
 }
 
@@ -164,10 +164,10 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 			waitTime := time.Since(start)
 			tb.mu.Lock()
 			tb.metrics.AllowedRequests += int64(n)
-			if tb.metrics.AllowedRequests == int64(n) {
+			tb.metrics.WaitCount++
+			if tb.metrics.WaitCount == 1 {
 				tb.metrics.AverageWaitTime = waitTime
 			} else {
-				// Simple moving average
 				tb.metrics.AverageWaitTime = time.Duration((int64(tb.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
 			}
 			tb.mu.Unlock()
@@ -302,14 +302,12 @@ func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 	now := time.Now()
 	cutoff := now.Add(-sw.windowSize)
 
-	// Remove old requests
-	validRequests := make([]time.Time, 0)
-	for _, req := range sw.requests {
-		if req.After(cutoff) {
-			validRequests = append(validRequests, req)
-		}
+	// Find first valid request
+	firstValid := 0
+	for firstValid < len(sw.requests) && !sw.requests[firstValid].After(cutoff) {
+		firstValid++
 	}
-	sw.requests = validRequests
+	sw.requests = sw.requests[firstValid:]
 
 	// Check if we can allow the request
 	if len(sw.requests)+n <= sw.rate {
@@ -333,14 +331,12 @@ func (sw *SlidingWindowLimiter) tryAllowN(n int) bool {
 	now := time.Now()
 	cutoff := now.Add(-sw.windowSize)
 
-	// Remove old requests
-	validRequests := make([]time.Time, 0)
-	for _, req := range sw.requests {
-		if req.After(cutoff) {
-			validRequests = append(validRequests, req)
-		}
+	// Find first valid request
+	firstValid := 0
+	for firstValid < len(sw.requests) && !sw.requests[firstValid].After(cutoff) {
+		firstValid++
 	}
-	sw.requests = validRequests
+	sw.requests = sw.requests[firstValid:]
 
 	// Check if we can allow the request
 	if len(sw.requests)+n <= sw.rate {
@@ -622,7 +618,7 @@ func (f *RateLimiterFactory) CreateLimiter(config RateLimiterConfig) (RateLimite
 }
 
 // Per-IP rate limiting middleware
-func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterConfig) func(http.Handler) http.Handler {
+func PerIPRateLimitMiddleware(ctx context.Context, factory *RateLimiterFactory, config RateLimiterConfig) func(http.Handler) http.Handler {
 	// Validate config once at middleware creation
 	if _, err := factory.CreateLimiter(config); err != nil {
 		panic(fmt.Sprintf("invalid rate limiter config: %v", err))
@@ -634,11 +630,19 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 
-		for range ticker.C {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
 			now := time.Now()
 
 			entries.Range(func(key, value any) bool {
-				entry := value.(*limiterEntry)
+				entry, ok := value.(*limiterEntry)
+				if !ok {
+					return true // skip malformed entry
+				}
 				entry.mu.Lock()
 				lastAccess := entry.lastAccess
 				entry.mu.Unlock()
@@ -657,7 +661,11 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 			ip := getClientIP(r)
 			value, loaded := entries.Load(ip)
 			if !loaded {
-				limiter, _ := factory.CreateLimiter(config)
+				limiter, err := factory.CreateLimiter(config)
+				if err != nil {
+					// Cannot happen: config validated at middleware creation
+					panic(fmt.Sprintf("unexpected limiter creation error: %v", err))
+				}
 
 				entry := &limiterEntry{
 					limiter:    limiter,
@@ -667,7 +675,11 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 				value, _ = entries.LoadOrStore(ip, entry)
 			}
 
-			entry := value.(*limiterEntry)
+			entry, ok := value.(*limiterEntry)
+			if !ok {
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				return
+			}
 			entry.mu.Lock()
 			entry.lastAccess = time.Now()
 			entry.mu.Unlock()
