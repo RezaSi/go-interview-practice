@@ -1,0 +1,544 @@
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+)
+
+type RateLimiter interface {
+	Allow() bool
+	AllowN(n int) bool
+	Wait(ctx context.Context) error
+	WaitN(ctx context.Context, n int) error
+	Limit() int
+	Burst() int
+	Reset()
+	GetMetrics() RateLimiterMetrics
+}
+type RateLimiterMetrics struct {
+	TotalRequests   int64
+	AllowedRequests int64
+	DeniedRequests  int64
+	AverageWaitTime time.Duration //?
+}
+
+/*
+Rate Limiting Algorithms
+1. Token Bucket Algorithm
+The token bucket algorithm is one of the most popular and flexible rate limiting techniques.
+
+How It Works
+┌─────────────────┐
+│   Token Bucket  │  ← Tokens added at fixed rate
+│  [🪙][🪙][🪙]   │
+│  [🪙][🪙][ ]    │  ← Current tokens
+│  [ ][ ][ ]      │
+└─────────────────┘
+
+	     ↓
+	Request consumes token
+
+Token Generation: Tokens are added to a bucket at a fixed rate
+Bucket Capacity: The bucket has a maximum capacity (burst limit)
+Request Processing: Each request consumes one or more tokens
+Rate Limiting: If no tokens are available, the request is denied
+
+Advantages
+Burst Handling: Allows temporary traffic spikes up to burst capacity
+Smooth Rate: Provides consistent long-term rate limiting
+Flexibility: Configurable rate and burst parameters
+Efficiency: O(1) time complexity for operations
+Disadvantages
+Memory Usage: Requires floating-point arithmetic for precise timing
+Complexity: More complex than simpler algorithms
+*/
+type TokenBucketLimiter struct {
+	mu         sync.Mutex
+	refillRate int       // Tokens added per second
+	capacity   int       // maximum capacity (burst)
+	tokens     float64   // current token count
+	lastRefill time.Time // last token refill time
+	metrics    RateLimiterMetrics
+	waitQueue  []chan struct{} // queue for waiting requests
+}
+
+func NewTokenBucketLimiter(refillRate int, capacity int) RateLimiter {
+	return &TokenBucketLimiter{
+		refillRate: refillRate,
+		capacity:   capacity,
+		tokens:     float64(capacity),
+		lastRefill: time.Now(),
+		metrics:    RateLimiterMetrics{},
+		waitQueue:  make([]chan struct{}, 0),
+	}
+}
+func (tb *TokenBucketLimiter) Allow() bool {
+	return tb.AllowN(1)
+}
+
+func (tb *TokenBucketLimiter) AllowN(n int) bool {
+	// Similar to Allow() but check for n tokens availability
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.metrics.TotalRequests += int64(n)
+	now := time.Now()
+	elapsed := now.Sub(tb.lastRefill).Seconds()
+	tb.tokens += elapsed * float64(tb.refillRate)
+	if tb.tokens > float64(tb.capacity) {
+		tb.tokens = float64(tb.capacity)
+	}
+	tb.lastRefill = now
+	if tb.tokens >= float64(n) {
+		tb.tokens -= float64(n)
+		tb.metrics.AllowedRequests++
+		return true
+	}
+	tb.metrics.DeniedRequests += int64(n)
+	return false
+}
+
+func (tb *TokenBucketLimiter) Wait(ctx context.Context) error {
+	return tb.WaitN(ctx, 1)
+}
+
+func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
+	// 1. If Allow() returns true, return immediately
+	// 2. Calculate wait time based on token deficit
+	// 3. Use context timeout and cancellation
+	// 4. Update average wait time metrics
+	start := time.Now()
+	for {
+		if tb.AllowN(n) {
+			waitTime := time.Since(start)
+			tb.mu.Lock()
+			if tb.metrics.TotalRequests == 1 {
+				tb.metrics.AverageWaitTime = waitTime
+			} else {
+				// Simple moving average
+				tb.metrics.AverageWaitTime = time.Duration((int64(tb.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
+			}
+			tb.mu.Unlock()
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Millisecond * 10):
+		}
+	}
+}
+
+func (tb *TokenBucketLimiter) Limit() int {
+	return tb.refillRate
+}
+
+func (tb *TokenBucketLimiter) Burst() int {
+	return tb.capacity
+}
+
+func (tb *TokenBucketLimiter) Reset() {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	tb.tokens = float64(tb.capacity)
+	tb.lastRefill = time.Now()
+	tb.metrics = RateLimiterMetrics{}
+	tb.waitQueue = make([]chan struct{}, 0)
+}
+
+func (tb *TokenBucketLimiter) GetMetrics() RateLimiterMetrics {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+	return tb.metrics
+}
+
+// Sliding Window Rate Limiter
+/*
+More precise than fixed windows, avoids boundary effects:
+Key Insight:
+
+Track timestamps of recent requests in a sliding time window
+Before each request, remove timestamps older than window size
+Allow request if remaining count < rate limit
+Advantages over Fixed Window:
+No burst at window boundaries
+More accurate rate limiting
+Smooths traffic over time
+
+2. Sliding Window Algorithm
+The sliding window algorithm maintains a more accurate rate limit by tracking requests within a moving time window.
+
+How It Works
+Time: --------|--------|--------|--------|--------
+      10:00   10:01   10:02   10:03   10:04
+
+Current Time: 10:03:30
+Window Size: 1 minute
+Window: [10:02:30 - 10:03:30]
+
+Requests in window: ✓✓✓✗✗ (3 requests, limit 5)
+Window Management: Maintains a sliding time window of fixed size
+Request Tracking: Records timestamps of all requests
+Window Sliding: Continuously removes old requests outside the window
+Rate Checking: Allows requests if count within window is below limit
+Implementation Key Points
+
+Advantages
+Accuracy: More precise rate limiting without boundary effects
+Fairness: Smooth distribution of allowed requests
+Predictability: Consistent behavior across time boundaries
+Disadvantages
+Memory Usage: Stores timestamps for all requests in the window
+Complexity: O(n) time complexity for cleanup operations
+Scalability: Memory usage grows with request rate
+*/
+type SlidingWindowLimiter struct {
+	mu         sync.Mutex
+	rate       int
+	windowSize time.Duration
+	requests   []time.Time // timestamps of recent requests
+	metrics    RateLimiterMetrics
+}
+
+func NewSlidingWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
+	return &SlidingWindowLimiter{
+		rate:       rate,
+		windowSize: windowSize,
+		requests:   make([]time.Time, 0),
+		metrics:    RateLimiterMetrics{},
+	}
+}
+
+func (sw *SlidingWindowLimiter) Allow() bool {
+	return sw.AllowN(1)
+}
+
+func (sw *SlidingWindowLimiter) AllowN(n int) bool {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	sw.metrics.TotalRequests += int64(n)
+	now := time.Now()
+	cutoff := now.Add(-sw.windowSize)
+
+	// Remove old requests
+	validRequests := make([]time.Time, 0)
+	for _, req := range sw.requests {
+		if req.After(cutoff) {
+			validRequests = append(validRequests, req)
+		}
+	}
+	sw.requests = validRequests
+
+	// Check if we can allow the request
+	if len(sw.requests)+n <= sw.rate {
+		for i := 0; i < n; i++ {
+			sw.requests = append(sw.requests, now)
+		}
+		sw.metrics.AllowedRequests += int64(n)
+		return true
+	}
+	sw.metrics.DeniedRequests++
+	return false
+}
+
+func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
+	return sw.WaitN(ctx, 1)
+}
+
+func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
+	start := time.Now()
+	for {
+		if sw.AllowN(n) {
+			sw.mu.Lock()
+			defer sw.mu.Unlock()
+			waitTime := time.Since(start)
+			sw.metrics.AverageWaitTime += time.Duration(waitTime)
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Millisecond * 10):
+		}
+	}
+}
+
+func (sw *SlidingWindowLimiter) Limit() int {
+	return sw.rate
+}
+
+func (sw *SlidingWindowLimiter) Burst() int {
+	return sw.rate // sliding window doesn't have burst concept
+}
+
+func (sw *SlidingWindowLimiter) Reset() {
+	// TODO: Reset sliding window state
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	sw.requests = make([]time.Time, 0)
+	sw.metrics = RateLimiterMetrics{}
+}
+
+func (sw *SlidingWindowLimiter) GetMetrics() RateLimiterMetrics {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	return sw.metrics
+}
+
+// Fixed Window Rate Limiter
+/*
+3. Fixed Window Algorithm
+The fixed window algorithm is the simplest approach, using a counter that resets at fixed intervals.
+
+How It Works
+Window 1     Window 2     Window 3
+[10:00-10:01][10:01-10:02][10:02-10:03]
+✓✓✓✓✓✗✗✗    ✓✓✓✓✓✗      ✓✓✓✓✓
+(5/5 limit)  (5/5 limit) (5/5 limit)
+Time Windows: Divides time into fixed-size windows
+Counter Reset: Request counter resets at window boundaries
+Simple Counting: Increments counter for each request
+Limit Enforcement: Denies requests when counter exceeds limit
+
+Advantages
+Simplicity: Easy to understand and implement
+Performance: O(1) time complexity
+Memory Efficiency: Minimal memory usage
+Disadvantages
+Boundary Effects: Allows bursts at window boundaries
+Unfairness: Can allow 2x rate limit at window transitions
+Advanced Rate Limiting Concepts
+
+*/
+type FixedWindowLimiter struct {
+	mu           sync.Mutex
+	rate         int
+	windowSize   time.Duration
+	windowStart  time.Time
+	requestCount int
+	metrics      RateLimiterMetrics
+}
+
+// NewFixedWindowLimiter creates a new fixed window rate limiter
+func NewFixedWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
+	return &FixedWindowLimiter{
+		rate:         rate,
+		windowSize:   windowSize,
+		windowStart:  time.Now(),
+		requestCount: 0,
+		metrics:      RateLimiterMetrics{},
+	}
+}
+
+func (fw *FixedWindowLimiter) Allow() bool {
+	return fw.AllowN(1)
+}
+
+func (fw *FixedWindowLimiter) AllowN(n int) bool {
+	// TODO: Implement Allow method for fixed window
+	// 1. Check if current time is in a new window
+	// 2. If new window, reset counter and window start time
+	// 3. If request count < rate, increment and allow
+	// 4. Update metrics
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	fw.metrics.TotalRequests += int64(n)
+	now := time.Now()
+	// Check if we're in a new window
+	if now.Sub(fw.windowStart) >= fw.windowSize {
+		fw.windowStart = now
+		fw.requestCount = 0
+	}
+	// Check if request can be allowed
+	if fw.requestCount+n <= fw.rate {
+		fw.requestCount += n
+		fw.metrics.AllowedRequests++
+		return true
+	}
+	fw.metrics.DeniedRequests++
+	return false
+}
+
+func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
+	return fw.WaitN(ctx, 1)
+}
+
+func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
+	for {
+		if fw.AllowN(n) {
+			return nil
+		}
+		// Calculate time until next window
+		fw.mu.Lock()
+		nextWindow := fw.windowStart.Add(fw.windowSize)
+		fw.mu.Unlock()
+		waitTime := time.Until(nextWindow)
+		if waitTime <= 0 {
+			continue
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(waitTime):
+			// Window has reset, try again
+		}
+	}
+}
+
+func (fw *FixedWindowLimiter) Limit() int {
+	return fw.rate
+}
+
+func (fw *FixedWindowLimiter) Burst() int {
+	return fw.rate
+}
+
+func (fw *FixedWindowLimiter) Reset() {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	fw.windowStart = time.Now()
+	fw.requestCount = 0
+	fw.metrics = RateLimiterMetrics{}
+}
+
+func (fw *FixedWindowLimiter) GetMetrics() RateLimiterMetrics {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	return fw.metrics
+}
+
+// Rate Limiter Factory
+type RateLimiterFactory struct{}
+
+type RateLimiterConfig struct {
+	Algorithm  string        // "token_bucket", "sliding_window", "fixed_window"
+	Rate       int           // requests per second
+	Burst      int           // maximum burst capacity (for token bucket)
+	WindowSize time.Duration // for sliding window and fixed window
+}
+
+// NewRateLimiterFactory creates a new rate limiter factory
+func NewRateLimiterFactory() *RateLimiterFactory {
+	return &RateLimiterFactory{}
+}
+
+func (f *RateLimiterFactory) CreateLimiter(config RateLimiterConfig) (RateLimiter, error) {
+	// TODO: Implement factory method to create different types of rate limiters
+	// Validate configuration and create appropriate limiter type
+	switch config.Algorithm {
+	case "token_bucket":
+		if config.Rate <= 0 || config.Burst <= 0 {
+			return nil, fmt.Errorf("invalid token bucket configuration: rate and burst must be positive")
+		}
+		return NewTokenBucketLimiter(config.Rate, config.Burst), nil
+	case "sliding_window":
+		if config.Rate <= 0 || config.WindowSize <= 0 {
+			return nil, fmt.Errorf("invalid sliding window configuration: rate and window size must be positive")
+		}
+		return NewSlidingWindowLimiter(config.Rate, config.WindowSize), nil
+	case "fixed_window":
+		if config.Rate <= 0 || config.WindowSize <= 0 {
+			return nil, fmt.Errorf("invalid fixed window configuration: rate and window size must be positive")
+		}
+		return NewFixedWindowLimiter(config.Rate, config.WindowSize), nil
+	default:
+		return nil, fmt.Errorf("unsupported algorithm: %s", config.Algorithm)
+	}
+}
+
+// Per-IP rate limiting middleware
+func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterConfig) func(http.Handler) http.Handler {
+	limiters := sync.Map{}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip := getClientIP(r)
+			limiterInterface, _ := limiters.LoadOrStore(ip, func() RateLimiter {
+				limiter, _ := factory.CreateLimiter(config)
+				return limiter
+			}())
+			limiter := limiterInterface.(RateLimiter)
+			if !limiter.Allow() {
+				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+func getClientIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return strings.Split(forwarded, ",")[0]
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
+}
+
+// HTTP Middleware for rate limiting
+func RateLimitMiddleware(limiter RateLimiter) func(http.Handler) http.Handler {
+	// TODO: Implement HTTP middleware for rate limiting
+	// 1. Check if request is allowed using limiter.Allow()
+	// 2. If allowed, call next handler
+	// 3. If rate limited, return HTTP 429 (Too Many Requests)
+	// 4. Add appropriate headers (X-RateLimit-Remaining, X-RateLimit-Reset, etc.)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			allowed := limiter.Allow()
+
+			w.Header().Set("X-RateLimit-Limit",
+				fmt.Sprintf("%d", limiter.Limit()))
+
+			if !allowed {
+				w.Header().Set("X-RateLimit-Remaining", "0")
+				w.Header().Set("Retry-After", "1")
+				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func (m *RateLimiterMetrics) GetStats() (total, allowed, denied int64, avgWait time.Duration) {
+	return m.TotalRequests, m.AllowedRequests, m.DeniedRequests, m.AverageWaitTime
+}
+func (m *RateLimiterMetrics) SuccessRate() float64 {
+	if m.TotalRequests == 0 {
+		return 0.0
+	}
+	return float64(m.AllowedRequests) / float64(m.TotalRequests)
+}
+
+// Demo function to show basic usage
+func main() {
+	fmt.Println("Rate Limiter Challenge - Solution Template")
+	fmt.Println("Implement the TODO sections to complete the challenge")
+
+	limiter := NewTokenBucketLimiter(10, 5)
+	if limiter.Allow() {
+		fmt.Println("Request allowed")
+	}
+}
+
+// Advanced Features (Optional - for extra credit)
+
+// DistributedRateLimiter - Rate limiter that works across multiple instances
+type DistributedRateLimiter struct {
+	// TODO: Implement distributed rate limiting using Redis or similar
+	// This is an advanced feature for extra credit
+}
+
+// AdaptiveRateLimiter - Rate limiter that adjusts limits based on system load
+type AdaptiveRateLimiter struct {
+	// TODO: Implement adaptive rate limiting
+	// Monitor system metrics and adjust rate limits dynamically
+}
