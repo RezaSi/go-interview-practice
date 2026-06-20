@@ -1,23 +1,3 @@
-// Challenge 29: Rate Limiter Implementation
-/*
-Why Rate Limiting Matters
-1. System Protection
-Prevents system overload and crashes
-Maintains service availability during traffic spikes
-Protects against denial-of-service (DoS) attacks
-2. Resource Management
-Ensures fair usage of computational resources
-Prevents any single user from monopolizing the system
-Maintains consistent performance for all users
-3. Cost Control
-Limits resource consumption and associated costs
-Prevents runaway processes from causing expensive operations
-Enables predictable infrastructure scaling
-4. Service Level Agreements (SLAs)
-Enforces agreed-upon usage limits
-Enables different service tiers with varying limits
-Provides measurable quality of service
-*/
 package main
 
 import (
@@ -84,7 +64,6 @@ type TokenBucketLimiter struct {
 	tokens     float64   // current token count
 	lastRefill time.Time // last token refill time
 	metrics    RateLimiterMetrics
-	waitQueue  []chan struct{} // queue for waiting requests
 }
 
 func NewTokenBucketLimiter(refillRate int, capacity int) RateLimiter {
@@ -94,7 +73,6 @@ func NewTokenBucketLimiter(refillRate int, capacity int) RateLimiter {
 		tokens:     float64(capacity),
 		lastRefill: time.Now(),
 		metrics:    RateLimiterMetrics{},
-		waitQueue:  make([]chan struct{}, 0),
 	}
 }
 func (tb *TokenBucketLimiter) Allow() bool {
@@ -136,7 +114,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		if tb.AllowN(n) {
 			waitTime := time.Since(start)
 			tb.mu.Lock()
-			if tb.metrics.TotalRequests == 1 {
+			if tb.metrics.AllowedRequests == int64(n) {
 				tb.metrics.AverageWaitTime = waitTime
 			} else {
 				// Simple moving average
@@ -167,7 +145,6 @@ func (tb *TokenBucketLimiter) Reset() {
 	tb.tokens = float64(tb.capacity)
 	tb.lastRefill = time.Now()
 	tb.metrics = RateLimiterMetrics{}
-	tb.waitQueue = make([]chan struct{}, 0)
 }
 
 func (tb *TokenBucketLimiter) GetMetrics() RateLimiterMetrics {
@@ -394,8 +371,17 @@ func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 }
 
 func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
+	start := time.Now()
 	for {
 		if fw.AllowN(n) {
+			waitTime := time.Since(start)
+			fw.mu.Lock()
+			if fw.metrics.AllowedRequests == int64(n) {
+				fw.metrics.AverageWaitTime = waitTime
+			} else {
+				fw.metrics.AverageWaitTime = time.Duration((int64(fw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
+		}
+			fw.mu.Unlock()
 			return nil
 		}
 		// Calculate time until next window
@@ -482,7 +468,7 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 	if _, err := factory.CreateLimiter(config); err != nil {
 		panic(fmt.Sprintf("invalid rate limiter config: %v", err))
 	}
-	limiters := sync.Map{}
+	limiters := sync.Map{} // consider cleaning this variable after some time
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
@@ -503,7 +489,7 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 func getClientIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-Forwarded-For")
 	if forwarded != "" {
-		return strings.Split(forwarded, ",")[0]
+		return strings.TrimSpace(strings.Split(forwarded, ",")[0])
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err == nil {
@@ -523,8 +509,7 @@ func RateLimitMiddleware(limiter RateLimiter) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			allowed := limiter.Allow()
 
-			w.Header().Set("X-RateLimit-Limit",
-				fmt.Sprintf("%d", limiter.Limit()))
+			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limiter.Limit()))
 
 			if !allowed {
 				w.Header().Set("X-RateLimit-Remaining", "0")
