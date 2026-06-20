@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -46,6 +47,9 @@ var (
 )
 
 func validateBook(book *Book) error {
+	if book == nil {
+		return fmt.Errorf("%w: book payload is required", ErrBookRepositoryCantCreate)
+	}
 	if book.Title == "" {
 		return fmt.Errorf("%w: title is empty", ErrBookRepositoryCantCreate)
 	}
@@ -242,7 +246,13 @@ func (h *BookHandler) getAllBooks(w http.ResponseWriter, r *http.Request) {
 func (h *BookHandler) createBook(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1 MB limit
 	var book Book
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&book); err != nil {
+		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
+		return
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
 		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
 		return
 	}
@@ -261,7 +271,13 @@ func (h *BookHandler) updateBook(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1 MB limit
 	var book Book
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&book); err != nil {
+		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
+		return
+	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
 		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
 		return
 	}
