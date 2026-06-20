@@ -60,9 +60,15 @@ func validateBook(book *Book) error {
 		return fmt.Errorf("%w: published year must be positive", ErrBookRepositoryCantCreate)
 	}
 	if book.ISBN != "" {
-		isbnLen := len(strings.ReplaceAll(book.ISBN, "-", ""))
+		normalizedISBN := strings.ReplaceAll(book.ISBN, "-", "")
+		isbnLen := len(normalizedISBN)
 		if isbnLen != 10 && isbnLen != 13 {
 			return fmt.Errorf("%w: ISBN must be exactly 10 or 13 characters", ErrBookRepositoryCantCreate)
+		}
+		for _, ch := range normalizedISBN {
+			if ch < '0' || ch > '9' {
+				return fmt.Errorf("%w: ISBN must contain only digits (optionally separated by dashes)", ErrBookRepositoryCantCreate)
+			}
 		}
 	}
 	return nil
