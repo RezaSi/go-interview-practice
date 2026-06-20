@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -17,6 +16,7 @@ type RateLimiter interface {
 	WaitN(ctx context.Context, n int) error
 	Limit() int
 	Burst() int
+	Remaining() int
 	Reset()
 	GetMetrics() RateLimiterMetrics
 }
@@ -75,6 +75,9 @@ func NewTokenBucketLimiter(refillRate int, capacity int) RateLimiter {
 		metrics:    RateLimiterMetrics{},
 	}
 }
+func (tb *TokenBucketLimiter) Remaining() int {
+	return int(tb.tokens)
+}
 func (tb *TokenBucketLimiter) Allow() bool {
 	return tb.AllowN(1)
 }
@@ -114,7 +117,6 @@ func (tb *TokenBucketLimiter) tryAllowN(n int) bool {
 		tb.tokens -= float64(n)
 		return true
 	}
-	tb.metrics.DeniedRequests += int64(n)
 	return false
 }
 
@@ -231,7 +233,9 @@ func NewSlidingWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 		metrics:    RateLimiterMetrics{},
 	}
 }
-
+func (tb *SlidingWindowLimiter) Remaining() int {
+	return int(tb.rate)
+}
 func (sw *SlidingWindowLimiter) Allow() bool {
 	return sw.AllowN(1)
 }
@@ -268,28 +272,55 @@ func (sw *SlidingWindowLimiter) Wait(ctx context.Context) error {
 	return sw.WaitN(ctx, 1)
 }
 
-func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
-	start := time.Now()
-	for {
-		if sw.AllowN(n) {
-			sw.mu.Lock()
-
-			waitTime := time.Since(start)
-			// Update average wait time
-			if sw.metrics.TotalRequests == 1 {
-				sw.metrics.AverageWaitTime = waitTime
-			} else {
-				sw.metrics.AverageWaitTime = time.Duration((int64(sw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
-			}
-			sw.mu.Unlock()
-			return nil
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(time.Millisecond * 10):
+func (sw *SlidingWindowLimiter) tryAllowN(n int) bool {
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+	now := time.Now()
+	cutoff := now.Add(-sw.windowSize)
+	
+	// Remove old requests
+	validRequests := make([]time.Time, 0)
+	for _, req := range sw.requests {
+		if req.After(cutoff) {
+			validRequests = append(validRequests, req)
 		}
 	}
+	sw.requests = validRequests
+	
+	// Check if we can allow the request
+	if len(sw.requests)+n <= sw.rate {
+		for i := 0; i < n; i++ {
+			sw.requests = append(sw.requests, now)
+		}
+		return true
+	}
+	return false
+}
+
+func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
+	start := time.Now()
+	sw.mu.Lock()
+	sw.metrics.TotalRequests += int64(n)
+	sw.mu.Unlock()
+ 	for {
+		if sw.tryAllowN(n) {
+ 			sw.mu.Lock()
+			sw.metrics.AllowedRequests += int64(n)
+ 			waitTime := time.Since(start)
+			if sw.metrics.AllowedRequests == int64(n) {
+ 				sw.metrics.AverageWaitTime = waitTime
+ 			} else {
+				sw.metrics.AverageWaitTime = time.Duration((int64(sw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
+ 			}
+ 			sw.mu.Unlock()
+ 			return nil
+ 		}
+ 		select {
+ 		case <-ctx.Done():
+ 			return ctx.Err()
+ 		case <-time.After(time.Millisecond * 10):
+ 		}
+ 	}
 }
 
 func (sw *SlidingWindowLimiter) Limit() int {
@@ -358,7 +389,9 @@ func NewFixedWindowLimiter(rate int, windowSize time.Duration) RateLimiter {
 		metrics:      RateLimiterMetrics{},
 	}
 }
-
+func (tb *FixedWindowLimiter) Remaining() int {
+	return int(tb.requestCount)
+}
 func (fw *FixedWindowLimiter) Allow() bool {
 	return fw.AllowN(1)
 }
@@ -391,36 +424,55 @@ func (fw *FixedWindowLimiter) AllowN(n int) bool {
 func (fw *FixedWindowLimiter) Wait(ctx context.Context) error {
 	return fw.WaitN(ctx, 1)
 }
-
+func (fw *FixedWindowLimiter) tryAllowN(n int) bool {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	now := time.Now()
+	// Check if we're in a new window
+	if now.Sub(fw.windowStart) >= fw.windowSize {
+		fw.windowStart = now
+		fw.requestCount = 0
+	}
+	// Check if request can be allowed
+	if fw.requestCount+n <= fw.rate {
+		fw.requestCount += n
+		return true
+	}
+	return false
+}
 func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	start := time.Now()
-	for {
-		if fw.AllowN(n) {
+	fw.mu.Lock()
+	fw.metrics.TotalRequests += int64(n)
+	fw.mu.Unlock()
+ 	for {
+		if fw.tryAllowN(n) {
+ 			fw.mu.Lock()
+			fw.metrics.AllowedRequests += int64(n)
 			waitTime := time.Since(start)
-			fw.mu.Lock()
-			if fw.metrics.AllowedRequests == int64(n) {
-				fw.metrics.AverageWaitTime = waitTime
-			} else {
-				fw.metrics.AverageWaitTime = time.Duration((int64(fw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
-			}
-			fw.mu.Unlock()
-			return nil
-		}
-		// Calculate time until next window
-		fw.mu.Lock()
-		nextWindow := fw.windowStart.Add(fw.windowSize)
-		fw.mu.Unlock()
-		waitTime := time.Until(nextWindow)
-		if waitTime <= 0 {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(waitTime):
-			// Window has reset, try again
-		}
-	}
+ 			if fw.metrics.AllowedRequests == int64(n) {
+ 				fw.metrics.AverageWaitTime = waitTime
+ 			} else {
+ 				fw.metrics.AverageWaitTime = time.Duration((int64(fw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
+ 			}
+ 			fw.mu.Unlock()
+ 			return nil
+ 		}
+ 		// Calculate time until next window
+ 		fw.mu.Lock()
+ 		nextWindow := fw.windowStart.Add(fw.windowSize)
+ 		fw.mu.Unlock()
+ 		waitTime := time.Until(nextWindow)
+ 		if waitTime <= 0 {
+ 			continue
+ 		}
+ 		select {
+ 		case <-ctx.Done():
+ 			return ctx.Err()
+ 		case <-time.After(waitTime):
+ 			// Window has reset, try again
+ 		}
+ 	}
 }
 
 func (fw *FixedWindowLimiter) Limit() int {
@@ -491,6 +543,7 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 		panic(fmt.Sprintf("invalid rate limiter config: %v", err))
 	}
 	limiters := sync.Map{} // consider cleaning this variable after some time
+	// how to Implement periodic cleanup with a simple LRU eviction policy? please help dear rabbit
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
@@ -509,10 +562,13 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 	}
 }
 func getClientIP(r *http.Request) string {
-	forwarded := r.Header.Get("X-Forwarded-For")
-	if forwarded != "" {
-		return strings.TrimSpace(strings.Split(forwarded, ",")[0])
-	}
+	// If I must support X-Forwarded-For: this middleware should only be used behind a trusted reverse proxy that sets X-Forwarded-For correctly, 
+	// and consider adding a configuration option to choose the IP extraction strategy.
+
+	// forwarded := r.Header.Get("X-Forwarded-For")
+	// if forwarded != "" {
+	// 	return strings.TrimSpace(strings.Split(forwarded, ",")[0])
+	// }
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err == nil {
 		return host
@@ -532,9 +588,8 @@ func RateLimitMiddleware(limiter RateLimiter) func(http.Handler) http.Handler {
 			allowed := limiter.Allow()
 
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limiter.Limit()))
-
+			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", limiter.Remaining()))
 			if !allowed {
-				w.Header().Set("X-RateLimit-Remaining", "0")
 				w.Header().Set("Retry-After", "1")
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 				return
