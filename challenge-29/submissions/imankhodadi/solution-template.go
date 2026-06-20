@@ -146,15 +146,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	tb.mu.Lock()
 	tb.metrics.TotalRequests += int64(n)
 
-deficit := float64(n) - tb.tokens
-wait := time.Duration(
-    deficit/float64(tb.refillRate) * float64(time.Second),
-)
-
-tb.mu.Unlock()
-timer := time.NewTimer(wait)
-
-	defer timer.Stop()
+	tb.mu.Unlock()
 	for {
 		if tb.tryAllowN(n) { // internal method that doesn't update metrics
 			waitTime := time.Since(start)
@@ -169,13 +161,22 @@ timer := time.NewTimer(wait)
 			tb.mu.Unlock()
 			return nil
 		}
+
+		tb.mu.Lock()
+		deficit := float64(n) - tb.tokens
+		tb.mu.Unlock()
+		if deficit <= 0 {
+			deficit = 1
+		}
+		wait := time.Duration(deficit / float64(tb.refillRate) * float64(time.Second))
+
 		select {
 		case <-ctx.Done():
 			tb.mu.Lock()
 			tb.metrics.DeniedRequests += int64(n)
 			tb.mu.Unlock()
 			return ctx.Err()
-		case <-timer.C:
+		case <-time.After(wait):
 		}
 	}
 }
@@ -362,6 +363,9 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		}
 		select {
 		case <-ctx.Done():
+			sw.mu.Lock()
+			sw.metrics.DeniedRequests += int64(n)
+			sw.mu.Unlock()
 			return ctx.Err()
 		case <-time.After(time.Millisecond * 10):
 		}
@@ -528,6 +532,9 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 		}
 		select {
 		case <-ctx.Done():
+			fw.mu.Lock()
+			fw.metrics.DeniedRequests += int64(n)
+			fw.mu.Unlock()
 			return ctx.Err()
 		case <-time.After(waitTime):
 			// Window has reset, try again
@@ -647,6 +654,7 @@ func PerIPRateLimitMiddleware(factory *RateLimiterFactory, config RateLimiterCon
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 				return
 			}
+			next.ServeHTTP(w, r)
 		})
 	}
 
