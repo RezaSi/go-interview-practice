@@ -363,8 +363,9 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		if sw.tryAllowN(n) {
 			sw.mu.Lock()
 			sw.metrics.AllowedRequests += int64(n)
+			sw.metrics.WaitCount++
 			waitTime := time.Since(start)
-			if sw.metrics.AllowedRequests == int64(n) {
+			if sw.metrics.WaitCount == 1 {
 				sw.metrics.AverageWaitTime = waitTime
 			} else {
 				sw.metrics.AverageWaitTime = time.Duration((int64(sw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
@@ -527,8 +528,9 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 		if fw.tryAllowN(n) {
 			fw.mu.Lock()
 			fw.metrics.AllowedRequests += int64(n)
+			fw.metrics.WaitCount++
 			waitTime := time.Since(start)
-			if fw.metrics.AllowedRequests == int64(n) {
+			if fw.metrics.WaitCount == 1 {
 				fw.metrics.AverageWaitTime = waitTime
 			} else {
 				fw.metrics.AverageWaitTime = time.Duration((int64(fw.metrics.AverageWaitTime)*9 + int64(waitTime)) / 10)
@@ -583,7 +585,7 @@ type RateLimiterFactory struct{}
 
 type RateLimiterConfig struct {
 	Algorithm  string        // "token_bucket", "sliding_window", "fixed_window"
-	Rate       int           // requests per second
+	Rate       int           // token_bucket: requests per second; sliding/fixed window: requests per WindowSize
 	Burst      int           // maximum burst capacity (for token bucket)
 	WindowSize time.Duration // for sliding window and fixed window
 }
@@ -723,7 +725,7 @@ func RateLimitMiddleware(limiter RateLimiter) func(http.Handler) http.Handler {
 			w.Header().Set("X-RateLimit-Limit", fmt.Sprintf("%d", limiter.Limit()))
 			w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", limiter.Remaining()))
 			if !allowed {
-				w.Header().Set("Retry-After", "1")
+				w.Header().Set("Retry-After", "1") // remove hardcoded Retry-After
 				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 				return
 			}
