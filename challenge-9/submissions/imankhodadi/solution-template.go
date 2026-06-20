@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type Book struct {
@@ -241,6 +240,7 @@ func (h *BookHandler) getAllBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) createBook(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1 MB limit
 	var book Book
 	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
 		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
@@ -254,14 +254,17 @@ func (h *BookHandler) createBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) updateBook(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := getIDFromPath(r.URL.Path)
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1 MB limit
 	var book Book
 	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
 		writeError(w, http.StatusBadRequest, ErrInvalidJSON.Error())
 		return
 	}
-	book.ID = id // Explicitly set ID before update
 	if err := h.Service.UpdateBook(id, &book); err != nil {
 		if errors.Is(err, ErrBookRepositoryIdNotFound) {
 			writeError(w, http.StatusNotFound, err.Error())
@@ -274,8 +277,11 @@ func (h *BookHandler) updateBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) deleteBook(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := getIDFromPath(r.URL.Path)
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
 	if err := h.Service.DeleteBook(id); err != nil {
 		if errors.Is(err, ErrBookRepositoryIdNotFound) {
 			writeError(w, http.StatusNotFound, err.Error())
@@ -288,8 +294,11 @@ func (h *BookHandler) deleteBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BookHandler) getBookById(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := getIDFromPath(r.URL.Path)
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
 	book, err := h.Service.GetBookByID(id)
 	if err != nil {
 		writeError(w, http.StatusNotFound, err.Error())
@@ -320,81 +329,90 @@ func (h *BookHandler) searchBooks(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Missing search parameter: author or title")
 	}
 }
-func (h *BookHandler) searchBooksById(w http.ResponseWriter, r *http.Request, id string) {
-	book, err := h.Service.GetBookByID(id)
-	if err != nil {
-		writeError(w, http.StatusNotFound, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, book)
-}
-
-func (h *BookHandler) searchBooksByAuthor(w http.ResponseWriter, r *http.Request, author string) {
-	books, err := h.Service.SearchBooksByAuthor(author)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, books)
-}
-
-func (h *BookHandler) searchBooksByTitle(w http.ResponseWriter, r *http.Request, title string) {
-	books, err := h.Service.SearchBooksByTitle(title)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, books)
-}
 
 type BookHandler struct {
 	Service BookService
-	router  *mux.Router
 }
 
 func NewBookHandler(service BookService) *BookHandler {
-	h := &BookHandler{Service: service}
-	h.router = mux.NewRouter()
-	h.router.HandleFunc("/api/books", h.getAllBooks).Methods("GET")
-	h.router.HandleFunc("/api/books", h.createBook).Methods("POST")
-	h.router.HandleFunc("/api/books/search", h.searchBooks).Methods("GET")
-	h.router.HandleFunc("/api/books/{id}", h.getBookById).Methods("GET")
-	h.router.HandleFunc("/api/books/{id}", h.updateBook).Methods("PUT")
-	h.router.HandleFunc("/api/books/{id}", h.deleteBook).Methods("DELETE")
-	return h
+	return &BookHandler{
+		Service: service,
+	}
 }
 
-/*The /api/books/{id} endpoint handles both "get by ID" and search operations. If query parameters (author or title) are provided alongside a path {id}, the query params take precedence and the path ID is ignored. This could lead to unexpected behavior.
+func getIDFromPath(path string) string {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-For example, GET /api/books/123?author=Smith would search by author rather than fetching book 123.
+	if len(parts) != 3 {
+		return ""
+	}
 
-Consider either:
+	return parts[2]
+}
 
-    Separating search endpoints (e.g., /api/books?author=X on the collection route)
-    Prioritizing the path ID when present
-    Returning an error if both path ID and query params are provided
-
-*/
 // this function signature is part of the assignment signature and cannot be deleted
 func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
-	h.router.ServeHTTP(w, r)
+	path := r.URL.Path
+
+	switch {
+	case path == "/api/books":
+		switch r.Method {
+		case http.MethodGet:
+			h.getAllBooks(w, r)
+		case http.MethodPost:
+			h.createBook(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+
+	case path == "/api/books/search":
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		h.searchBooks(w, r)
+
+	case strings.HasPrefix(path, "/api/books/"):
+		switch r.Method {
+		case http.MethodGet:
+			h.getBookById(w, r)
+
+		case http.MethodPut:
+			h.updateBook(w, r)
+
+		case http.MethodDelete:
+			h.deleteBook(w, r)
+
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+
+	default:
+		http.NotFound(w, r)
+	}
 }
 
+// cannot use mux for this assignment
 func main() {
 	repo := NewInMemoryBookRepository()
 	service := NewBookService(repo)
 	handler := NewBookHandler(service)
-	httpmux := http.NewServeMux()
-	httpmux.HandleFunc("/api/books", handler.HandleBooks)
-	httpmux.HandleFunc("/api/books/", handler.HandleBooks)
-	httpmux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/api/books", handler.HandleBooks)
+	mux.HandleFunc("/api/books/", handler.HandleBooks)
+
+	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			writeJSON(w, http.StatusOK, map[string]string{
+				"status": "ok",
+			})
+			return
 		}
+
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
-	if err := http.ListenAndServe(":8083", httpmux); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+
+	log.Fatal(http.ListenAndServe(":8083", mux))
 }
