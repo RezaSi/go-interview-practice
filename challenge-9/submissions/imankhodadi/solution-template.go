@@ -65,7 +65,14 @@ func validateBook(book *Book) error {
 		if isbnLen != 10 && isbnLen != 13 {
 			return fmt.Errorf("%w: ISBN must be exactly 10 or 13 characters", ErrBookRepositoryCantCreate)
 		}
-		for _, ch := range normalizedISBN {
+		for i, ch := range normalizedISBN {
+			// ISBN-10 can have 'X' as the last character (checksum = 10)
+			if ch == 'X' || ch == 'x' {
+				if isbnLen == 10 && i == 9 {
+					continue
+				}
+				return fmt.Errorf("%w: 'X' is only valid as the last character of ISBN-10", ErrBookRepositoryCantCreate)
+			}
 			if ch < '0' || ch > '9' {
 				return fmt.Errorf("%w: ISBN must contain only digits (optionally separated by dashes)", ErrBookRepositoryCantCreate)
 			}
@@ -270,34 +277,49 @@ func (h *BookHandler) deleteBook(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	if err := h.Service.DeleteBook(id); err != nil {
-		writeError(w, http.StatusNotFound, err.Error())
-		// +		if errors.Is(err, ErrBookRepositoryIdNotFound) {
-		// +			writeError(w, http.StatusNotFound, err.Error())
-		// +		} else {
-		// +			writeError(w, http.StatusInternalServerError, err.Error())
-		// +		}
+		if errors.Is(err, ErrBookRepositoryIdNotFound) {
+			writeError(w, http.StatusNotFound, err.Error())
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Book deleted successfully"})
 }
 
+func (h *BookHandler) getBookById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	book, err := h.Service.GetBookByID(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, book)
+}
+
 func (h *BookHandler) searchBooks(w http.ResponseWriter, r *http.Request) {
 	author := r.URL.Query().Get("author")
 	title := r.URL.Query().Get("title")
-	vars := mux.Vars(r)
-	id := vars["id"]
 	switch {
 	case author != "":
-		h.searchBooksByAuthor(w, r, author)
+		books, err := h.Service.SearchBooksByAuthor(author)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, books)
 	case title != "":
-		h.searchBooksByTitle(w, r, title)
-	case id != "":
-		h.searchBooksById(w, r, id)
+		books, err := h.Service.SearchBooksByTitle(title)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, books)
 	default:
-		writeError(w, http.StatusBadRequest, "Missing search parameter: id, author, title")
+		writeError(w, http.StatusBadRequest, "Missing search parameter: author or title")
 	}
 }
-
 func (h *BookHandler) searchBooksById(w http.ResponseWriter, r *http.Request, id string) {
 	book, err := h.Service.GetBookByID(id)
 	if err != nil {
@@ -335,7 +357,8 @@ func NewBookHandler(service BookService) *BookHandler {
 	h.router = mux.NewRouter()
 	h.router.HandleFunc("/api/books", h.getAllBooks).Methods("GET")
 	h.router.HandleFunc("/api/books", h.createBook).Methods("POST")
-	h.router.HandleFunc("/api/books/{id}", h.searchBooks).Methods("GET")
+	h.router.HandleFunc("/api/books/search", h.searchBooks).Methods("GET")
+	h.router.HandleFunc("/api/books/{id}", h.getBookById).Methods("GET")
 	h.router.HandleFunc("/api/books/{id}", h.updateBook).Methods("PUT")
 	h.router.HandleFunc("/api/books/{id}", h.deleteBook).Methods("DELETE")
 	return h
