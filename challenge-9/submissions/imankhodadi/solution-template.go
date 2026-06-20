@@ -56,7 +56,7 @@ func validateBook(book *Book) error {
 	if book.Author == "" {
 		return fmt.Errorf("%w: author is empty", ErrBookRepositoryCantCreate)
 	}
-	if book.PublishedYear > time.Now().Year()+1 {
+	if book.PublishedYear > time.Now().Year() {
 		return fmt.Errorf("%w: published year cannot be too far in the future", ErrBookRepositoryCantCreate)
 	}
 	if book.PublishedYear <= 0 {
@@ -368,7 +368,10 @@ func getIDFromPath(path string) string {
 
 // this function signature is part of the assignment signature and cannot be deleted
 func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
+	path := strings.TrimSuffix(r.URL.Path, "/")
+	if path == "" {
+		path = "/"
+	}
 
 	switch {
 	case path == "/api/books":
