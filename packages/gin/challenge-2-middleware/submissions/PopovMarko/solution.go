@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -71,12 +72,13 @@ func main() {
 // RequestIDMiddleware generates a unique request ID for each request
 func RequestIDMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requestID := c.GetHeader("X-Request-ID")
+		// requestID := c.GetHeader("X-Request-ID")
+		requestID := c.GetString("RequestID")
 		if requestID == "" {
 			requestID = uuid.New().String()
 		}
 
-		c.Set("requestID", requestID)
+		c.Set("RequestID", requestID)
 		c.Header("X-Request-ID", requestID)
 
 		c.Next()
@@ -92,7 +94,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 
 		duration := time.Since(start)
 		entry := map[string]interface{}{
-			"requestID":  c.GetString("requestID"),
+			"requestID":  c.GetString("RequestID"),
 			"method":     c.Request.Method,
 			"path":       c.Request.URL.Path,
 			"status":     c.Writer.Status(),
@@ -188,12 +190,17 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 // ping handles GET /ping - health check endpoint
 func ping(c *gin.Context) {
 	// TODO: Return simple pong response with request ID
+	successResponse(c, "pong", "success", http.StatusOK)
 }
 
 // getArticles handles GET /articles - get all articles with pagination
 func getArticles(c *gin.Context) {
 	// TODO: Implement pagination (optional)
 	// TODO: Return articles in standard format
+	mu.RLock()
+	art := articles
+	mu.RUnlock()
+	successResponse(c, art, "success", http.StatusOK)
 }
 
 // getArticle handles GET /articles/:id - get article by ID
@@ -201,6 +208,20 @@ func getArticle(c *gin.Context) {
 	// TODO: Get article ID from URL parameter
 	// TODO: Find article by ID
 	// TODO: Return 404 if not found
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		errorResponse(c, "bad request", http.StatusBadRequest)
+	}
+	mu.RLock()
+	articlesCp := articles
+	mu.RUnlock()
+	for _, article := range articlesCp {
+		if article.ID == id {
+			successResponse(c, article, "success", http.StatusOK)
+			return
+		}
+	}
+	errorResponse(c, "not found", http.StatusNotFound)
 }
 
 // createArticle handles POST /articles - create new article (protected)
@@ -270,7 +291,7 @@ func errorResponse(c *gin.Context, err string, status int) {
 	response := APIResponse{
 		Success:   false,
 		Error:     err,
-		RequestID: c.GetHeader("X-Request-ID"),
+		RequestID: c.GetString("RequestID"),
 	}
 
 	responseHandler(c, response, status)
@@ -279,8 +300,9 @@ func errorResponse(c *gin.Context, err string, status int) {
 func successResponse(c *gin.Context, data interface{}, msg string, status int) {
 	response := APIResponse{
 		Success:   true,
+		Data:      data,
 		Message:   msg,
-		RequestID: c.GetHeader("X-Request-ID"),
+		RequestID: c.GetString("RequestID"),
 	}
 
 	responseHandler(c, response, status)
