@@ -209,6 +209,7 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		// Return consistent error response format
 		// Include request ID in response
 		errorResponse(c, fmt.Sprintf("%v", recovered), "Internal server error", http.StatusInternalServerError)
+		c.Abort()
 	})
 }
 
@@ -225,7 +226,7 @@ func getArticles(c *gin.Context) {
 	// TODO: Implement pagination (optional)
 	// TODO: Return articles in standard format
 	mu.RLock()
-	art := articles
+	art := articles[:]
 	mu.RUnlock()
 	successResponse(c, art, "success", http.StatusOK)
 }
@@ -240,7 +241,7 @@ func getArticle(c *gin.Context) {
 		errorResponse(c, "", "bad request", http.StatusBadRequest)
 	}
 	mu.RLock()
-	articlesCp := articles
+	articlesCp := articles[:]
 	mu.RUnlock()
 	for _, article := range articlesCp {
 		if article.ID == id {
@@ -254,6 +255,11 @@ func getArticle(c *gin.Context) {
 // createArticle handles POST /articles - create new article (protected)
 func createArticle(c *gin.Context) {
 	// TODO: Parse JSON request body
+	role, _ := c.Get("user_role")
+	if role == "user" && role != "admin" {
+		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
+		return
+	}
 	article := Article{}
 	if err := c.ShouldBindJSON(&article); err != nil {
 		errorResponse(c, "", "failed to parse JSON", http.StatusBadRequest)
@@ -277,6 +283,11 @@ func createArticle(c *gin.Context) {
 
 // updateArticle handles PUT /articles/:id - update article (protected)
 func updateArticle(c *gin.Context) {
+	role, _ := c.Get("user_role")
+	if role == "user" && role != "admin" {
+		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
@@ -291,21 +302,25 @@ func updateArticle(c *gin.Context) {
 	article, i := findArticleByID(id)
 	if i == -1 {
 		errorResponse(c, "", "not found", http.StatusNotFound)
+		mu.Unlock()
 		return
 	}
 	articleToUpdate := *article
-	if article.Author != "" {
-		articleToUpdate.Author = article.Author
+	if dataForUpdate.Author != "" {
+		dataForUpdate.Author = article.Author
 	}
-	if article.Content != "" {
-		articleToUpdate.Content = article.Content
+	if dataForUpdate.Content != "" {
+		dataForUpdate.Content = article.Content
 	}
-	if article.Title != "" {
-		articleToUpdate.Title = article.Title
+	if dataForUpdate.Title != "" {
+		dataForUpdate.Title = article.Title
 	}
-	articleToUpdate.UpdatedAt = time.Now()
-	if err := validateArticle(articleToUpdate); err != nil {
+	dataForUpdate.UpdatedAt = time.Now()
+	dataForUpdate.CreatedAt = articleToUpdate.CreatedAt
+
+	if err := validateArticle(dataForUpdate); err != nil {
 		errorResponse(c, "", err.Error(), http.StatusBadRequest)
+		mu.Unlock()
 		return
 	}
 	articles[i] = articleToUpdate
@@ -315,20 +330,32 @@ func updateArticle(c *gin.Context) {
 
 // deleteArticle handles DELETE /articles/:id - delete article (protected)
 func deleteArticle(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
+	role, _ := c.Get("user_role")
+	switch role {
+	case "user":
+		errorResponse(c, "not allowed", "forbidden", http.StatusForbidden)
+		return
+
+	case "admin":
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		_, i := findArticleByID(id)
+		if i == -1 {
+			errorResponse(c, "", "not found", http.StatusNotFound)
+			return
+		}
+		articles = append(articles[:i], articles[i+1:]...)
+		successResponse(c, nil, "deleted successfully", http.StatusOK)
+
+	default:
+		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
 		return
 	}
-	mu.Lock()
-	defer mu.Unlock()
-	_, i := findArticleByID(id)
-	if i == -1 {
-		errorResponse(c, "", "not found", http.StatusNotFound)
-		return
-	}
-	articles = append(articles[:i], articles[i+1:]...)
-	successResponse(c, nil, "deleted successfully", http.StatusOK)
 }
 
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
