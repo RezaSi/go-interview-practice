@@ -52,7 +52,8 @@ func NewChatServer() *ChatServer {
 func (s *ChatServer) Connect(username string) (*Client, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if strings.TrimSpace(username) == "" {
+	username = strings.TrimSpace(username)
+	if username == "" {
 		return nil, errors.New("username cannot be empty")
 	}
 	if _, exists := s.clients[username]; exists {
@@ -72,14 +73,15 @@ func (s *ChatServer) Disconnect(client *Client) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, exists := s.clients[client.Username]; !exists {
+	stored, exists := s.clients[client.Username]
+	if !exists || stored != client {
 		return
 	}
 	delete(s.clients, client.Username)
-	client.mu.Lock()
-	if !client.disconnected {
-		client.disconnected = true
-		close(client.Messages)
+	stored.mu.Lock()
+	if !stored.disconnected {
+		stored.disconnected = true
+		close(stored.Messages)
 	}
 	client.mu.Unlock()
 }
@@ -124,3 +126,4 @@ func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message st
 	client.Send(formatted)
 	return nil
 }
+
