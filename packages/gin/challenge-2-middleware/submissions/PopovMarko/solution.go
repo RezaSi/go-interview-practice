@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,6 +44,8 @@ var nextID = 3
 var mu sync.RWMutex
 var limiters = make(map[string]*rate.Limiter)
 var limitersMu sync.RWMutex
+var startedAt = time.Now()
+var totalRequests atomic.Uint64
 
 func main() {
 	router := gin.New()
@@ -68,7 +72,9 @@ func main() {
 		protectedRoute.GET("/admin/stats", getStats)
 	}
 
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("server failed to start: %v", err)
+	}
 }
 
 // TODO: Implement middleware functions
@@ -84,6 +90,8 @@ func RequestIDMiddleware() gin.HandlerFunc {
 
 		c.Set("RequestID", requestID)
 		c.Header("X-Request-ID", requestID)
+
+		totalRequests.Add(1)
 
 		c.Next()
 	}
@@ -196,7 +204,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
-			if c.Request.Header.Get("Content-Type") != "application/json" {
+			if strings.HasPrefix(c.Request.Header.Get("Content-Type"), "application/json") {
 				c.Status(http.StatusUnsupportedMediaType)
 				c.Abort()
 				return
@@ -264,7 +272,7 @@ func createArticle(c *gin.Context) {
 	role, _ := c.Get("user_role")
 
 	if role != "admin" {
-		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
+		errorResponse(c, "not allowed", "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -281,7 +289,9 @@ func createArticle(c *gin.Context) {
 	// TODO: Add article to storage
 	mu.Lock()
 	article.ID = nextID
-	article.CreatedAt = time.Now()
+	now := time.Now()
+	article.CreatedAt = now
+	article.UpdatedAt = now
 	nextID++
 	articles = append(articles, article)
 	mu.Unlock()
@@ -384,8 +394,8 @@ func getStats(c *gin.Context) {
 	case "admin":
 		stats := map[string]interface{}{
 			"total_articles": artLen,
-			"total_requests": 0, // Could track this in middleware
-			"uptime":         "24h",
+			"total_requests": totalRequests.Load(), // Could track this in middleware
+			"uptime":         time.Since(startedAt).String(),
 		}
 		successResponse(c, stats, "success", http.StatusOK)
 		return
