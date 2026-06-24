@@ -6,10 +6,11 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,7 +19,6 @@ type User struct {
 	ID             int        `json:"id"`
 	Username       string     `json:"username" binding:"required,min=3,max=30"`
 	Email          string     `json:"email" binding:"required,email"`
-	Password       string     `json:"-"` // Never return in JSON
 	PasswordHash   string     `json:"-"`
 	FirstName      string     `json:"first_name" binding:"required,min=2,max=50"`
 	LastName       string     `json:"last_name" binding:"required,min=2,max=50"`
@@ -75,15 +75,21 @@ type APIResponse struct {
 
 // Global data stores (in a real app, these would be databases)
 var users = []User{}
-var blacklistedTokens = make(map[string]bool) // Token blacklist for logout
-var refreshTokens = make(map[string]int)      // RefreshToken -> UserID mapping
 var nextUserID = 1
+var userLock sync.RWMutex
+
+var blacklistedTokens = make(map[string]bool) // Token blacklist for logout
+var blacklistedTokenLock sync.RWMutex
+
+var refreshTokens = make(map[string]int)                // RefreshToken -> UserID mapping
+var refreshTokensExpiresAt = make(map[string]time.Time) // RefreshToken -> ExpiresAt
+var refreshTokenLock sync.RWMutex
 
 // Configuration
 var (
-	jwtSecret         = []byte("your-super-secret-jwt-key")
-	accessTokenTTL    = 15 * time.Minute   // 15 minutes
-	refreshTokenTTL   = 7 * 24 * time.Hour // 7 days
+	jwtSecret         = []byte("your-super-secret-jwt-key") // fixed for assignment, move it to env in production
+	accessTokenTTL    = 15 * time.Minute                    // 15 minutes
+	refreshTokenTTL   = 7 * 24 * time.Hour                  // 7 days
 	maxFailedAttempts = 5
 	lockoutDuration   = 30 * time.Minute
 )
@@ -158,7 +164,12 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 		return nil, err
 	}
 	// Store refresh token
+
+	refreshTokenLock.Lock()
 	refreshTokens[refreshToken] = userID
+	refreshTokensExpiresAt[refreshToken] = time.Now().Add(refreshTokenTTL)
+	refreshTokenLock.Unlock()
+
 	return &TokenResponse{
 		AccessToken:  accessTokenString,
 		RefreshToken: refreshToken,
@@ -173,12 +184,25 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 	// Parse and validate JWT token
 	// Check if token is blacklisted
 	// Return claims if valid
+	// Use jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()})) or reject non-HMAC/HS256 in the key function before returning jwtSecret.
+	blacklistedTokenLock.RLock()
+	defer blacklistedTokenLock.RUnlock()
 	if blacklistedTokens[tokenString] {
 		return nil, errors.New("token is blacklisted")
 	}
-	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&JWTClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, errors.New("unexpected signing method")
+			}
+
+			return jwtSecret, nil
+		},
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -190,27 +214,33 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 }
 
 func findUserByUsername(username string) *User {
-	for _, user := range users {
-		if user.Username == username {
-			return &user
+	userLock.RLock()
+	defer userLock.RUnlock()
+	for i := range users {
+		if users[i].Username == username {
+			return &users[i]
 		}
 	}
 	return nil
 }
 
 func findUserByEmail(email string) *User {
-	for _, user := range users {
-		if user.Email == email {
-			return &user
+	userLock.RLock()
+	defer userLock.RUnlock()
+	for i := range users {
+		if users[i].Email == email {
+			return &users[i]
 		}
 	}
 	return nil
 }
 
 func findUserByID(id int) *User {
-	for _, user := range users {
-		if user.ID == id {
-			return &user
+	userLock.RLock()
+	defer userLock.RUnlock()
+	for i := range users {
+		if users[i].ID == id {
+			return &users[i]
 		}
 	}
 	return nil
@@ -224,6 +254,8 @@ func isAccountLocked(user *User) bool {
 }
 
 func recordFailedAttempt(user *User) {
+	userLock.Lock()
+	defer userLock.Unlock()
 	user.FailedAttempts++
 	if user.FailedAttempts >= maxFailedAttempts {
 		lockUntil := time.Now().Add(lockoutDuration)
@@ -232,6 +264,8 @@ func recordFailedAttempt(user *User) {
 }
 
 func resetFailedAttempts(user *User) {
+	userLock.Lock()
+	defer userLock.Unlock()
 	user.FailedAttempts = 0
 	user.LockedUntil = nil
 }
@@ -272,22 +306,20 @@ func register(c *gin.Context) {
 		})
 		return
 	}
-	// Check if username already exists
-	// Check if email already exists
-	// Hash password
-	// Create user and add to users slice
+	userLock.Lock()
+	defer userLock.Unlock()
 	for _, user := range users {
 		if user.Username == req.Username {
 			c.JSON(409, APIResponse{
 				Success: false,
-				Error:   "Password does not meet strength requirements",
+				Error:   "Account already exists",
 			})
 			return
 		}
 		if user.Email == req.Email {
 			c.JSON(409, APIResponse{
 				Success: false,
-				Error:   "Email already exists",
+				Error:   "Account already exists",
 			})
 			return
 		}
@@ -306,7 +338,6 @@ func register(c *gin.Context) {
 		ID:             nextUserID,
 		Username:       req.Username,
 		Email:          req.Email,
-		Password:       req.Password,
 		PasswordHash:   hashedPass,
 		FirstName:      req.FirstName,
 		LastName:       req.LastName,
@@ -365,14 +396,23 @@ func login(c *gin.Context) {
 		})
 		return
 	}
+
+	if !user.IsActive {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Not active",
+		})
+		return
+	}
 	// Reset failed attempts on successful login
 	resetFailedAttempts(user)
 
 	// Update last login time
 	now := time.Now()
+	userLock.Lock()
 	user.LastLogin = &now
+	userLock.Unlock()
 
-	// Generate tokens
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -403,22 +443,56 @@ func logout(c *gin.Context) {
 	// Extract token from "Bearer <token>" format
 	// Add token to blacklist
 	// Remove refresh token from store
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	parts := strings.SplitN(authHeader, " ", 2)
+
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Invalid authorization header",
+		})
+		return
+	}
+
+	tokenString := parts[1]
 	// Add token to blacklist
+	blacklistedTokenLock.Lock()
 	blacklistedTokens[tokenString] = true
+	blacklistedTokenLock.Unlock()
 	// Remove refresh token if provided
 	var req struct {
 		RefreshToken string `json:"refresh_token,omitempty"`
 	}
 	c.ShouldBindJSON(&req)
 	if req.RefreshToken != "" {
+		refreshTokenLock.Lock()
 		delete(refreshTokens, req.RefreshToken)
+		delete(refreshTokensExpiresAt, req.RefreshToken)
+		refreshTokenLock.Unlock()
+
 	}
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Logout successful",
 	})
 
+}
+
+func isRefreshTokenExpired(token string) bool {
+	refreshTokenLock.Lock()
+	defer refreshTokenLock.Unlock()
+
+	expiry, ok := refreshTokensExpiresAt[token]
+	if !ok {
+		return true
+	}
+
+	if time.Now().After(expiry) {
+		delete(refreshTokens, token)
+		delete(refreshTokensExpiresAt, token)
+		return true
+	}
+
+	return false
 }
 
 // POST /auth/refresh - Refresh access token
@@ -434,31 +508,47 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	// Validate refresh token
-	// Get user ID from refresh token store
-	// Find user by ID
-	// Generate new access token
-	// Optionally rotate refresh token
+
+	if isRefreshTokenExpired(req.RefreshToken) {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Refresh token expired",
+		})
+		return
+	}
+	refreshTokenLock.Lock()
 	userId, exists := refreshTokens[req.RefreshToken]
+	refreshTokenLock.Unlock()
 	if !exists {
 		c.JSON(401, APIResponse{
-			Success: true,
-			Message: "Invalid refresh token",
+			Success: false,
+			Error:   "Invalid refresh token",
 		})
 		return
 	}
 	user := findUserByID(userId)
-	_, err := generateTokens(userId, user.Username, user.Role)
-	if err != nil {
-		c.JSON(500, APIResponse{
-			Success: true,
-			Message: "Internal Error",
+	if user == nil {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Invalid refresh token",
 		})
 		return
 	}
-
+	tokens, err := generateTokens(userId, user.Username, user.Role)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Internal Error",
+		})
+		return
+	}
+	refreshTokenLock.Lock()
+	delete(refreshTokens, req.RefreshToken)
+	delete(refreshTokensExpiresAt, req.RefreshToken)
+	refreshTokenLock.Unlock()
 	c.JSON(200, APIResponse{
 		Success: true,
+		Data:    tokens,
 		Message: "Token refreshed successfully",
 	})
 }
@@ -478,7 +568,20 @@ func authMiddleware() gin.HandlerFunc {
 		// Extract token from "Bearer <token>" format
 		// Validate token using validateToken function
 		// Set user info in context for route handlers
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		// tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		parts := strings.SplitN(authHeader, " ", 2)
+
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.JSON(401, APIResponse{
+				Success: false,
+				Error:   "Invalid authorization header",
+			})
+			c.Abort()
+			return
+		}
+
+		tokenString := parts[1]
+
 		claims, err := validateToken(tokenString)
 		if err != nil {
 			c.JSON(401, APIResponse{
@@ -528,13 +631,29 @@ func requireRole(roles ...string) gin.HandlerFunc {
 
 // GET /user/profile - Get current user profile
 func getUserProfile(c *gin.Context) {
-	// TODO: Get user ID from context (set by authMiddleware)
-	// TODO: Find user by ID
-	// TODO: Return user profile (without sensitive data)
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Unauthorized",
+		})
+		return
+	}
+
+	userID := userIDVal.(int)
+
+	user := findUserByID(userID)
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
 
 	c.JSON(200, APIResponse{
 		Success: true,
-		Data:    nil, // TODO: Return user data
+		Data:    user,
 		Message: "Profile retrieved successfully",
 	})
 }
@@ -556,9 +675,8 @@ func updateUserProfile(c *gin.Context) {
 	}
 	// Get user ID from context
 	// Find user by ID
-	// TODO: Check if new email is already taken
-	// TODO: Update user profile
 	userId, exists := c.Get("userID")
+
 	if !exists {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -566,8 +684,8 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
-	userIdInt, ok := userId.(int)
 
+	userIdInt, ok := userId.(int)
 	if !ok {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -575,21 +693,36 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
-
+	userLock.RLock()
+	for i := range users {
+		if users[i].Email == req.Email &&
+			users[i].ID != userIdInt {
+			userLock.RUnlock()
+			c.JSON(409, APIResponse{
+				Success: false,
+				Error:   "Email already exists",
+			})
+			return
+		}
+	}
+	userLock.RUnlock()
 	user := findUserByID(userIdInt)
 
-	res := findUserByEmail(req.Email)
-	if res != nil {
+	if user == nil {
 		c.JSON(400, APIResponse{
 			Success: false,
-			Error:   "Invalid email",
+			Error:   "user not found",
 		})
 		return
 	}
 
+	userLock.Lock()
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
 	user.Email = req.Email
+	user.UpdatedAt = time.Now()
+	userLock.Unlock()
+
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Profile updated successfully",
@@ -599,79 +732,84 @@ func updateUserProfile(c *gin.Context) {
 // POST /user/change-password - Change user password
 func changePassword(c *gin.Context) {
 	var req struct {
-        CurrentPassword string `json:"current_password" binding:"required"`
-        NewPassword     string `json:"new_password" binding:"required,min=8"`
-    }
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required,min=8"`
+	}
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(400, APIResponse{
-            Success: false,
-            Error:   "Invalid input data",
-        })
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Invalid input data",
+		})
+		return
+	}
 
-    userIDVal, exists := c.Get("userID")
-    if !exists {
-        c.JSON(401, APIResponse{
-            Success: false,
-            Error:   "Unauthorized",
-        })
-        return
-    }
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Unauthorized",
+		})
+		return
+	}
 
-    userID := userIDVal.(int)
-    user := findUserByID(userID)
+	userID := userIDVal.(int)
+	user := findUserByID(userID)
 
-    if user == nil {
-        c.JSON(404, APIResponse{
-            Success: false,
-            Error:   "User not found",
-        })
-        return
-    }
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
 
-    if !verifyPassword(req.CurrentPassword, user.PasswordHash) {
-        c.JSON(400, APIResponse{
-            Success: false,
-            Error:   "Current password is incorrect",
-        })
-        return
-    }
+	if !verifyPassword(req.CurrentPassword, user.PasswordHash) {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Current password is incorrect",
+		})
+		return
+	}
 
-    if !isStrongPassword(req.NewPassword) {
-        c.JSON(400, APIResponse{
-            Success: false,
-            Error:   "Password does not meet strength requirements",
-        })
-        return
-    }
+	if !isStrongPassword(req.NewPassword) {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Password does not meet strength requirements",
+		})
+		return
+	}
 
-    hash, err := hashPassword(req.NewPassword)
-    if err != nil {
-        c.JSON(500, APIResponse{
-            Success: false,
-            Error:   "Internal error",
-        })
-        return
-    }
+	hash, err := hashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Internal error",
+		})
+		return
+	}
 
-    user.PasswordHash = hash
+	userLock.Lock()
+	user.PasswordHash = hash
+	user.UpdatedAt = time.Now()
+	userLock.Unlock()
 
-    c.JSON(200, APIResponse{
-        Success: true,
-        Message: "Password changed successfully",
-    })
+	c.JSON(200, APIResponse{
+		Success: true,
+		Message: "Password changed successfully",
+	})
 }
 
 // GET /admin/users - List all users (admin only)
 func listUsers(c *gin.Context) {
-	// TODO: Get pagination parameters
-	// TODO: Return list of users (without sensitive data)
+	userLock.RLock()
+	defer userLock.RUnlock()
 
+	usersCopy := make([]User, len(users))
+	copy(usersCopy, users)
 	c.JSON(200, APIResponse{
 		Success: true,
-		Data:    users, // TODO: Filter sensitive data
+		Data:    usersCopy,
 		Message: "Users retrieved successfully",
 	})
 }
@@ -720,7 +858,26 @@ func changeUserRole(c *gin.Context) {
 
 	// TODO: Find user by ID
 	// TODO: Update user role
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Invalid user ID",
+		})
+		return
+	}
 
+	user := findUserByID(id)
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
+	userLock.Lock()
+	user.Role = req.Role
+	userLock.Unlock()
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "User role updated successfully",
@@ -736,12 +893,13 @@ func setupRouter() *gin.Engine {
 	{
 		auth.POST("/register", register)
 		auth.POST("/login", login)
-		auth.POST("/logout", logout)
+
 		auth.POST("/refresh", refreshToken)
 	}
 
 	// Protected user routes
 	user := router.Group("/user")
+	auth.POST("/logout", authMiddleware(), logout)
 	user.Use(authMiddleware())
 	{
 		user.GET("/profile", getUserProfile)
@@ -763,7 +921,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 	// Initialize with a default admin user
-	adminHash, _ := hashPassword("admin123")
+	adminHash, _ := hashPassword("Admin123!")
 	users = append(users, User{
 		ID:            nextUserID,
 		Username:      "admin",
