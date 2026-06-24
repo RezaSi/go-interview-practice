@@ -204,7 +204,7 @@ func RateLimitMiddleware() gin.HandlerFunc {
 func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
-			if strings.HasPrefix(c.Request.Header.Get("Content-Type"), "application/json") {
+			if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "application/json") {
 				c.Status(http.StatusUnsupportedMediaType)
 				c.Abort()
 				return
