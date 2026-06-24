@@ -33,7 +33,7 @@ type APIResponse struct {
 	RequestID string      `json:"request_id,omitempty"`
 }
 
-// In-memory storage
+// In-memory storage for articles and the next ID to assign, guarded by mu.
 var articles = []Article{
 	{ID: 1, Title: "Getting Started with Go", Content: "Go is a programming language...", Author: "John Doe", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	{ID: 2, Title: "Web Development with Gin", Content: "Gin is a web framework...", Author: "Jane Smith", CreatedAt: time.Now(), UpdatedAt: time.Now()},
@@ -64,7 +64,7 @@ func main() {
 	{
 		protectedRoute.POST("/articles", createArticle)
 		protectedRoute.PUT("/articles/:id", updateArticle)
-		protectedRoute.DELETE("articles/:id", deleteArticle)
+		protectedRoute.DELETE("/articles/:id", deleteArticle)
 		protectedRoute.GET("/admin/stats", getStats)
 	}
 
@@ -76,8 +76,8 @@ func main() {
 // RequestIDMiddleware generates a unique request ID for each request
 func RequestIDMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// requestID := c.GetHeader("X-Request-ID")
-		requestID := c.GetString("RequestID")
+		requestID := c.GetHeader("X-Request-ID")
+		// requestID := c.GetString("RequestID")
 		if requestID == "" {
 			requestID = uuid.New().String()
 		}
@@ -110,7 +110,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 		if c.Writer.Status() >= 400 {
 			log.Printf("ERROR %+v", entry)
 		} else {
-			log.Printf("WARNING %+v", entry)
+			log.Printf("INFO %+v", entry)
 		}
 	}
 }
@@ -131,6 +131,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		default:
 			errorResponse(c, "invalid key", "invalid API key", http.StatusUnauthorized)
 			c.Abort()
+			return
 		}
 
 		c.Next()
@@ -156,6 +157,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		if c.Request.Method == "OPTIONS" {
 			c.Status(http.StatusNoContent)
 			c.Abort()
+			return
 		}
 		c.Next()
 	}
@@ -166,17 +168,19 @@ func CORSMiddleware() gin.HandlerFunc {
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var limit = 100
-		ip := c.RemoteIP()
+		ip := c.ClientIP()
 		limitersMu.Lock()
 		limiter, ok := limiters[ip]
 
 		if !ok {
-			limiter = rate.NewLimiter(rate.Limit(limit), limit*2)
+			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(limit)), limit*2)
 			limiters[ip] = limiter
 		}
 		if !limiter.Allow() {
 			errorResponse(c, "too many requests", "too many requests", http.StatusTooManyRequests)
+			limitersMu.Unlock()
 			c.Abort()
+			return
 		}
 		l := strconv.Itoa(limit)
 		c.Header("X-RateLimit-Limit", l)
@@ -195,6 +199,7 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 			if c.Request.Header.Get("Content-Type") != "application/json" {
 				c.Status(http.StatusUnsupportedMediaType)
 				c.Abort()
+				return
 			}
 		}
 
@@ -226,7 +231,7 @@ func getArticles(c *gin.Context) {
 	// TODO: Implement pagination (optional)
 	// TODO: Return articles in standard format
 	mu.RLock()
-	art := articles[:]
+	art := append([]Article{}, articles...)
 	mu.RUnlock()
 	successResponse(c, art, "success", http.StatusOK)
 }
@@ -239,9 +244,10 @@ func getArticle(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		errorResponse(c, "", "bad request", http.StatusBadRequest)
+		return
 	}
 	mu.RLock()
-	articlesCp := articles[:]
+	articlesCp := append([]Article{}, articles...)
 	mu.RUnlock()
 	for _, article := range articlesCp {
 		if article.ID == id {
@@ -256,10 +262,12 @@ func getArticle(c *gin.Context) {
 func createArticle(c *gin.Context) {
 	// TODO: Parse JSON request body
 	role, _ := c.Get("user_role")
-	if role == "user" && role != "admin" {
+
+	if role != "admin" {
 		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
 		return
 	}
+
 	article := Article{}
 	if err := c.ShouldBindJSON(&article); err != nil {
 		errorResponse(c, "", "failed to parse JSON", http.StatusBadRequest)
@@ -284,10 +292,15 @@ func createArticle(c *gin.Context) {
 // updateArticle handles PUT /articles/:id - update article (protected)
 func updateArticle(c *gin.Context) {
 	role, _ := c.Get("user_role")
-	if role == "user" && role != "admin" {
-		errorResponse(c, "not allowed", "not authorize", http.StatusUnauthorized)
+	if role == "user" {
+		errorResponse(c, "not allowed", "forbiden", http.StatusForbidden)
 		return
 	}
+	if role != "user" && role != "admin" {
+		errorResponse(c, "not allowed", "not authorised", http.StatusUnauthorized)
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
@@ -305,27 +318,30 @@ func updateArticle(c *gin.Context) {
 		mu.Unlock()
 		return
 	}
-	articleToUpdate := *article
-	if dataForUpdate.Author != "" {
+	if dataForUpdate.Author == "" {
 		dataForUpdate.Author = article.Author
 	}
-	if dataForUpdate.Content != "" {
+	if dataForUpdate.Content == "" {
 		dataForUpdate.Content = article.Content
 	}
-	if dataForUpdate.Title != "" {
+	if dataForUpdate.Title == "" {
 		dataForUpdate.Title = article.Title
 	}
+
 	dataForUpdate.UpdatedAt = time.Now()
-	dataForUpdate.CreatedAt = articleToUpdate.CreatedAt
+
+	dataForUpdate.CreatedAt = article.CreatedAt
+
+	dataForUpdate.ID = article.ID
 
 	if err := validateArticle(dataForUpdate); err != nil {
 		errorResponse(c, "", err.Error(), http.StatusBadRequest)
 		mu.Unlock()
 		return
 	}
-	articles[i] = articleToUpdate
+	articles[i] = dataForUpdate
 	mu.Unlock()
-	successResponse(c, articleToUpdate, "success", http.StatusOK)
+	successResponse(c, dataForUpdate, "success", http.StatusOK)
 }
 
 // deleteArticle handles DELETE /articles/:id - delete article (protected)
@@ -361,10 +377,13 @@ func deleteArticle(c *gin.Context) {
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
 func getStats(c *gin.Context) {
 	userRole := c.GetString("user_role")
+	mu.RLock()
+	artLen := len(articles)
+	mu.RUnlock()
 	switch userRole {
 	case "admin":
 		stats := map[string]interface{}{
-			"total_articles": len(articles),
+			"total_articles": artLen,
 			"total_requests": 0, // Could track this in middleware
 			"uptime":         "24h",
 		}
@@ -411,7 +430,7 @@ func errorResponse(c *gin.Context, msg, err string, status int) {
 		RequestID: c.GetString("RequestID"),
 	}
 
-	responseHandler(c, response, status)
+	c.JSON(status, response)
 }
 
 func successResponse(c *gin.Context, data interface{}, msg string, status int) {
@@ -422,9 +441,5 @@ func successResponse(c *gin.Context, data interface{}, msg string, status int) {
 		RequestID: c.GetString("RequestID"),
 	}
 
-	responseHandler(c, response, status)
-}
-
-func responseHandler(c *gin.Context, response interface{}, status int) {
 	c.JSON(status, response)
 }
