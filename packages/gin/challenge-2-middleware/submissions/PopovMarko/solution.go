@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/time/rate"
 )
 
 // Article represents a blog article
@@ -38,6 +40,8 @@ var articles = []Article{
 }
 var nextID = 3
 var mu sync.RWMutex
+var limiters = make(map[string]*rate.Limiter)
+var limitersMu sync.RWMutex
 
 func main() {
 	router := gin.New()
@@ -56,7 +60,7 @@ func main() {
 		publicRoute.GET("/articles/:id", getArticle)
 	}
 
-	protectedRoute := router.Group("/", LoggingMiddleware(), AuthMiddleware())
+	protectedRoute := router.Group("/", AuthMiddleware())
 	{
 		protectedRoute.POST("/articles", createArticle)
 		protectedRoute.PUT("/articles/:id", updateArticle)
@@ -113,24 +117,19 @@ func LoggingMiddleware() gin.HandlerFunc {
 
 // AuthMiddleware validates API keys for protected routes
 func AuthMiddleware() gin.HandlerFunc {
-	// TODO: Define valid API keys and their roles
-	// "admin-key-123" -> "admin"
-	// "user-key-456" -> "user"
-	const (
-		admin = "admin-key-123"
-		user  = "user-key-456"
-	)
-
 	return func(c *gin.Context) {
+		const (
+			admin = "admin-key-123"
+			user  = "user-key-456"
+		)
 		key := c.GetHeader("X-API-Key")
-		if key == admin {
-			c.Set("role", "admin")
-		}
-		if key == user {
-			c.Set("role", "user")
-		}
-		if key == "" {
-			errorResponse(c, "invalid API key", http.StatusUnauthorized)
+		switch key {
+		case admin:
+			c.Set("user_role", "admin")
+		case user:
+			c.Set("user_role", "user")
+		default:
+			errorResponse(c, "invalid key", "invalid API key", http.StatusUnauthorized)
 			c.Abort()
 		}
 
@@ -141,26 +140,50 @@ func AuthMiddleware() gin.HandlerFunc {
 // CORSMiddleware handles cross-origin requests
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: Set CORS headers
-		// Allow origins: http://localhost:3000, https://myblog.com
-		// Allow methods: GET, POST, PUT, DELETE, OPTIONS
-		// Allow headers: Content-Type, X-API-Key, X-Request-ID
+		origin := c.Request.Header.Get("Origin")
+		allowedOrigines := map[string]bool{
+			"http://localhost:3000": true,
+			"https://myblog.com":    true,
+		}
 
-		// TODO: Handle preflight OPTIONS requests
+		if allowedOrigines[origin] {
+			c.Header("Access-Control-Allow-Origin", origin)
+		}
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, X-API-Key, X-Request-ID")
+		c.Header("Access-Control-Allow-Credentials", "true")
 
+		if c.Request.Method == "OPTIONS" {
+			c.Status(http.StatusNoContent)
+			c.Abort()
+		}
 		c.Next()
 	}
 }
 
 // RateLimitMiddleware implements rate limiting per IP
-func RateLimitMiddleware() gin.HandlerFunc {
-	// TODO: Implement rate limiting
-	// Limit: 100 requests per IP per minute
-	// Use golang.org/x/time/rate package
-	// Set headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
-	// Return 429 if rate limit exceeded
 
+func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var limit = 100
+		ip := c.RemoteIP()
+		limitersMu.Lock()
+		limiter, ok := limiters[ip]
+
+		if !ok {
+			limiter = rate.NewLimiter(rate.Limit(limit), limit*2)
+			limiters[ip] = limiter
+		}
+		if !limiter.Allow() {
+			errorResponse(c, "too many requests", "too many requests", http.StatusTooManyRequests)
+			c.Abort()
+		}
+		l := strconv.Itoa(limit)
+		c.Header("X-RateLimit-Limit", l)
+		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(time.Minute).Unix()))
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", int(limiter.Tokens())))
+
+		limitersMu.Unlock()
 		c.Next()
 	}
 }
@@ -168,9 +191,12 @@ func RateLimitMiddleware() gin.HandlerFunc {
 // ContentTypeMiddleware validates content type for POST/PUT requests
 func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: Check content type for POST/PUT requests
-		// Must be application/json
-		// Return 415 if invalid content type
+		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
+			if c.Request.Header.Get("Content-Type") != "application/json" {
+				c.Status(http.StatusUnsupportedMediaType)
+				c.Abort()
+			}
+		}
 
 		c.Next()
 	}
@@ -182,6 +208,7 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		// TODO: Handle panics gracefully
 		// Return consistent error response format
 		// Include request ID in response
+		errorResponse(c, fmt.Sprintf("%v", recovered), "Internal server error", http.StatusInternalServerError)
 	})
 }
 
@@ -210,7 +237,7 @@ func getArticle(c *gin.Context) {
 	// TODO: Return 404 if not found
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		errorResponse(c, "bad request", http.StatusBadRequest)
+		errorResponse(c, "", "bad request", http.StatusBadRequest)
 	}
 	mu.RLock()
 	articlesCp := articles
@@ -221,44 +248,106 @@ func getArticle(c *gin.Context) {
 			return
 		}
 	}
-	errorResponse(c, "not found", http.StatusNotFound)
+	errorResponse(c, "", "not found", http.StatusNotFound)
 }
 
 // createArticle handles POST /articles - create new article (protected)
 func createArticle(c *gin.Context) {
 	// TODO: Parse JSON request body
+	article := Article{}
+	if err := c.ShouldBindJSON(&article); err != nil {
+		errorResponse(c, "", "failed to parse JSON", http.StatusBadRequest)
+		return
+	}
 	// TODO: Validate required fields
+	if err := validateArticle(article); err != nil {
+		errorResponse(c, "", "Invalid article data", http.StatusBadRequest)
+		return
+	}
 	// TODO: Add article to storage
+	mu.Lock()
+	article.ID = nextID
+	article.CreatedAt = time.Now()
+	nextID++
+	articles = append(articles, article)
+	mu.Unlock()
 	// TODO: Return created article
+	successResponse(c, article, "Successfully added", http.StatusCreated)
 }
 
 // updateArticle handles PUT /articles/:id - update article (protected)
 func updateArticle(c *gin.Context) {
-	// TODO: Get article ID from URL parameter
-	// TODO: Parse JSON request body
-	// TODO: Find and update article
-	// TODO: Return updated article
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
+		return
+	}
+	dataForUpdate := Article{}
+	if err := c.ShouldBindJSON(&dataForUpdate); err != nil {
+		errorResponse(c, "", err.Error(), http.StatusBadRequest)
+		return
+	}
+	mu.Lock()
+	article, i := findArticleByID(id)
+	if i == -1 {
+		errorResponse(c, "", "not found", http.StatusNotFound)
+		return
+	}
+	articleToUpdate := *article
+	if article.Author != "" {
+		articleToUpdate.Author = article.Author
+	}
+	if article.Content != "" {
+		articleToUpdate.Content = article.Content
+	}
+	if article.Title != "" {
+		articleToUpdate.Title = article.Title
+	}
+	articleToUpdate.UpdatedAt = time.Now()
+	if err := validateArticle(articleToUpdate); err != nil {
+		errorResponse(c, "", err.Error(), http.StatusBadRequest)
+		return
+	}
+	articles[i] = articleToUpdate
+	mu.Unlock()
+	successResponse(c, articleToUpdate, "success", http.StatusOK)
 }
 
 // deleteArticle handles DELETE /articles/:id - delete article (protected)
 func deleteArticle(c *gin.Context) {
-	// TODO: Get article ID from URL parameter
-	// TODO: Find and remove article
-	// TODO: Return success message
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		errorResponse(c, "", "article ID should be integer", http.StatusBadRequest)
+		return
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	_, i := findArticleByID(id)
+	if i == -1 {
+		errorResponse(c, "", "not found", http.StatusNotFound)
+		return
+	}
+	articles = append(articles[:i], articles[i+1:]...)
+	successResponse(c, nil, "deleted successfully", http.StatusOK)
 }
 
 // getStats handles GET /admin/stats - get API usage statistics (admin only)
 func getStats(c *gin.Context) {
-	// TODO: Check if user role is "admin"
-	// TODO: Return mock statistics
-
-	// stats := map[string]interface{}{
-	// 	"total_articles": len(articles),
-	// 	"total_requests": 0, // Could track this in middleware
-	// 	"uptime":         "24h",
-	// }
-
-	// TODO: Return stats in standard format
+	userRole := c.GetString("user_role")
+	switch userRole {
+	case "admin":
+		stats := map[string]interface{}{
+			"total_articles": len(articles),
+			"total_requests": 0, // Could track this in middleware
+			"uptime":         "24h",
+		}
+		successResponse(c, stats, "success", http.StatusOK)
+		return
+	case "user":
+		errorResponse(c, "", "forbidden", http.StatusForbidden)
+	default:
+		errorResponse(c, "", "not authorize", http.StatusUnauthorized)
+	}
 }
 
 // Helper functions
@@ -287,9 +376,10 @@ func validateArticle(article Article) error {
 	return nil
 }
 
-func errorResponse(c *gin.Context, err string, status int) {
+func errorResponse(c *gin.Context, msg, err string, status int) {
 	response := APIResponse{
 		Success:   false,
+		Message:   msg,
 		Error:     err,
 		RequestID: c.GetString("RequestID"),
 	}
