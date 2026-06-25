@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -43,6 +44,8 @@ var articles = []Article{
 var nextID = 3
 var mu sync.RWMutex
 var limiters = make(map[string]*rate.Limiter)
+var limitersCash = make(map[string]time.Time)
+var ttl = time.Duration(time.Minute)
 var limitersMu sync.RWMutex
 var startedAt = time.Now()
 var totalRequests atomic.Uint64
@@ -72,6 +75,9 @@ func main() {
 		protectedRoute.GET("/admin/stats", getStats)
 	}
 
+	ctx, cancle := context.WithCancel(context.Background())
+	defer cancle()
+	go limitersCleanup(ctx)
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("server failed to start: %v", err)
 	}
@@ -130,6 +136,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			admin = "admin-key-123"
 			user  = "user-key-456"
 		)
+		if admin == "" || user == "" {
+			errorResponse(c, "", "Authensication not configured", http.StatusInternalServerError)
+			c.Abort()
+			return
+		}
+
 		key := c.GetHeader("X-API-Key")
 		switch key {
 		case admin:
@@ -179,23 +191,24 @@ func RateLimitMiddleware() gin.HandlerFunc {
 		ip := c.ClientIP()
 		limitersMu.Lock()
 		limiter, ok := limiters[ip]
-
 		if !ok {
 			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(limit)), limit*2)
 			limiters[ip] = limiter
 		}
+		limitersCash[ip] = time.Now()
+
 		if !limiter.Allow() {
-			errorResponse(c, "too many requests", "too many requests", http.StatusTooManyRequests)
 			limitersMu.Unlock()
+			errorResponse(c, "too many requests", "too many requests", http.StatusTooManyRequests)
 			c.Abort()
 			return
 		}
+		limitersMu.Unlock()
 		l := strconv.Itoa(limit)
 		c.Header("X-RateLimit-Limit", l)
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Add(time.Minute).Unix()))
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", int(limiter.Tokens())))
 
-		limitersMu.Unlock()
 		c.Next()
 	}
 }
@@ -205,7 +218,7 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
 			if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "application/json") {
-				c.Status(http.StatusUnsupportedMediaType)
+				errorResponse(c, "", "StatusUnsupportedMediaType", http.StatusUnsupportedMediaType)
 				c.Abort()
 				return
 			}
@@ -430,6 +443,25 @@ func validateArticle(article Article) error {
 		return errors.New("author filed required")
 	}
 	return nil
+}
+
+func limitersCleanup(ctx context.Context) {
+	ticker := time.NewTicker(2 * time.Minute)
+	for {
+		select {
+		case <-ticker.C:
+			limitersMu.Lock()
+			for addr, liveSince := range limitersCash {
+				if time.Since(liveSince) > ttl {
+					delete(limitersCash, addr)
+					delete(limiters, addr)
+				}
+			}
+			limitersMu.Unlock()
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func errorResponse(c *gin.Context, msg, err string, status int) {
