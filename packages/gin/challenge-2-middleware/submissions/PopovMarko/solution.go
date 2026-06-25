@@ -218,7 +218,7 @@ func ContentTypeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
 			if !strings.HasPrefix(c.Request.Header.Get("Content-Type"), "application/json") {
-				errorResponse(c, "", "StatusUnsupportedMediaType", http.StatusUnsupportedMediaType)
+				errorResponse(c, "", "unsupported media type", http.StatusUnsupportedMediaType)
 				c.Abort()
 				return
 			}
@@ -447,6 +447,7 @@ func validateArticle(article Article) error {
 
 func limitersCleanup(ctx context.Context) {
 	ticker := time.NewTicker(2 * time.Minute)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
