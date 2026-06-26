@@ -31,7 +31,7 @@ func OptimizedSort(data []int) []int {
 	result := make([]int, len(data))
 	copy(result, data)
 	sort.Ints(result)
-	return SlowSort(result) // Replace this with your optimized implementation
+	return result // Replace this with your optimized implementation
 }
 
 // InefficientStringBuilder builds a string by repeatedly concatenating
@@ -51,6 +51,10 @@ func InefficientStringBuilder(parts []string, repeatCount int) string {
 // OptimizedStringBuilder is your optimized version of InefficientStringBuilder
 // It should produce identical results but perform better
 func OptimizedStringBuilder(parts []string, repeatCount int) string {
+	if repeatCount <= 0 {
+		return ""
+	}
+
 	totalLen := 0
 	for _, p := range parts {
 		totalLen += len(p)
@@ -139,19 +143,22 @@ func HighAllocationSearch(text, substr string) map[int]string {
 // OptimizedSearch is your optimized version of HighAllocationSearch
 // It should produce identical results but perform better with fewer allocations
 func OptimizedSearch(text, substr string) map[int]string {
-	if len(substr) == 0 || len(text) < len(substr) {
-		return make(map[int]string)
-	}
-
 	result := make(map[int]string)
+	if len(substr) == 0 {
+		for i := 0; i < len(text); i++ {
+			result[i] = ""
+		}
+		return result
+	}
+	if len(text) < len(substr) {
+		return result
+	}
 	subLen := len(substr)
-
 	for i := 0; i <= len(text)-subLen; i++ {
 		if strings.EqualFold(text[i:i+subLen], substr) {
 			result[i] = text[i : i+subLen]
 		}
 	}
-
 	return result
 }
 
