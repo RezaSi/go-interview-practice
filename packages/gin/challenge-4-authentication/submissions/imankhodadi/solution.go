@@ -87,9 +87,9 @@ var refreshTokenLock sync.RWMutex
 
 // Configuration
 var (
-	jwtSecret         = []byte("your-super-secret-jwt-key") // fixed for assignment, move it to env in production
-	accessTokenTTL    = 15 * time.Minute                    // 15 minutes
-	refreshTokenTTL   = 7 * 24 * time.Hour                  // 7 days
+	jwtSecret         = []byte(rand.Text())
+	accessTokenTTL    = 15 * time.Minute    // 15 minutes
+	refreshTokenTTL   = 7 * 24 * time.Hour  // 7 days
 	maxFailedAttempts = 5
 	lockoutDuration   = 30 * time.Minute
 )
@@ -306,6 +306,7 @@ func register(c *gin.Context) {
 		})
 		return
 	}
+	hashedPass, err := hashPassword(req.Password)
 	userLock.Lock()
 	defer userLock.Unlock()
 	for _, user := range users {
@@ -325,7 +326,6 @@ func register(c *gin.Context) {
 		}
 	}
 
-	hashedPass, err := hashPassword(req.Password)
 	if err != nil {
 		c.JSON(500, APIResponse{
 			Success: false,
@@ -534,6 +534,12 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
+	
+	
+	refreshTokenLock.Lock()
+	delete(refreshTokens, req.RefreshToken)
+	delete(refreshTokensExpiresAt, req.RefreshToken)
+	refreshTokenLock.Unlock()
 	tokens, err := generateTokens(userId, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -542,10 +548,6 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	refreshTokenLock.Lock()
-	delete(refreshTokens, req.RefreshToken)
-	delete(refreshTokensExpiresAt, req.RefreshToken)
-	refreshTokenLock.Unlock()
 	c.JSON(200, APIResponse{
 		Success: true,
 		Data:    tokens,
