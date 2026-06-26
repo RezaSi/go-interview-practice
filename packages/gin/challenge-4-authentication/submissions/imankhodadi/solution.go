@@ -308,6 +308,13 @@ func register(c *gin.Context) {
 		return
 	}
 	hashedPass, err := hashPassword(req.Password)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Internal error",
+		})
+		return
+	}
 	userLock.Lock()
 	defer userLock.Unlock()
 	req.Username = strings.ToLower(req.Username)
@@ -328,14 +335,6 @@ func register(c *gin.Context) {
 			})
 			return
 		}
-	}
-
-	if err != nil {
-		c.JSON(500, APIResponse{
-			Success: false,
-			Error:   "Internal error",
-		})
-		return
 	}
 	createdTime := time.Now()
 	newUser := User{
@@ -388,8 +387,6 @@ func login(c *gin.Context) {
 	}
 	userID := user.ID
 	hash := user.PasswordHash
-	role := user.Role
-	active := user.IsActive
 	locked := isAccountLocked(user)
 
 	// Check if account is locked
@@ -426,7 +423,7 @@ func login(c *gin.Context) {
 		})
 		return
 	}
-	if !active {
+	if !u.IsActive {
 		userLock.Unlock()
 		c.JSON(401, APIResponse{
 			Success: false,
@@ -434,12 +431,14 @@ func login(c *gin.Context) {
 		})
 		return
 	}
+	username := u.Username
+	role := u.Role
 	resetFailedAttempts(u)
 	now := time.Now()
 	u.LastLogin = &now
 	userLock.Unlock()
 
-	tokens, err := generateTokens(userID, user.Username, role)
+	tokens, err := generateTokens(userID, username, role)
 	if err != nil {
 
 		c.JSON(500, APIResponse{
@@ -548,23 +547,22 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	if isRefreshTokenExpired(req.RefreshToken) {
-		c.JSON(401, APIResponse{
-			Success: false,
-			Error:   "Refresh token expired",
-		})
-		return
-	}
-	refreshTokenLock.RLock()
+	refreshTokenLock.Lock()
 	userId, exists := refreshTokens[req.RefreshToken]
-	refreshTokenLock.RUnlock()
-	if !exists {
+	expiry, hasExpiry := refreshTokensExpiresAt[req.RefreshToken]
+	if !exists || !hasExpiry || time.Now().After(expiry) {
+		delete(refreshTokens, req.RefreshToken)
+		delete(refreshTokensExpiresAt, req.RefreshToken)
+		refreshTokenLock.Unlock()
 		c.JSON(401, APIResponse{
 			Success: false,
 			Error:   "Invalid or expired refresh token",
 		})
 		return
 	}
+	delete(refreshTokens, req.RefreshToken)
+	delete(refreshTokensExpiresAt, req.RefreshToken)
+	refreshTokenLock.Unlock()
 	userLock.RLock()
 	defer userLock.RUnlock()
 	user := findUserByID(userId)
@@ -575,11 +573,6 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-
-	refreshTokenLock.Lock()
-	delete(refreshTokens, req.RefreshToken)
-	delete(refreshTokensExpiresAt, req.RefreshToken)
-	refreshTokenLock.Unlock()
 	if !user.IsActive {
 		c.JSON(500, APIResponse{
 			Success: false,
@@ -795,10 +788,10 @@ func changePassword(c *gin.Context) {
 	}
 
 	userID := userIDVal.(int)
-	userLock.Lock()
+	userLock.RLock()
 	user := findUserByID(userID)
-	userLock.Unlock()
 	if user == nil {
+		userLock.RUnlock()
 		c.JSON(404, APIResponse{
 			Success: false,
 			Error:   "User not found",
@@ -807,6 +800,7 @@ func changePassword(c *gin.Context) {
 	}
 
 	currentHash := user.PasswordHash
+	userLock.RUnlock()
 	if !verifyPassword(req.CurrentPassword, currentHash) {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -830,10 +824,20 @@ func changePassword(c *gin.Context) {
 		return
 	}
 	userLock.Lock()
+	user = findUserByID(userID)
+	if user == nil {
+		userLock.Unlock()
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
 	user.PasswordHash = hash
-	user.UpdatedAt = time.Now()
+ 		user.UpdatedAt = time.Now()
+
 	userLock.Unlock()
-	revokeUserRefreshTokens(user.ID)
+	revokeUserRefreshTokens(userID)
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Password changed successfully",
