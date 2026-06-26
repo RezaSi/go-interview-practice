@@ -78,7 +78,7 @@ var users = []User{}
 var nextUserID = 1
 var userLock sync.RWMutex
 
-var blacklistedTokens = make(map[string]bool) // Token blacklist for logout
+var blacklistedTokens = make(map[string]bool) // Token blacklist for logout, TODO: Store expiry timestamps and periodically purge expired entries.
 var blacklistedTokenLock sync.RWMutex
 
 var refreshTokens = make(map[string]int)                // RefreshToken -> UserID mapping
@@ -86,10 +86,17 @@ var refreshTokensExpiresAt = make(map[string]time.Time) // RefreshToken -> Expir
 var refreshTokenLock sync.RWMutex
 
 // Configuration
+var jwtSecret = make([]byte, 32)
+
+func init() {
+	if _, err := rand.Read(jwtSecret); err != nil { //jwtSecret = []byte(os.Getenv("JWT_SECRET")) for production
+		panic(err)
+	}
+}
+
 var (
-	jwtSecret         = []byte(rand.Text())
-	accessTokenTTL    = 15 * time.Minute    // 15 minutes
-	refreshTokenTTL   = 7 * 24 * time.Hour  // 7 days
+	accessTokenTTL    = 15 * time.Minute   // 15 minutes
+	refreshTokenTTL   = 7 * 24 * time.Hour // 7 days
 	maxFailedAttempts = 5
 	lockoutDuration   = 30 * time.Minute
 )
@@ -194,13 +201,12 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 		tokenString,
 		&JWTClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-
 			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 				return nil, errors.New("unexpected signing method")
 			}
-
 			return jwtSecret, nil
 		},
+		jwt.WithIssuer("your-app"),
 	)
 
 	if err != nil {
@@ -213,9 +219,8 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 	return nil, errors.New("invalid token")
 }
 
+// required the holder to hold the lock. if this function locks, the outer function changes unsafe pointer
 func findUserByUsername(username string) *User {
-	userLock.RLock()
-	defer userLock.RUnlock()
 	for i := range users {
 		if users[i].Username == username {
 			return &users[i]
@@ -224,9 +229,8 @@ func findUserByUsername(username string) *User {
 	return nil
 }
 
+// required the holder to hold the lock. if this function locks, the outer function changes unsafe pointer
 func findUserByEmail(email string) *User {
-	userLock.RLock()
-	defer userLock.RUnlock()
 	for i := range users {
 		if users[i].Email == email {
 			return &users[i]
@@ -235,9 +239,8 @@ func findUserByEmail(email string) *User {
 	return nil
 }
 
+// required the holder to hold the lock. if this function locks, the outer function changes unsafe pointer
 func findUserByID(id int) *User {
-	userLock.RLock()
-	defer userLock.RUnlock()
 	for i := range users {
 		if users[i].ID == id {
 			return &users[i]
@@ -253,9 +256,8 @@ func isAccountLocked(user *User) bool {
 	return time.Now().Before(*user.LockedUntil)
 }
 
+// required the holder to hold the lock.
 func recordFailedAttempt(user *User) {
-	userLock.Lock()
-	defer userLock.Unlock()
 	user.FailedAttempts++
 	if user.FailedAttempts >= maxFailedAttempts {
 		lockUntil := time.Now().Add(lockoutDuration)
@@ -263,9 +265,8 @@ func recordFailedAttempt(user *User) {
 	}
 }
 
+// required the holder to hold the lock
 func resetFailedAttempts(user *User) {
-	userLock.Lock()
-	defer userLock.Unlock()
 	user.FailedAttempts = 0
 	user.LockedUntil = nil
 }
@@ -309,6 +310,9 @@ func register(c *gin.Context) {
 	hashedPass, err := hashPassword(req.Password)
 	userLock.Lock()
 	defer userLock.Unlock()
+	req.Username = strings.ToLower(req.Username)
+
+	req.Email = strings.ToLower(req.Email)
 	for _, user := range users {
 		if user.Username == req.Username {
 			c.JSON(409, APIResponse{
@@ -371,50 +375,73 @@ func login(c *gin.Context) {
 		return
 	}
 	// Find user by username
-	user := findUserByUsername(req.Username)
+	userLock.RLock()
+	user := findUserByUsername(strings.ToLower(req.Username))
+
 	if user == nil {
+		userLock.RUnlock()
 		c.JSON(401, APIResponse{
 			Success: false,
 			Error:   "Invalid credentials",
 		})
 		return
 	}
+	userID := user.ID
+	hash := user.PasswordHash
+	role := user.Role
+	active := user.IsActive
+	locked := isAccountLocked(user)
+
 	// Check if account is locked
-	if isAccountLocked(user) {
+	if locked {
+		userLock.RUnlock()
 		c.JSON(423, APIResponse{
 			Success: false,
 			Error:   "Account is temporarily locked",
 		})
 		return
 	}
+	userLock.RUnlock()
 	// Verify password
-	if !verifyPassword(req.Password, user.PasswordHash) {
-		recordFailedAttempt(user)
+	if !verifyPassword(req.Password, hash) {
+		userLock.Lock()
+		u := findUserByID(userID)
+		if u != nil {
+			recordFailedAttempt(u)
+		}
+		userLock.Unlock()
 		c.JSON(401, APIResponse{
 			Success: false,
 			Error:   "Invalid credentials",
 		})
 		return
 	}
-
-	if !user.IsActive {
+	userLock.Lock()
+	u := findUserByID(userID)
+	if u == nil {
+		userLock.Unlock()
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Invalid user",
+		})
+		return
+	}
+	if !active {
+		userLock.Unlock()
 		c.JSON(401, APIResponse{
 			Success: false,
 			Error:   "Not active",
 		})
 		return
 	}
-	// Reset failed attempts on successful login
-	resetFailedAttempts(user)
-
-	// Update last login time
+	resetFailedAttempts(u)
 	now := time.Now()
-	userLock.Lock()
-	user.LastLogin = &now
+	u.LastLogin = &now
 	userLock.Unlock()
 
-	tokens, err := generateTokens(user.ID, user.Username, user.Role)
+	tokens, err := generateTokens(userID, user.Username, role)
 	if err != nil {
+
 		c.JSON(500, APIResponse{
 			Success: false,
 			Error:   "Failed to generate tokens",
@@ -462,7 +489,8 @@ func logout(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token,omitempty"`
 	}
-	c.ShouldBindJSON(&req)
+	_ = c.ShouldBindJSON(&req) //no error checking, RefreshToken isoptional
+
 	if req.RefreshToken != "" {
 		refreshTokenLock.Lock()
 		delete(refreshTokens, req.RefreshToken)
@@ -495,6 +523,18 @@ func isRefreshTokenExpired(token string) bool {
 	return false
 }
 
+func revokeUserRefreshTokens(userID int) {
+	refreshTokenLock.Lock()
+	defer refreshTokenLock.Unlock()
+
+	for token, uid := range refreshTokens {
+		if uid == userID {
+			delete(refreshTokens, token)
+			delete(refreshTokensExpiresAt, token)
+		}
+	}
+}
+
 // POST /auth/refresh - Refresh access token
 func refreshToken(c *gin.Context) {
 	var req struct {
@@ -508,7 +548,6 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-
 	if isRefreshTokenExpired(req.RefreshToken) {
 		c.JSON(401, APIResponse{
 			Success: false,
@@ -516,16 +555,18 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	refreshTokenLock.Lock()
+	refreshTokenLock.RLock()
 	userId, exists := refreshTokens[req.RefreshToken]
-	refreshTokenLock.Unlock()
+	refreshTokenLock.RUnlock()
 	if !exists {
 		c.JSON(401, APIResponse{
 			Success: false,
-			Error:   "Invalid refresh token",
+			Error:   "Invalid or expired refresh token",
 		})
 		return
 	}
+	userLock.RLock()
+	defer userLock.RUnlock()
 	user := findUserByID(userId)
 	if user == nil {
 		c.JSON(401, APIResponse{
@@ -534,12 +575,18 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
-	
-	
+
 	refreshTokenLock.Lock()
 	delete(refreshTokens, req.RefreshToken)
 	delete(refreshTokensExpiresAt, req.RefreshToken)
 	refreshTokenLock.Unlock()
+	if !user.IsActive {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Invalid user",
+		})
+		return
+	}
 	tokens, err := generateTokens(userId, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -643,7 +690,8 @@ func getUserProfile(c *gin.Context) {
 	}
 
 	userID := userIDVal.(int)
-
+	userLock.RLock()
+	defer userLock.RUnlock()
 	user := findUserByID(userID)
 	if user == nil {
 		c.JSON(404, APIResponse{
@@ -652,7 +700,6 @@ func getUserProfile(c *gin.Context) {
 		})
 		return
 	}
-
 	c.JSON(200, APIResponse{
 		Success: true,
 		Data:    user,
@@ -667,7 +714,6 @@ func updateUserProfile(c *gin.Context) {
 		LastName  string `json:"last_name" binding:"required,min=2,max=50"`
 		Email     string `json:"email" binding:"required,email"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -675,10 +721,7 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
-	// Get user ID from context
-	// Find user by ID
 	userId, exists := c.Get("userID")
-
 	if !exists {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -695,11 +738,12 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
-	userLock.RLock()
+	userLock.Lock()
+	defer userLock.Unlock()
+	req.Email = strings.ToLower(req.Email)
 	for i := range users {
 		if users[i].Email == req.Email &&
 			users[i].ID != userIdInt {
-			userLock.RUnlock()
 			c.JSON(409, APIResponse{
 				Success: false,
 				Error:   "Email already exists",
@@ -707,9 +751,7 @@ func updateUserProfile(c *gin.Context) {
 			return
 		}
 	}
-	userLock.RUnlock()
 	user := findUserByID(userIdInt)
-
 	if user == nil {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -717,14 +759,10 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
-
-	userLock.Lock()
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
-	user.Email = req.Email
+	user.Email = strings.ToLower(req.Email)
 	user.UpdatedAt = time.Now()
-	userLock.Unlock()
-
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Profile updated successfully",
@@ -733,6 +771,7 @@ func updateUserProfile(c *gin.Context) {
 
 // POST /user/change-password - Change user password
 func changePassword(c *gin.Context) {
+
 	var req struct {
 		CurrentPassword string `json:"current_password" binding:"required"`
 		NewPassword     string `json:"new_password" binding:"required,min=8"`
@@ -756,8 +795,9 @@ func changePassword(c *gin.Context) {
 	}
 
 	userID := userIDVal.(int)
+	userLock.Lock()
 	user := findUserByID(userID)
-
+	userLock.Unlock()
 	if user == nil {
 		c.JSON(404, APIResponse{
 			Success: false,
@@ -766,14 +806,14 @@ func changePassword(c *gin.Context) {
 		return
 	}
 
-	if !verifyPassword(req.CurrentPassword, user.PasswordHash) {
+	currentHash := user.PasswordHash
+	if !verifyPassword(req.CurrentPassword, currentHash) {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Error:   "Current password is incorrect",
 		})
 		return
 	}
-
 	if !isStrongPassword(req.NewPassword) {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -781,7 +821,6 @@ func changePassword(c *gin.Context) {
 		})
 		return
 	}
-
 	hash, err := hashPassword(req.NewPassword)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -790,12 +829,11 @@ func changePassword(c *gin.Context) {
 		})
 		return
 	}
-
 	userLock.Lock()
 	user.PasswordHash = hash
 	user.UpdatedAt = time.Now()
 	userLock.Unlock()
-
+	revokeUserRefreshTokens(user.ID)
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Password changed successfully",
@@ -816,10 +854,10 @@ func listUsers(c *gin.Context) {
 	})
 }
 
-// PUT /admin/users/:id/role - Change user role (admin only)
+// PUT /admin/users/:id/role - Change user role (admin only), TODO: make a super admin to grant admin role
 func changeUserRole(c *gin.Context) {
 	userID := c.Param("id")
-	_, err := strconv.Atoi(userID)
+	id, err := strconv.Atoi(userID)
 	if err != nil {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -857,10 +895,6 @@ func changeUserRole(c *gin.Context) {
 		})
 		return
 	}
-
-	// TODO: Find user by ID
-	// TODO: Update user role
-	id, err := strconv.Atoi(userID)
 	if err != nil {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -868,7 +902,8 @@ func changeUserRole(c *gin.Context) {
 		})
 		return
 	}
-
+	userLock.Lock()
+	defer userLock.Unlock()
 	user := findUserByID(id)
 	if user == nil {
 		c.JSON(404, APIResponse{
@@ -877,9 +912,7 @@ func changeUserRole(c *gin.Context) {
 		})
 		return
 	}
-	userLock.Lock()
 	user.Role = req.Role
-	userLock.Unlock()
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "User role updated successfully",
