@@ -14,9 +14,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
     authHeader := "X-Auth-Token"
     
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authTokens := r.Header[authHeader]
-	    // Assume auth token is first (given the current set of test cases).
-		if (len(authTokens) != 0) && (authTokens[0] == validToken) {
+		authToken := r.Header.Get(authHeader)
+		if (authToken == validToken) {
 	        next.ServeHTTP(w, r)
 		} else {
 	        w.WriteHeader(http.StatusUnauthorized)
