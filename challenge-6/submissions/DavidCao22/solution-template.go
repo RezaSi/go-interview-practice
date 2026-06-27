@@ -13,6 +13,7 @@ import (
 // Words are defined as sequences of letters and digits.
 // All words are converted to lowercase before counting.
 // All punctuation, spaces, and other non-alphanumeric characters are ignored.
+// Hyphenated words should be split into separate words.
 //
 // For example:
 // Input: "The quick brown fox jumps over the lazy dog."
