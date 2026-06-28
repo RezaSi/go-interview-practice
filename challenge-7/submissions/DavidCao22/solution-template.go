@@ -102,8 +102,9 @@ func (a *BankAccount) Deposit(amount float64) error {
 	}
 	
 	a.mu.Lock()
+    defer a.mu.Unlock()
+    
     a.Balance += amount
-    a.mu.Unlock()
 	
 	return nil
 }
@@ -115,14 +116,15 @@ func (a *BankAccount) Withdraw(amount float64) error {
 	if err := isAmtValid(amount); err != nil {
 	    return err
 	}
+	
+	a.mu.Lock()
+    defer a.mu.Unlock()
+	
 	if err := doesWithdrawalGoBelowMinBalance(amount, a.Balance, a.MinBalance); err != nil {
 	    return err
 	}
-	
-	a.mu.Lock()
     a.Balance -= amount
-    a.mu.Unlock()
-	
+    
 	return nil
 }
 
@@ -130,13 +132,21 @@ func (a *BankAccount) Withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
-    if err := a.Withdraw(amount); err != nil {
-        return err
-    }
-    if err := target.Deposit(amount); err != nil {
-        return err
-    }
+    if err := isAmtValid(amount); err != nil {
+	    return err
+	}
+	
+    a.mu.Lock()
+    defer a.mu.Unlock()
+    target.mu.Lock()
+    defer target.mu.Unlock()
     
+	if err := doesWithdrawalGoBelowMinBalance(amount, a.Balance, a.MinBalance); err != nil {
+	    return err
+	}
+    a.Balance -= amount
+    target.Balance += amount
+
     return nil
 } 
 
