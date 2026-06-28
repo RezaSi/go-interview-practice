@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -76,8 +77,10 @@ type APIResponse struct {
 
 // Global data stores (in a real app, these would be databases)
 var users = []User{}
+var usersMU sync.RWMutex
 var blacklistedTokens = make(map[string]bool) // Token blacklist for logout
-var refreshTokens = make(map[string]int)      // RefreshToken -> UserID mapping
+
+var refreshTokens = make(map[string]int) // RefreshToken -> UserID mapping
 var nextUserID = 1
 
 // Configuration
@@ -211,17 +214,28 @@ func findUserByID(id int) *User {
 // TODO: Implement account lockout check
 func isAccountLocked(user *User) bool {
 	// TODO: Check if account is locked based on LockedUntil field
-	return false
+	return time.Until(*user.LockedUntil) > 0
 }
 
 // TODO: Implement failed attempt tracking
 func recordFailedAttempt(user *User) {
-	// TODO: Increment failed attempts counter
-	// TODO: Lock account if max attempts reached
+	user.FailedAttempts++
+	now := time.Now()
+	if user.LockedUntil == nil {
+		user.LockedUntil = &now
+	}
+
+	if user.FailedAttempts > 5 {
+		*user.LockedUntil = time.Now().Add(lockoutDuration)
+		return
+	}
 }
 
 func resetFailedAttempts(user *User) {
 	// TODO: Reset failed attempts counter and unlock account
+	user.FailedAttempts = 0
+	now := time.Now()
+	user.LockedUntil = &now
 }
 
 // TODO: Generate secure random token
@@ -266,9 +280,51 @@ func register(c *gin.Context) {
 	}
 
 	// TODO: Check if username already exists
-	// TODO: Check if email already exists
-	// TODO: Hash password
-	// TODO: Create user and add to users slice
+	if user := findUserByUsername(req.Username); user != nil {
+		c.JSON(409, APIResponse{
+			Success: false,
+			Error:   "Username duplicated",
+		})
+		return
+	}
+	if user := findUserByEmail(req.Email); user != nil {
+		c.JSON(200, APIResponse{
+			Success: false,
+			Error:   "Email already registered",
+		})
+		return
+	}
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Internal server error",
+		})
+		return
+	}
+
+	now := time.Now()
+	usersMU.Lock()
+	id := nextUserID
+	nextUserID++
+
+	user := User{
+		ID:            id,
+		Username:      req.Username,
+		Email:         req.Email,
+		Password:      req.Password,
+		PasswordHash:  hashedPassword,
+		FirstName:     req.FirstName,
+		LastName:      req.LastName,
+		Role:          "",
+		IsActive:      true,
+		EmailVerified: false,
+		LockedUntil:   &now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+	users = append(users, user)
+	usersMU.Unlock()
 
 	c.JSON(201, APIResponse{
 		Success: true,
