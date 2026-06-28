@@ -243,7 +243,11 @@ func (h *BookHandler) handleGetBookById (w http.ResponseWriter, r *http.Request)
 }
 
 func (h *BookHandler) handleCreateBook (w http.ResponseWriter, r *http.Request) {
-    book := extractBookFromResponseBody(w, r)
+    book, err := extractBookFromResponseBody(r)
+    if err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }    
     book.ID = uuid.New().String()
     
     if err := h.Service.CreateBook(book); err != nil {
@@ -254,10 +258,21 @@ func (h *BookHandler) handleCreateBook (w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *BookHandler) handleUpdateBook (w http.ResponseWriter, r *http.Request) {
-    book := extractBookFromResponseBody(w, r)
+    id := r.PathValue("id")
     
-    if err := h.Service.UpdateBook(book.ID, book); err != nil {
-        http.Error(w, fmt.Sprintf("Cannot update book with ID %v. %v", book.ID, err), http.StatusNotFound)
+    book, err := extractBookFromResponseBody(r)
+    if err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+    if book.ID != "" && book.ID != id {
+        http.Error(w, "Book ID in body must match URL", http.StatusBadRequest)
+        return
+    }
+    book.ID = id
+
+    if err := h.Service.UpdateBook(id, book); err != nil {
+        http.Error(w, fmt.Sprintf("Cannot update book with ID %v. %v", id, err), http.StatusNotFound)
         return
     }
     
@@ -297,6 +312,8 @@ func (h *BookHandler) handleSearchBooks (w http.ResponseWriter, r *http.Request)
         writeJSONResponse(w, books, http.StatusOK)
         return
     }
+    
+    http.Error(w, "Cannot search, missing search criteria", http.StatusBadRequest)
 }
 
 // HandleBooks processes the book-related endpoints
@@ -327,16 +344,14 @@ func writeJSONResponse(w http.ResponseWriter, data interface{}, status int) {
     }
 }
 
-func extractBookFromResponseBody(w http.ResponseWriter, r *http.Request) *Book {
+func extractBookFromResponseBody(r *http.Request) (*Book, error) {
     var book Book
     
-    decoder := json.NewDecoder(r.Body)
     defer r.Body.Close()
-    if err := decoder.Decode(&book); err != nil {
-        http.Error(w, "Invalid request payload", http.StatusBadRequest)
-        return nil
+    if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+        return nil, err
     }
-    return &book
+    return &book, nil
 }
 
 func main() {
