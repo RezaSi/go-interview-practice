@@ -28,7 +28,7 @@ type AccountError struct {
 }
 
 func (e *AccountError) Error() string {
-	return fmt.Sprintf("Error, missing fields %v. Cannot create account.", e.MissingFields)
+	return fmt.Sprintf("Error, field(s) %v are invalid.", e.MissingFields)
 }
 
 // InsufficientFundsError occurs when a withdrawal or transfer would bring the balance below minimum.
@@ -65,7 +65,8 @@ func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*Bank
 	missingFields := []string{}
 	if id == "" {
 	    missingFields = append(missingFields, "id")
-	} else if owner == ""{
+	} 
+	if owner == ""{
 	    missingFields = append(missingFields, "owner")
 	}
 	if len(missingFields) != 0 {
@@ -135,6 +136,9 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
     if err := isAmtValid(amount); err != nil {
 	    return err
 	}
+	if target == nil {
+        return &AccountError{[]string{"target"}}
+    }
 	
     a.mu.Lock()
     defer a.mu.Unlock()
