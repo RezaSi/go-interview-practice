@@ -24,11 +24,11 @@ const (
 
 // AccountError is a general error type for bank account operations.
 type AccountError struct {
-	MissingFields   []string
+	Fields   []string
 }
 
 func (e *AccountError) Error() string {
-	return fmt.Sprintf("Error, field(s) %v are invalid.", e.MissingFields)
+	return fmt.Sprintf("Error, field(s) %v are invalid.", e.Fields)
 }
 
 // InsufficientFundsError occurs when a withdrawal or transfer would bring the balance below minimum.
@@ -62,15 +62,15 @@ func (e *ExceedsLimitError) Error() string {
 // NewBankAccount creates a new bank account with the given parameters.
 // It returns an error if any of the parameters are invalid.
 func NewBankAccount(id, owner string, initialBalance, minBalance float64) (*BankAccount, error) {
-	missingFields := []string{}
+	badFields := []string{}
 	if id == "" {
-	    missingFields = append(missingFields, "id")
+	    badFields = append(badFields, "id")
 	} 
 	if owner == ""{
-	    missingFields = append(missingFields, "owner")
+	    badFields = append(badFields, "owner")
 	}
-	if len(missingFields) != 0 {
-        return nil, &AccountError{ missingFields }
+	if len(badFields) != 0 {
+        return nil, &AccountError{ badFields }
 	}
     
     if initialBalance < 0.0 {
@@ -139,11 +139,24 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
 	if target == nil {
         return &AccountError{[]string{"target"}}
     }
-	
-    a.mu.Lock()
-    defer a.mu.Unlock()
-    target.mu.Lock()
-    defer target.mu.Unlock()
+    if a.ID == target.ID {
+        return &AccountError{[]string{"target"}}
+    }
+    
+    // Ensure locks are done in a deterministically fixed order.
+	if a.ID < target.ID {
+        a.mu.Lock()
+        defer a.mu.Unlock()
+        
+        target.mu.Lock()
+        defer target.mu.Unlock()
+	} else {
+        target.mu.Lock()
+        defer target.mu.Unlock()
+	    
+	    a.mu.Lock()
+        defer a.mu.Unlock()
+	}
     
 	if err := doesWithdrawalGoBelowMinBalance(amount, a.Balance, a.MinBalance); err != nil {
 	    return err
