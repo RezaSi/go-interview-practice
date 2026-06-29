@@ -24,6 +24,7 @@
 | Cpoing | 6 | 6 |
 | DEEZY4U | 6 | 6 |
 | DaniilYuz | 6 | 6 |
+| DavidCao22 | 6 | 6 |
 | Dhar01 | 6 | 6 |
 | DigvijayWagh22 | 6 | 6 |
 | Divyamsirswal | 6 | 6 |

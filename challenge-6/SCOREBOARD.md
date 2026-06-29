@@ -11,6 +11,7 @@
 | Be1chenok | 7 | 7 |
 | BrianHuang813 | 7 | 7 |
 | Cpoing | 7 | 7 |
+| DavidCao22 | 7 | 7 |
 | ForcemCS | 7 | 7 |
 | Francky999 | 7 | 7 |
 | Gandook | 7 | 7 |
