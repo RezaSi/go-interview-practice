@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -118,7 +119,7 @@ func (ps *ProductStore) UpdateProduct(product *Product) error {
     
     exists, err := productExists(product.ID, tx)
     if err != nil || !exists {
-        return fail("UpdateProduct", err)
+        return fail("UpdateProduct, product does not exist", err)
     }
     
     updateProduct := `
@@ -147,7 +148,7 @@ func (ps *ProductStore) DeleteProduct(id int64) error {
     
     exists, err := productExists(id, tx)
     if err != nil || !exists {
-        return fail("DeleteProduct", err)
+        return fail("DeleteProduct, product does not exist", err)
     }
     
     deleteProduct := `
@@ -173,15 +174,16 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 	`
     if category == "" {
     	selectProducts += ";"
-	    if rows, err = ps.db.Query(selectProducts); err == sql.ErrNoRows {
+	    if rows, err = ps.db.Query(selectProducts); err != nil {
             return nil, fail("ListProducts, no products stored", err)
         }
     } else {
     	selectProducts += "WHERE category=?;"
-    	if rows, err = ps.db.Query(selectProducts, category); err == sql.ErrNoRows {
+    	if rows, err = ps.db.Query(selectProducts, category); err != nil {
             return nil, fail(fmt.Sprintf("ListProducts, no products with category %v", category), err)
         }
     }
+    defer rows.Close()
     
     products := []Product{}
     for rows.Next() {
@@ -205,6 +207,10 @@ func (ps *ProductStore) ListProducts(category string) ([]*Product, error) {
 
 // BatchUpdateInventory updates the quantity of multiple products in a single transaction
 func (ps *ProductStore) BatchUpdateInventory(updates map[int64]int) error {
+    if len(updates) == 0 {
+        return errors.New("BatchUpdateInventory, no updates to execute")
+    }
+    
 	tx, err := ps.db.Begin()
 	if err != nil {
         return fail("BatchUpdateInventory", err)
