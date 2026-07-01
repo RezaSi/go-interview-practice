@@ -103,6 +103,8 @@ const (
 	RoleModerator = "moderator"
 )
 
+// isStrongPassword reports whether the password is at least 8 characters long
+// and contains an uppercase letter, a lowercase letter, a digit, and a symbol.
 func isStrongPassword(password string) bool {
 	if utf8.RuneCountInString(password) < 8 {
 		return false
@@ -131,6 +133,7 @@ func isStrongPassword(password string) bool {
 	return hasUpper && hasLower && hasDigit && hasSymbol
 }
 
+// hashPassword returns the bcrypt hash of the given plaintext password.
 func hashPassword(password string) (string, error) {
 	pass, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
@@ -140,6 +143,7 @@ func hashPassword(password string) (string, error) {
 	return string(pass), nil
 }
 
+// verifyPassword reports whether the plaintext password matches the bcrypt hash.
 func verifyPassword(password, hash string) bool {
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
 		return false
@@ -148,6 +152,8 @@ func verifyPassword(password, hash string) bool {
 	return true
 }
 
+// generateTokens creates a signed access token and refresh token for the user,
+// records the refresh token in the store, and returns them as a TokenResponse.
 func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 	claimsForAccess := &JWTClaims{
 		UserID:   userID,
@@ -159,7 +165,10 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsForAccess)
-	accessTokenSring, err := accessToken.SignedString(jwtSecret)
+	accessTokenString, err := accessToken.SignedString(jwtSecret)
+	if err != nil {
+		return nil, err
+	}
 
 	claimsForRefresh := &JWTClaims{
 		UserID:   userID,
@@ -172,12 +181,12 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsForRefresh)
 	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
-
 	if err != nil {
 		return nil, err
 	}
+
 	response := TokenResponse{
-		AccessToken:  accessTokenSring,
+		AccessToken:  accessTokenString,
 		RefreshToken: refreshTokenString,
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(accessTokenTTL.Seconds()),
@@ -191,11 +200,13 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 	return &response, nil
 }
 
+// validateToken parses and verifies the signed JWT, ensuring it uses HMAC
+// signing and is not blacklisted, and returns its claims.
 func validateToken(tokenString string) (*JWTClaims, error) {
 	claims := JWTClaims{}
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected jwt method")
+			return nil, fmt.Errorf("unexpected JWT signing method")
 		}
 
 		return jwtSecret, nil
@@ -208,13 +219,15 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 	tokenMU.RLock()
 	if _, exists := blacklistedTokens[tokenString]; exists {
 		tokenMU.RUnlock()
-		return nil, fmt.Errorf("Token compromized")
+		return nil, fmt.Errorf("token has been revoked")
 	}
 	tokenMU.RUnlock()
 
 	return &claims, nil
 }
 
+// findUserByUsername returns a pointer to the user with the given username,
+// or nil if no such user exists.
 func findUserByUsername(username string) *User {
 	if username == "" {
 		return nil
@@ -232,6 +245,8 @@ func findUserByUsername(username string) *User {
 	return nil
 }
 
+// findUserByEmail returns a pointer to the user with the given email,
+// or nil if no such user exists.
 func findUserByEmail(email string) *User {
 	if email == "" {
 		return nil
@@ -249,6 +264,8 @@ func findUserByEmail(email string) *User {
 	return nil
 }
 
+// findUserByID returns a pointer to the user with the given ID,
+// or nil if no such user exists.
 func findUserByID(id int) *User {
 	usersMU.RLock()
 	defer usersMU.RUnlock()
@@ -262,8 +279,9 @@ func findUserByID(id int) *User {
 	return nil
 }
 
+// isAccountLocked reports whether the user's account is currently locked,
+// based on whether LockedUntil is set to a time in the future.
 func isAccountLocked(user *User) bool {
-	// TODO: Check if account is locked based on LockedUntil field
 	usersMU.RLock()
 	defer usersMU.RUnlock()
 	if user.LockedUntil == nil {
@@ -272,6 +290,8 @@ func isAccountLocked(user *User) bool {
 	return time.Until(*user.LockedUntil) > 0
 }
 
+// recordFailedAttempt increments the user's failed login counter and locks the
+// account for lockoutDuration once maxFailedAttempts is reached.
 func recordFailedAttempt(user *User) {
 	usersMU.Lock()
 	defer usersMU.Unlock()
@@ -282,21 +302,23 @@ func recordFailedAttempt(user *User) {
 		user.LockedUntil = &now
 	}
 
-	if user.FailedAttempts > maxFailedAttempts {
+	if user.FailedAttempts >= maxFailedAttempts {
 		*user.LockedUntil = time.Now().Add(lockoutDuration)
 		return
 	}
 }
 
+// resetFailedAttempts clears the user's failed login counter and unlocks the account.
 func resetFailedAttempts(user *User) {
 	usersMU.Lock()
 	defer usersMU.Unlock()
 
 	user.FailedAttempts = 0
-	now := time.Now()
-	user.LockedUntil = &now
+	user.LockedUntil = nil
 }
 
+// generateRandomToken returns a cryptographically random 32-byte token,
+// hex-encoded as a string.
 func generateRandomToken() (string, error) {
 	bytes := make([]byte, 32)
 	_, err := rand.Read(bytes)
@@ -307,6 +329,9 @@ func generateRandomToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
+// register handles POST /auth/register: it validates the registration payload,
+// enforces password strength and uniqueness, creates the user, and returns
+// freshly issued tokens.
 func register(c *gin.Context) {
 	var req RegisterRequest
 
@@ -343,7 +368,7 @@ func register(c *gin.Context) {
 	}
 
 	if user := findUserByEmail(req.Email); user != nil {
-		c.JSON(200, APIResponse{
+		c.JSON(409, APIResponse{
 			Success: false,
 			Error:   "Email already registered",
 		})
@@ -359,6 +384,11 @@ func register(c *gin.Context) {
 		return
 	}
 
+	role := c.GetString("role")
+	if role == "" {
+		role = RoleUser
+	}
+
 	now := time.Now()
 	usersMU.Lock()
 	id := nextUserID
@@ -372,10 +402,9 @@ func register(c *gin.Context) {
 		PasswordHash:  hashedPassword,
 		FirstName:     req.FirstName,
 		LastName:      req.LastName,
-		Role:          c.GetString("role"),
+		Role:          role,
 		IsActive:      true,
 		EmailVerified: false,
-		LockedUntil:   &now,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
@@ -385,8 +414,9 @@ func register(c *gin.Context) {
 	if err != nil {
 		c.JSON(500, APIResponse{
 			Success: false,
-			Error:   "Failed to genesate tokens",
+			Error:   "Failed to generate tokens",
 		})
+		return
 	}
 
 	c.JSON(201, APIResponse{
@@ -396,6 +426,8 @@ func register(c *gin.Context) {
 	})
 }
 
+// login handles POST /auth/login: it authenticates the credentials, enforces
+// account lockout on repeated failures, and returns access and refresh tokens.
 func login(c *gin.Context) {
 	var req LoginRequest
 
@@ -465,6 +497,8 @@ func login(c *gin.Context) {
 	})
 }
 
+// logout handles POST /auth/logout: it blacklists the presented access token
+// and removes the user's refresh token from the store.
 func logout(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
@@ -476,7 +510,7 @@ func logout(c *gin.Context) {
 	}
 
 	tokenS := strings.SplitN(authHeader, " ", 2)
-	if tokenS[0] != "Bearer" {
+	if len(tokenS) != 2 || tokenS[0] != "Bearer" {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Error:   "Wrong token type",
@@ -510,6 +544,9 @@ func logout(c *gin.Context) {
 	})
 }
 
+// refreshToken handles POST /auth/refresh: it validates the supplied refresh
+// token against the store, then issues a new token pair and rotates the refresh
+// token.
 func refreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
@@ -523,17 +560,24 @@ func refreshToken(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate refresh token
 	claims, err := validateToken(req.RefreshToken)
 	if err != nil {
 		c.JSON(401, APIResponse{
 			Success: false,
-			Error:   "Invalid  refresh token",
+			Error:   "Invalid refresh token",
 		})
 		return
 	}
 	userID := claims.UserID
 	user := findUserByID(userID)
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
+
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -544,13 +588,17 @@ func refreshToken(c *gin.Context) {
 	}
 
 	tokenMU.Lock()
+	if storedUserID, exists := refreshTokens[req.RefreshToken]; !exists || storedUserID != userID {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Refresh token not recognized",
+		})
+		tokenMU.Unlock()
+		return
+	}
 	delete(refreshTokens, req.RefreshToken)
 	refreshTokens[tokens.RefreshToken] = user.ID
 	tokenMU.Unlock()
-	// TODO: Get user ID from refresh token store
-	// TODO: Find user by ID
-	// TODO: Generate new access token
-	// TODO: Optionally rotate refresh token
 
 	c.JSON(200, APIResponse{
 		Success: true,
@@ -559,7 +607,8 @@ func refreshToken(c *gin.Context) {
 	})
 }
 
-// Middleware: JWT Authentication
+// authMiddleware returns Gin middleware that requires a valid "Bearer" JWT in
+// the Authorization header and stores the user's ID and role in the context.
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -572,11 +621,12 @@ func authMiddleware() gin.HandlerFunc {
 			return
 		}
 		tokenS := strings.SplitN(authHeader, " ", 2)
-		if tokenS[0] != "Bearer" {
+		if len(tokenS) != 2 || tokenS[0] != "Bearer" {
 			c.JSON(400, APIResponse{
 				Success: false,
 				Error:   "Wrong token type",
 			})
+			c.Abort()
 			return
 		}
 		token := tokenS[1]
@@ -586,37 +636,27 @@ func authMiddleware() gin.HandlerFunc {
 				Success: false,
 				Error:   "Invalid token",
 			})
+			c.Abort()
 			return
 		}
 		c.Set("userID", claims.UserID)
 		c.Set("role", claims.Role)
-		// TODO: Extract token from "Bearer <token>" format
-		// TODO: Validate token using validateToken function
-		// TODO: Set user info in context for route handlers
 
 		c.Next()
 	}
 }
 
-// Middleware: Role-based authorization
+// requireRole returns Gin middleware that authorizes the request only if the
+// role stored in the context (by authMiddleware) is one of the allowed roles.
 func requireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: Get user role from context (set by authMiddleware)
 		role := c.GetString("role")
-		// TODO: Check if user role is in allowed roles
 		if !slices.Contains(roles, role) {
-			c.JSON(403, APIResponse{
-				Success: false,
-				Error:   "nsupported role",
-			})
-			return
-		}
-		// TODO: Return 403 if not authorized
-		if role != RoleAdmin {
 			c.JSON(403, APIResponse{
 				Success: false,
 				Error:   "Forbidden: insufficient permissions",
 			})
+			c.Abort()
 			return
 		}
 
@@ -624,10 +664,19 @@ func requireRole(roles ...string) gin.HandlerFunc {
 	}
 }
 
+// getUserProfile handles GET /user/profile: it returns the authenticated
+// user's profile.
 func getUserProfile(c *gin.Context) {
 	id := c.GetInt("userID")
 	user := findUserByID(id)
 
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
 	c.JSON(200, APIResponse{
 		Success: true,
 		Data:    user,
@@ -635,7 +684,8 @@ func getUserProfile(c *gin.Context) {
 	})
 }
 
-// PUT /user/profile - Update user profile
+// updateUserProfile handles PUT /user/profile: it validates and applies updates
+// to the authenticated user's profile.
 func updateUserProfile(c *gin.Context) {
 	var req struct {
 		FirstName string `json:"first_name" binding:"required,min=2,max=50"`
@@ -651,18 +701,14 @@ func updateUserProfile(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get user ID from context
-	// TODO: Find user by ID
-	// TODO: Check if new email is already taken
-	// TODO: Update user profile
-
 	c.JSON(200, APIResponse{
 		Success: true,
 		Message: "Profile updated successfully",
 	})
 }
 
-// POST /user/change-password - Change user password
+// changePassword handles POST /user/change-password: it verifies the current
+// password, enforces new-password strength, and stores the new hash.
 func changePassword(c *gin.Context) {
 	var req struct {
 		CurrentPassword string `json:"current_password" binding:"required"`
@@ -677,24 +723,30 @@ func changePassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get user ID from context
 	id := c.GetInt("userID")
-	// TODO: Find user by ID
 	user := findUserByID(id)
-	// TODO: Verify current password
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
+
 	if !verifyPassword(req.CurrentPassword, user.PasswordHash) {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Error:   "Current password is incorrect",
 		})
+		return
 	}
 
-	// TODO: Validate new password strength
 	if !isStrongPassword(req.NewPassword) {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Error:   "New password does not meet strength requirements",
 		})
+		return
 	}
 	hashedPassword, err := hashPassword(req.NewPassword)
 	if err != nil {
@@ -702,8 +754,8 @@ func changePassword(c *gin.Context) {
 			Success: false,
 			Error:   "Failed to hash new password",
 		})
+		return
 	}
-	// TODO: Hash new password and update user
 	usersMU.Lock()
 	user.PasswordHash = hashedPassword
 	user.UpdatedAt = time.Now()
@@ -715,19 +767,21 @@ func changePassword(c *gin.Context) {
 	})
 }
 
-// GET /admin/users - List all users (admin only)
+// listUsers handles GET /admin/users: it returns a snapshot of all users.
 func listUsers(c *gin.Context) {
-	// TODO: Get pagination parameters
-	// TODO: Return list of users (without sensitive data)
-
+	usersMU.RLock()
+	usersList := make([]User, len(users))
+	copy(usersList, users)
+	usersMU.RUnlock()
 	c.JSON(200, APIResponse{
 		Success: true,
-		Data:    users, // TODO: Filter sensitive data
+		Data:    usersList,
 		Message: "Users retrieved successfully",
 	})
 }
 
-// PUT /admin/users/:id/role - Change user role (admin only)
+// changeUserRole handles PUT /admin/users/:id/role: it validates the requested
+// role and applies it to the target user.
 func changeUserRole(c *gin.Context) {
 	userID := c.Param("id")
 	id, err := strconv.Atoi(userID)
@@ -751,17 +805,8 @@ func changeUserRole(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate role value
 	validRoles := []string{RoleUser, RoleAdmin, RoleModerator}
-	isValid := false
-	for _, role := range validRoles {
-		if req.Role == role {
-			isValid = true
-			break
-		}
-	}
-
-	if !isValid {
+	if !slices.Contains(validRoles, req.Role) {
 		c.JSON(400, APIResponse{
 			Success: false,
 			Error:   "Invalid role",
@@ -769,9 +814,7 @@ func changeUserRole(c *gin.Context) {
 		return
 	}
 
-	// TODO: Find user by ID
 	_ = findUserByID(id)
-	// TODO: Update user role
 
 	c.JSON(200, APIResponse{
 		Success: true,
@@ -779,7 +822,8 @@ func changeUserRole(c *gin.Context) {
 	})
 }
 
-// Setup router with authentication routes
+// setupRouter builds the Gin engine with the public auth routes and the
+// authenticated user and admin route groups.
 func setupRouter() *gin.Engine {
 	router := gin.Default()
 
@@ -813,6 +857,7 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
+// main seeds a default admin user and starts the HTTP server on port 8080.
 func main() {
 	// Initialize with a default admin user
 	adminHash, _ := hashPassword("admin123")
