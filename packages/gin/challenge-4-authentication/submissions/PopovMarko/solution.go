@@ -266,6 +266,9 @@ func isAccountLocked(user *User) bool {
 	// TODO: Check if account is locked based on LockedUntil field
 	usersMU.RLock()
 	defer usersMU.RUnlock()
+	if user.LockedUntil == nil {
+		return false
+	}
 	return time.Until(*user.LockedUntil) > 0
 }
 
@@ -527,6 +530,7 @@ func refreshToken(c *gin.Context) {
 			Success: false,
 			Error:   "Invalid  refresh token",
 		})
+		return
 	}
 	userID := claims.UserID
 	user := findUserByID(userID)
@@ -536,6 +540,7 @@ func refreshToken(c *gin.Context) {
 			Success: false,
 			Error:   "Failed to generate new tokens",
 		})
+		return
 	}
 
 	tokenMU.Lock()
@@ -577,7 +582,7 @@ func authMiddleware() gin.HandlerFunc {
 		token := tokenS[1]
 		claims, err := validateToken(token)
 		if err != nil {
-			c.JSON(400, APIResponse{
+			c.JSON(401, APIResponse{
 				Success: false,
 				Error:   "Invalid token",
 			})
@@ -600,7 +605,7 @@ func requireRole(roles ...string) gin.HandlerFunc {
 		role := c.GetString("role")
 		// TODO: Check if user role is in allowed roles
 		if !slices.Contains(roles, role) {
-			c.JSON(400, APIResponse{
+			c.JSON(403, APIResponse{
 				Success: false,
 				Error:   "nsupported role",
 			})
@@ -619,15 +624,13 @@ func requireRole(roles ...string) gin.HandlerFunc {
 	}
 }
 
-// GET /user/profile - Get current user profile
 func getUserProfile(c *gin.Context) {
-	// TODO: Get user ID from context (set by authMiddleware)
-	// TODO: Find user by ID
-	// TODO: Return user profile (without sensitive data)
+	id := c.GetInt("userID")
+	user := findUserByID(id)
 
 	c.JSON(200, APIResponse{
 		Success: true,
-		Data:    nil, // TODO: Return user data
+		Data:    user,
 		Message: "Profile retrieved successfully",
 	})
 }
@@ -675,10 +678,36 @@ func changePassword(c *gin.Context) {
 	}
 
 	// TODO: Get user ID from context
+	id := c.GetInt("userID")
 	// TODO: Find user by ID
+	user := findUserByID(id)
 	// TODO: Verify current password
+	if !verifyPassword(req.CurrentPassword, user.PasswordHash) {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Current password is incorrect",
+		})
+	}
+
 	// TODO: Validate new password strength
+	if !isStrongPassword(req.NewPassword) {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "New password does not meet strength requirements",
+		})
+	}
+	hashedPassword, err := hashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Failed to hash new password",
+		})
+	}
 	// TODO: Hash new password and update user
+	usersMU.Lock()
+	user.PasswordHash = hashedPassword
+	user.UpdatedAt = time.Now()
+	usersMU.Unlock()
 
 	c.JSON(200, APIResponse{
 		Success: true,
