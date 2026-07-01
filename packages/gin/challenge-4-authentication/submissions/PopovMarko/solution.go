@@ -3,8 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"log"
+	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 	"unicode"
@@ -81,6 +84,7 @@ var usersMU sync.RWMutex
 var blacklistedTokens = make(map[string]bool) // Token blacklist for logout
 
 var refreshTokens = make(map[string]int) // RefreshToken -> UserID mapping
+var tokenMU sync.RWMutex
 var nextUserID = 1
 
 // Configuration
@@ -99,18 +103,15 @@ const (
 	RoleModerator = "moderator"
 )
 
-// TODO: Implement password strength validation
 func isStrongPassword(password string) bool {
-	// TODO: Validate password strength:
-	// - At least 8 characters
 	if utf8.RuneCountInString(password) < 8 {
 		return false
 	}
 	var (
-		hasUpper bool
-		hasLower bool
-		hasDigit bool
-		hasChar  bool
+		hasUpper  bool
+		hasLower  bool
+		hasDigit  bool
+		hasSymbol bool
 	)
 	runePassword := []rune(password)
 
@@ -123,11 +124,11 @@ func isStrongPassword(password string) bool {
 		case unicode.IsDigit(r):
 			hasDigit = true
 		case unicode.IsPunct(r):
-			hasChar = true
+			hasSymbol = true
 		}
 	}
 
-	return hasUpper && hasLower && hasDigit && hasChar
+	return hasUpper && hasLower && hasDigit && hasSymbol
 }
 
 func hashPassword(password string) (string, error) {
@@ -135,6 +136,7 @@ func hashPassword(password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(pass), nil
 }
 
@@ -146,34 +148,79 @@ func verifyPassword(password, hash string) bool {
 	return true
 }
 
-// TODO: Implement JWT token generation
 func generateTokens(userID int, username, role string) (*TokenResponse, error) {
-	// TODO: Generate access token with 15 minute expiry
-	// TODO: Generate refresh token with 7 day expiry
-	// TODO: Store refresh token in memory store
+	claimsForAccess := &JWTClaims{
+		UserID:   userID,
+		Username: username,
+		Role:     role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenTTL)),
+		},
+	}
 
-	return &TokenResponse{
-		AccessToken:  "dummy-access-token",
-		RefreshToken: "dummy-refresh-token",
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsForAccess)
+	accessTokenSring, err := accessToken.SignedString(jwtSecret)
+
+	claimsForRefresh := &JWTClaims{
+		UserID:   userID,
+		Username: username,
+		Role:     role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenTTL)),
+		},
+	}
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claimsForRefresh)
+	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
+
+	if err != nil {
+		return nil, err
+	}
+	response := TokenResponse{
+		AccessToken:  accessTokenSring,
+		RefreshToken: refreshTokenString,
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(accessTokenTTL.Seconds()),
 		ExpiresAt:    time.Now().Add(accessTokenTTL),
-	}, nil
+	}
+
+	tokenMU.Lock()
+	refreshTokens[refreshTokenString] = userID
+	tokenMU.Unlock()
+
+	return &response, nil
 }
 
-// TODO: Implement JWT token validation
 func validateToken(tokenString string) (*JWTClaims, error) {
-	// TODO: Parse and validate JWT token
-	// TODO: Check if token is blacklisted
-	// TODO: Return claims if valid
-	return nil, nil
+	claims := JWTClaims{}
+	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected jwt method")
+		}
+
+		return jwtSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenMU.RLock()
+	if _, exists := blacklistedTokens[tokenString]; exists {
+		tokenMU.RUnlock()
+		return nil, fmt.Errorf("Token compromized")
+	}
+	tokenMU.RUnlock()
+
+	return &claims, nil
 }
 
-// TODO: Implement user lookup functions
 func findUserByUsername(username string) *User {
 	if username == "" {
 		return nil
 	}
+	usersMU.RLock()
+	defer usersMU.RUnlock()
 
 	for i, user := range users {
 		if user.Username == username {
@@ -189,6 +236,8 @@ func findUserByEmail(email string) *User {
 	if email == "" {
 		return nil
 	}
+	usersMU.RLock()
+	defer usersMU.RUnlock()
 
 	for i, user := range users {
 		if user.Email == email {
@@ -201,6 +250,8 @@ func findUserByEmail(email string) *User {
 }
 
 func findUserByID(id int) *User {
+	usersMU.RLock()
+	defer usersMU.RUnlock()
 	for i, user := range users {
 		if user.ID == id {
 
@@ -211,45 +262,48 @@ func findUserByID(id int) *User {
 	return nil
 }
 
-// TODO: Implement account lockout check
 func isAccountLocked(user *User) bool {
 	// TODO: Check if account is locked based on LockedUntil field
+	usersMU.RLock()
+	defer usersMU.RUnlock()
 	return time.Until(*user.LockedUntil) > 0
 }
 
-// TODO: Implement failed attempt tracking
 func recordFailedAttempt(user *User) {
+	usersMU.Lock()
+	defer usersMU.Unlock()
+
 	user.FailedAttempts++
 	now := time.Now()
 	if user.LockedUntil == nil {
 		user.LockedUntil = &now
 	}
 
-	if user.FailedAttempts > 5 {
+	if user.FailedAttempts > maxFailedAttempts {
 		*user.LockedUntil = time.Now().Add(lockoutDuration)
 		return
 	}
 }
 
 func resetFailedAttempts(user *User) {
-	// TODO: Reset failed attempts counter and unlock account
+	usersMU.Lock()
+	defer usersMU.Unlock()
+
 	user.FailedAttempts = 0
 	now := time.Now()
 	user.LockedUntil = &now
 }
 
-// TODO: Generate secure random token
 func generateRandomToken() (string, error) {
-	// TODO: Generate cryptographically secure random token
 	bytes := make([]byte, 32)
 	_, err := rand.Read(bytes)
 	if err != nil {
 		return "", err
 	}
+
 	return hex.EncodeToString(bytes), nil
 }
 
-// POST /auth/register - User registration
 func register(c *gin.Context) {
 	var req RegisterRequest
 
@@ -261,7 +315,6 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate password confirmation
 	if req.Password != req.ConfirmPassword {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -270,7 +323,6 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// TODO: Validate password strength
 	if !isStrongPassword(req.Password) {
 		c.JSON(400, APIResponse{
 			Success: false,
@@ -279,7 +331,6 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if username already exists
 	if user := findUserByUsername(req.Username); user != nil {
 		c.JSON(409, APIResponse{
 			Success: false,
@@ -287,6 +338,7 @@ func register(c *gin.Context) {
 		})
 		return
 	}
+
 	if user := findUserByEmail(req.Email); user != nil {
 		c.JSON(200, APIResponse{
 			Success: false,
@@ -294,6 +346,7 @@ func register(c *gin.Context) {
 		})
 		return
 	}
+
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -316,7 +369,7 @@ func register(c *gin.Context) {
 		PasswordHash:  hashedPassword,
 		FirstName:     req.FirstName,
 		LastName:      req.LastName,
-		Role:          "",
+		Role:          c.GetString("role"),
 		IsActive:      true,
 		EmailVerified: false,
 		LockedUntil:   &now,
@@ -325,14 +378,21 @@ func register(c *gin.Context) {
 	}
 	users = append(users, user)
 	usersMU.Unlock()
+	tokens, err := generateTokens(user.ID, user.Username, user.Role)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Failed to genesate tokens",
+		})
+	}
 
 	c.JSON(201, APIResponse{
 		Success: true,
+		Data:    tokens,
 		Message: "User registered successfully",
 	})
 }
 
-// POST /auth/login - User login
 func login(c *gin.Context) {
 	var req LoginRequest
 
@@ -344,7 +404,6 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// TODO: Find user by username
 	user := findUserByUsername(req.Username)
 	if user == nil {
 		c.JSON(401, APIResponse{
@@ -354,7 +413,6 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// TODO: Check if account is locked
 	if isAccountLocked(user) {
 		c.JSON(423, APIResponse{
 			Success: false,
@@ -363,8 +421,11 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify password
-	if !verifyPassword(req.Password, user.PasswordHash) {
+	usersMU.RLock()
+	userPasswordHash := user.PasswordHash
+	usersMU.RUnlock()
+
+	if !verifyPassword(req.Password, userPasswordHash) {
 		recordFailedAttempt(user)
 		c.JSON(401, APIResponse{
 			Success: false,
@@ -373,14 +434,8 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// TODO: Reset failed attempts on successful login
 	resetFailedAttempts(user)
 
-	// TODO: Update last login time
-	now := time.Now()
-	user.LastLogin = &now
-
-	// TODO: Generate tokens
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -390,16 +445,24 @@ func login(c *gin.Context) {
 		return
 	}
 
+	now := time.Now()
+	usersMU.Lock()
+	user.LastLogin = &now
+
+	data := map[string]interface{}{
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+	}
+
+	usersMU.Unlock()
 	c.JSON(200, APIResponse{
 		Success: true,
-		Data:    tokens,
+		Data:    data,
 		Message: "Login successful",
 	})
 }
 
-// POST /auth/logout - User logout
 func logout(c *gin.Context) {
-	// TODO: Extract token from Authorization header
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		c.JSON(401, APIResponse{
@@ -409,9 +472,34 @@ func logout(c *gin.Context) {
 		return
 	}
 
-	// TODO: Extract token from "Bearer <token>" format
-	// TODO: Add token to blacklist
-	// TODO: Remove refresh token from store
+	tokenS := strings.SplitN(authHeader, " ", 2)
+	if tokenS[0] != "Bearer" {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Wrong token type",
+		})
+		return
+	}
+	token := tokenS[1]
+	claims, err := validateToken(token)
+	if err != nil {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Invalid token",
+		})
+		return
+	}
+
+	tokenMU.Lock()
+	blacklistedTokens[token] = true
+
+	for r, id := range refreshTokens {
+		if id == claims.UserID {
+			delete(refreshTokens, r)
+			break
+		}
+	}
+	tokenMU.Unlock()
 
 	c.JSON(200, APIResponse{
 		Success: true,
@@ -419,7 +507,6 @@ func logout(c *gin.Context) {
 	})
 }
 
-// POST /auth/refresh - Refresh access token
 func refreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
@@ -434,6 +521,27 @@ func refreshToken(c *gin.Context) {
 	}
 
 	// TODO: Validate refresh token
+	claims, err := validateToken(req.RefreshToken)
+	if err != nil {
+		c.JSON(401, APIResponse{
+			Success: false,
+			Error:   "Invalid  refresh token",
+		})
+	}
+	userID := claims.UserID
+	user := findUserByID(userID)
+	tokens, err := generateTokens(user.ID, user.Username, user.Role)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Failed to generate new tokens",
+		})
+	}
+
+	tokenMU.Lock()
+	delete(refreshTokens, req.RefreshToken)
+	refreshTokens[tokens.RefreshToken] = user.ID
+	tokenMU.Unlock()
 	// TODO: Get user ID from refresh token store
 	// TODO: Find user by ID
 	// TODO: Generate new access token
@@ -441,6 +549,7 @@ func refreshToken(c *gin.Context) {
 
 	c.JSON(200, APIResponse{
 		Success: true,
+		Data:    tokens,
 		Message: "Token refreshed successfully",
 	})
 }
@@ -457,7 +566,25 @@ func authMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		tokenS := strings.SplitN(authHeader, " ", 2)
+		if tokenS[0] != "Bearer" {
+			c.JSON(400, APIResponse{
+				Success: false,
+				Error:   "Wrong token type",
+			})
+			return
+		}
+		token := tokenS[1]
+		claims, err := validateToken(token)
+		if err != nil {
+			c.JSON(400, APIResponse{
+				Success: false,
+				Error:   "Invalid token",
+			})
+			return
+		}
+		c.Set("userID", claims.UserID)
+		c.Set("role", claims.Role)
 		// TODO: Extract token from "Bearer <token>" format
 		// TODO: Validate token using validateToken function
 		// TODO: Set user info in context for route handlers
@@ -470,8 +597,23 @@ func authMiddleware() gin.HandlerFunc {
 func requireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO: Get user role from context (set by authMiddleware)
+		role := c.GetString("role")
 		// TODO: Check if user role is in allowed roles
+		if !slices.Contains(roles, role) {
+			c.JSON(400, APIResponse{
+				Success: false,
+				Error:   "nsupported role",
+			})
+			return
+		}
 		// TODO: Return 403 if not authorized
+		if role != RoleAdmin {
+			c.JSON(403, APIResponse{
+				Success: false,
+				Error:   "Forbidden: insufficient permissions",
+			})
+			return
+		}
 
 		c.Next()
 	}
