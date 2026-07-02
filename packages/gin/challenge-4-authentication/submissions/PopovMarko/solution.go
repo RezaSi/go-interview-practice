@@ -67,6 +67,7 @@ type JWTClaims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
+	TokenUse string `json:"token_use"`
 	jwt.RegisteredClaims
 }
 
@@ -159,6 +160,7 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 		UserID:   userID,
 		Username: username,
 		Role:     role,
+		TokenUse: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenTTL)),
 		},
@@ -174,6 +176,7 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 		UserID:   userID,
 		Username: username,
 		Role:     role,
+		TokenUse: "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenTTL)),
 		},
@@ -204,6 +207,7 @@ func generateTokens(userID int, username, role string) (*TokenResponse, error) {
 // signing and is not blacklisted, and returns its claims.
 func validateToken(tokenString string) (*JWTClaims, error) {
 	claims := JWTClaims{}
+
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected JWT signing method")
@@ -235,10 +239,11 @@ func findUserByUsername(username string) *User {
 	usersMU.RLock()
 	defer usersMU.RUnlock()
 
-	for i, user := range users {
+	for _, user := range users {
 		if user.Username == username {
 
-			return &users[i]
+			userToReturn := user
+			return &userToReturn
 		}
 	}
 
@@ -254,10 +259,11 @@ func findUserByEmail(email string) *User {
 	usersMU.RLock()
 	defer usersMU.RUnlock()
 
-	for i, user := range users {
+	for _, user := range users {
 		if user.Email == email {
 
-			return &users[i]
+			userToReturn := user
+			return &userToReturn
 		}
 	}
 
@@ -269,10 +275,11 @@ func findUserByEmail(email string) *User {
 func findUserByID(id int) *User {
 	usersMU.RLock()
 	defer usersMU.RUnlock()
-	for i, user := range users {
+	for _, user := range users {
 		if user.ID == id {
 
-			return &users[i]
+			userToReturn := user
+			return &userToReturn
 		}
 	}
 
@@ -333,6 +340,7 @@ func generateRandomToken() (string, error) {
 // enforces password strength and uniqueness, creates the user, and returns
 // freshly issued tokens.
 func register(c *gin.Context) {
+
 	var req RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -389,8 +397,9 @@ func register(c *gin.Context) {
 		role = RoleUser
 	}
 
-	now := time.Now()
 	usersMU.Lock()
+	defer usersMU.Unlock()
+	now := time.Now()
 	id := nextUserID
 	nextUserID++
 
@@ -398,7 +407,6 @@ func register(c *gin.Context) {
 		ID:            id,
 		Username:      req.Username,
 		Email:         req.Email,
-		Password:      req.Password,
 		PasswordHash:  hashedPassword,
 		FirstName:     req.FirstName,
 		LastName:      req.LastName,
@@ -409,7 +417,6 @@ func register(c *gin.Context) {
 		UpdatedAt:     now,
 	}
 	users = append(users, user)
-	usersMU.Unlock()
 	tokens, err := generateTokens(user.ID, user.Username, user.Role)
 	if err != nil {
 		c.JSON(500, APIResponse{
@@ -526,6 +533,13 @@ func logout(c *gin.Context) {
 		})
 		return
 	}
+	if claims.TokenUse != "access" {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Invalid refresh token",
+		})
+		return
+	}
 
 	tokenMU.Lock()
 	blacklistedTokens[token] = true
@@ -533,7 +547,6 @@ func logout(c *gin.Context) {
 	for r, id := range refreshTokens {
 		if id == claims.UserID {
 			delete(refreshTokens, r)
-			break
 		}
 	}
 	tokenMU.Unlock()
@@ -568,21 +581,18 @@ func refreshToken(c *gin.Context) {
 		})
 		return
 	}
+	if claims.TokenUse != "refresh" {
+		c.JSON(400, APIResponse{
+			Success: false,
+			Error:   "Invalid refresh token",
+		})
+	}
 	userID := claims.UserID
 	user := findUserByID(userID)
 	if user == nil {
 		c.JSON(404, APIResponse{
 			Success: false,
 			Error:   "User not found",
-		})
-		return
-	}
-
-	tokens, err := generateTokens(user.ID, user.Username, user.Role)
-	if err != nil {
-		c.JSON(500, APIResponse{
-			Success: false,
-			Error:   "Failed to generate new tokens",
 		})
 		return
 	}
@@ -597,8 +607,16 @@ func refreshToken(c *gin.Context) {
 		return
 	}
 	delete(refreshTokens, req.RefreshToken)
-	refreshTokens[tokens.RefreshToken] = user.ID
 	tokenMU.Unlock()
+
+	tokens, err := generateTokens(user.ID, user.Username, user.Role)
+	if err != nil {
+		c.JSON(500, APIResponse{
+			Success: false,
+			Error:   "Failed to generate new tokens",
+		})
+		return
+	}
 
 	c.JSON(200, APIResponse{
 		Success: true,
@@ -631,7 +649,7 @@ func authMiddleware() gin.HandlerFunc {
 		}
 		token := tokenS[1]
 		claims, err := validateToken(token)
-		if err != nil {
+		if err != nil || claims.TokenUse != "access" {
 			c.JSON(401, APIResponse{
 				Success: false,
 				Error:   "Invalid token",
@@ -700,6 +718,18 @@ func updateUserProfile(c *gin.Context) {
 		})
 		return
 	}
+	id := c.GetInt("userID")
+	usersMU.Lock()
+	for i, user := range users {
+		if user.ID == id {
+			users[i].FirstName = req.FirstName
+			users[i].LastName = req.LastName
+			users[i].Email = req.Email
+			users[i].UpdatedAt = time.Now()
+			break
+		}
+	}
+	usersMU.Unlock()
 
 	c.JSON(200, APIResponse{
 		Success: true,
@@ -814,7 +844,23 @@ func changeUserRole(c *gin.Context) {
 		return
 	}
 
-	_ = findUserByID(id)
+	user := findUserByID(id)
+	if user == nil {
+		c.JSON(404, APIResponse{
+			Success: false,
+			Error:   "User not found",
+		})
+		return
+	}
+	usersMU.Lock()
+	for i, u := range users {
+		if u.ID == id {
+			users[i].Role = req.Role
+			users[i].UpdatedAt = time.Now()
+			break
+		}
+	}
+	usersMU.Unlock()
 
 	c.JSON(200, APIResponse{
 		Success: true,
