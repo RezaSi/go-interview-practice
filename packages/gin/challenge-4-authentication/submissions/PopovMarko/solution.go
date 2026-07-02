@@ -586,6 +586,7 @@ func refreshToken(c *gin.Context) {
 			Success: false,
 			Error:   "Invalid refresh token",
 		})
+		return
 	}
 	userID := claims.UserID
 	user := findUserByID(userID)
@@ -720,6 +721,16 @@ func updateUserProfile(c *gin.Context) {
 	}
 	id := c.GetInt("userID")
 	usersMU.Lock()
+	for _, user := range users {
+		if user.Email == req.Email {
+			c.JSON(409, APIResponse{
+				Success: false,
+				Error:   "Email already in use",
+			})
+			usersMU.Unlock()
+			return
+		}
+	}
 	for i, user := range users {
 		if user.ID == id {
 			users[i].FirstName = req.FirstName
