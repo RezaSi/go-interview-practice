@@ -102,13 +102,13 @@ func NewCircuitBreaker(config Config) CircuitBreaker {
 
 // Call executes the given operation through the circuit breaker
 func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (any, error)) (any, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	err := cb.canExecute()
 	if err != nil {
 		return nil, err
-	}
-
-	if ctx.Err() != nil { // см. пункт 4 из прошлого разбора — заодно закрываем и его
-		return nil, ctx.Err()
 	}
 
 	type response struct {
@@ -116,7 +116,7 @@ func (cb *circuitBreakerImpl) Call(ctx context.Context, operation func() (any, e
 		e    error
 	}
 
-	resChan := make(chan *response, 1) // буфер 1 — см. пункт 1, закрывает утечку горутин
+	resChan := make(chan *response, 1)
 
 	go func() {
 		resp, err := operation()
