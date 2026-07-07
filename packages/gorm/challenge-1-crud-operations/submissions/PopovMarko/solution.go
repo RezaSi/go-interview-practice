@@ -56,15 +56,11 @@ func GetUserByID(db *gorm.DB, id uint) (*User, error) {
 }
 
 // GetAllUsers retrieves every user stored in the database. It returns the slice
-// of users (empty if the table has no rows), or a nil slice and an error if the
-// query fails.
+// of users (empty if the table has no rows) together with any error from the
+// query.
 func GetAllUsers(db *gorm.DB) ([]User, error) {
 	users := []User{}
-	res := db.Find(&users)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	return users, nil
+	return users, db.Find(&users).Error
 }
 
 // UpdateUser updates the non-zero fields of the given user, identified by its
