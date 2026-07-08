@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 func main() {
@@ -34,43 +35,44 @@ func MinCoins(amount int, denominations []int) int {
 		return 0
 	}
 
+	sorted := append([]int(nil), denominations...)
+	sort.Ints(sorted)
+
 	totalCoins := 0
 	remaining := amount
 
-	// Идем с конца, так как жадный алгоритм требует начинать с самой крупной монеты
-	for i := len(denominations) - 1; i >= 0; i-- {
-		coin := denominations[i]
+	for i := len(sorted) - 1; i >= 0; i-- {
+		coin := sorted[i]
 		if coin > 0 && coin <= remaining {
 			count := remaining / coin
 			totalCoins += count
-			remaining %= coin // Эквивалентно remaining -= count * coin, но чище
+			remaining %= coin
 		}
 		if remaining == 0 {
 			break
 		}
 	}
 
-	// Если после прохода всех монет остаток всё еще есть, набрать сумму невозможно
 	if remaining > 0 {
 		return -1
 	}
 	return totalCoins
 }
 
-// CoinCombination returns a map with the specific combination of coins that gives
-// the minimum number. The keys are coin denominations and values are the number of
-// coins used for each denomination.
-// If the amount cannot be made with the given denominations, return an empty map.
+// CoinCombination returns a map with the specific combination of coins.
 func CoinCombination(amount int, denominations []int) map[int]int {
 	combo := make(map[int]int)
 	if amount < 0 {
 		return combo
 	}
 
+	sorted := append([]int(nil), denominations...)
+	sort.Ints(sorted)
+
 	remaining := amount
 
-	for i := len(denominations) - 1; i >= 0; i-- {
-		coin := denominations[i]
+	for i := len(sorted) - 1; i >= 0; i-- {
+		coin := sorted[i]
 		if coin > 0 && coin <= remaining {
 			count := remaining / coin
 			combo[coin] = count
@@ -82,7 +84,7 @@ func CoinCombination(amount int, denominations []int) map[int]int {
 	}
 
 	if remaining > 0 {
-		return make(map[int]int) // Возвращаем пустой map, как требуется в условии
+		return make(map[int]int)
 	}
 	return combo
 }
