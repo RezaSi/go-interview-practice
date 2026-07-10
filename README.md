@@ -120,7 +120,7 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 361
+- **Active Developers**: 362
 - **Most Challenges Solved**: 30 by PolinaSvet
 
 <!-- END_CLASSIC_LEADERBOARD -->
@@ -206,7 +206,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 ### 📊 Package Challenge Statistics
 
 - **Total Package Challenges Available**: 26
-- **Active Package Learners**: 51
+- **Active Package Learners**: 52
 - **Available Packages**: 6 (cobra, echo, fiber, gin, gorm, mongodb)
 
 - **Most Package Challenges Solved**: 17 by odelbos
