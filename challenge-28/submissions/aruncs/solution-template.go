@@ -69,6 +69,9 @@ type LRUCache struct {
 
 // NewLRUCache creates a new LRU cache with the specified capacity
 func NewLRUCache(capacity int) *LRUCache {
+	if capacity < 0 {
+		capacity = 0
+	}
 	// TODO: Implement LRU cache constructor
 	cache := &LRUCache{
 		head: &ListNode{
@@ -218,6 +221,9 @@ type LFUCache struct {
 // NewLFUCache creates a new LFU cache with the specified capacity
 func NewLFUCache(capacity int) *LFUCache {
 	// TODO: Implement LFU cache constructor
+	if capacity < 0 {
+		capacity = 0
+	}
 
 	return &LFUCache{
 		hashMap:        make(map[string]*LFUListNode, capacity),
@@ -293,6 +299,8 @@ func (c *LFUCache) Delete(key string) bool {
 	if !exists {
 		return false
 	}
+
+	delete(c.hashMap, key)
 
 	c.removeNode(node)
 	return false
@@ -376,6 +384,11 @@ func (c *LFUCache) removefrequencyIfEmpty() {
 				c.Leastfrequency = frequency
 				break
 			}
+
+			if len(c.FrequncyList) == 0 {
+				c.Leastfrequency = 0
+				break
+			}
 		}
 	}
 }
@@ -406,6 +419,9 @@ type FIFOCache struct {
 // NewFIFOCache creates a new FIFO cache with the specified capacity
 func NewFIFOCache(capacity int) *FIFOCache {
 	// TODO: Implement FIFO cache constructor
+	if capacity < 0 {
+		capacity = 0
+	}
 
 	cache := &FIFOCache{
 		head: &ListNode{
@@ -516,12 +532,6 @@ func (c *FIFOCache) addToLast(node *ListNode) {
 
 	node.prev.next = node
 	c.tail.prev = node
-
-	// node.prev = c.head
-	// node.next = c.head.next
-
-	// node.next.prev = node
-	// c.head.next = node
 }
 
 func (c *FIFOCache) removeNode(node *ListNode) {
@@ -617,8 +627,8 @@ func NewCache(policy CachePolicy, capacity int) Cache {
 	// TODO: Implement cache factory
 	// Should create appropriate cache type based on policy
 
-	if capacity == 0 {
-		return nil
+	if capacity < 0 {
+		capacity = 0
 	}
 
 	switch policy {
