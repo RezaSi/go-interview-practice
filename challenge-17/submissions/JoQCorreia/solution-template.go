@@ -38,12 +38,13 @@ func IsPalindrome(s string) bool {
 		return true
 	}
 
-    //Full index of string
-	indx := len(pal) - 1
+    // Convert to runes to safely handle multi-byte Unicode characters
+	palRunes := []rune(pal)
+	indx := len(palRunes) - 1
 
 	for i := 0; i <= (indx - i); i++ {
     //Loop compares the letters on opposite sides of the string for matches
-		if pal[i] != pal[indx-i] {
+		if palRunes[i] != palRunes[indx-i] {
 			return false
 		}
 
