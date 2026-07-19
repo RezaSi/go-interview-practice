@@ -1,28 +1,46 @@
 # Scoreboard for challenge-10
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| 0xSangeet | 54 | 54 |
+| 110Aakif | 54 | 54 |
+| AkifhanIlgaz | 54 | 54 |
 | Ali-Fartoot | 54 | 54 |
 | BroQi | 54 | 54 |
 | Cpoing | 54 | 54 |
 | Gandook | 54 | 54 |
 | Hikitak | 54 | 54 |
+| ImHotDog | 54 | 54 |
 | JackDalberg | 54 | 54 |
 | Johrespi | 54 | 54 |
 | Kosench | 54 | 54 |
+| Mxn-ptr | 54 | 54 |
 | PolinaSvet | 54 | 54 |
+| PopovMarko | 54 | 54 |
 | RezaSi | 54 | 54 |
+| abhishek15032000 | 54 | 54 |
 | ahmedpyarali2 | 54 | 54 |
+| amanabay | 54 | 54 |
 | ashwinipatankar | 54 | 54 |
 | awsl1110 | 54 | 54 |
+| azs0309 | 54 | 54 |
+| brenoamin | 54 | 54 |
 | grozdovk | 54 | 54 |
+| imankhodadi | 54 | 54 |
+| jrbarbati | 54 | 54 |
 | kiramux | 54 | 54 |
+| kuzminprog | 54 | 54 |
 | law-lee | 54 | 54 |
 | longbui98 | 54 | 54 |
 | lyb88999 | 54 | 54 |
 | mick4711 | 54 | 54 |
+| mihir1737 | 54 | 54 |
+| mvsouza | 54 | 54 |
 | ne0phyte | 54 | 54 |
 | nzamulov | 54 | 54 |
 | odelbos | 54 | 54 |
+| onomica | 54 | 54 |
+| shansing | 54 | 54 |
+| sreehari-k-19 | 54 | 54 |
 | t4e1 | 54 | 54 |
 | wgasparin | 54 | 54 |
 | y1hao | 54 | 54 |

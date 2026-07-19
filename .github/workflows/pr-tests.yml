@@ -11,6 +11,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
 
 jobs:
   validate-submission-security:
@@ -212,6 +213,7 @@ jobs:
           echo ""
           echo "⚠️  SECURITY: Only approve changes you trust!"
           echo "❌ This workflow will block until manual approval is granted"
+          exit 1
 
   no-challenges-changed:
     runs-on: ubuntu-latest
@@ -315,3 +317,52 @@ jobs:
               echo "No submission found for $USERNAME in ${{ matrix.challenge }}"
             fi
           fi
+
+  # Final gatekeeper job - this is the single required status check for branch protection
+  pr-status:
+    runs-on: ubuntu-latest
+    needs: [validate-submission-security, manual-approval-status, no-challenges-changed, test-submissions]
+    if: always()
+    
+    steps:
+      - name: Check all job results
+        run: |
+          echo "Checking results of all jobs..."
+          echo ""
+          echo "validate-submission-security: ${{ needs.validate-submission-security.result }}"
+          echo "manual-approval-status: ${{ needs.manual-approval-status.result }}"
+          echo "no-challenges-changed: ${{ needs.no-challenges-changed.result }}"
+          echo "test-submissions: ${{ needs.test-submissions.result }}"
+          echo ""
+          
+          # Check if security validation failed
+          if [ "${{ needs.validate-submission-security.result }}" == "failure" ]; then
+            echo "❌ Security validation failed"
+            exit 1
+          fi
+          
+          # Check if manual approval is required but not granted (job failed with exit 1)
+          if [ "${{ needs.manual-approval-status.result }}" == "failure" ]; then
+            echo "❌ Manual approval is required for this PR"
+            echo "Add the 'manual-approval-granted' label and re-run the workflow"
+            exit 1
+          fi
+          
+          # Check if tests failed
+          if [ "${{ needs.test-submissions.result }}" == "failure" ]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          
+          # If no-challenges-changed ran successfully, that's fine
+          # If test-submissions ran successfully, that's fine
+          # Both being skipped means something unexpected happened
+          if [ "${{ needs.no-challenges-changed.result }}" == "skipped" ] && [ "${{ needs.test-submissions.result }}" == "skipped" ]; then
+            # This could happen if validation_passed is false
+            if [ "${{ needs.validate-submission-security.outputs.validation_passed }}" != "true" ]; then
+              echo "❌ Validation did not pass"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ All checks passed - PR is ready for merge"
