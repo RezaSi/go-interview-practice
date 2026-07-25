@@ -19,6 +19,7 @@ func main() {
 }
 
 // Sum returns the sum of a and b.
+// Trigger scoreboard update
 func Sum(a int, b int) int {
 
 	return a + b
