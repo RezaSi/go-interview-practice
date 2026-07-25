@@ -63,6 +63,7 @@
 | brenoamin | 7 | 7 |
 | chaos1ee | 7 | 7 |
 | clgp-aint-cool | 7 | 7 |
+| deltron-fr | 7 | 7 |
 | dquang0504 | 7 | 7 |
 | duj4 | 7 | 7 |
 | duplabe | 7 | 7 |
