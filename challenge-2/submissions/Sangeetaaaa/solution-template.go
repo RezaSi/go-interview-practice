@@ -22,10 +22,11 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	// TODO: Implement the function
-	var revStr string
-	for i:=len(s)-1; i>=0; i-- {
-	    revStr += string(s[i])
+	runes := []rune(s)
+
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
 	}
-	return revStr
+
+	return string(runes)
 }
