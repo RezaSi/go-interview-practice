@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"errors"
 	"strings"
+	"sync"
 )
 
 // User represents a user in our system
@@ -25,12 +26,19 @@ type Response struct {
 }
 
 // In-memory storage
+type SafeUsers struct{
+    mu  sync.Mutex
+    users   []User
+}
+
 var users = []User{
 	{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
 	{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
 	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
 }
 var nextID = 4
+
+var s = SafeUsers{users: users}
 
 func main() {
 	// TODO: Create Gin router
@@ -60,9 +68,11 @@ func main() {
 
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 	c.JSON(200, gin.H{
 	    "success":true,
-	    "data":users,
+	    "data":s.users,
 	})
 }
 
@@ -77,12 +87,14 @@ func getUserByID(c *gin.Context) {
 	    c.JSON(400, gin.H{"error":"Invalid ID"})
 	    return
 	}
+	s.mu.Lock()
 	user, _ := findUserByID(userID)
 	if user == nil{
+	    s.mu.Unlock()
 	    c.JSON(404, gin.H{"error":"User with given ID not found"})
 	    return
 	}
-	
+	s.mu.Unlock()
 	c.JSON(200, gin.H{
 	    "success":true,
 	    "data":user,
@@ -110,9 +122,11 @@ func createUser(c *gin.Context) {
         return
     }
     
+    s.mu.Lock()
     user.ID = nextID
-    users = append(users, user)
+    s.users = append(s.users, user)
     nextID += 1
+    s.mu.Unlock()
     
     c.JSON(201, gin.H{
         "success":true,
@@ -145,17 +159,19 @@ func updateUser(c *gin.Context) {
         return
     }
     
-    
+	s.mu.Lock()
     userDB, _ := findUserByID(userID)
     if userDB == nil{
+    	s.mu.Unlock()
         c.JSON(404, gin.H{"error": "User with given ID not found"})
         return
     }
 	
+
 	userDB.Name = user.Name
 	userDB.Email = user.Email
 	userDB.Age = user.Age
-	
+	s.mu.Unlock()
     c.JSON(200, gin.H{
         "success":true,
 	    "data":userDB,
@@ -174,14 +190,16 @@ func deleteUser(c *gin.Context) {
         c.JSON(400, gin.H{"error": "Invalid ID"})
         return
     }
-    
+    s.mu.Lock()
     user, index := findUserByID(userID)
     if user == nil{
+        s.mu.Unlock()
         c.JSON(404, gin.H{"error": "User with given ID not found"})
         return
     }
-    
-    users = append(users[:index], users[index+1:]...)
+
+    s.users = append(s.users[:index], s.users[index+1:]...)
+    s.mu.Unlock()
     c.JSON(200, gin.H{
         "success":true,
 	    "data":user,
@@ -201,7 +219,9 @@ func searchUsers(c *gin.Context) {
 	}
 	found_users := make([]User, 0)
 	
-	for _, user := range users{
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, user := range s.users{
 	    if strings.Contains(strings.ToLower(user.Name), strings.ToLower(name)){
 	        found_users = append(found_users, user)
 	    }
@@ -218,9 +238,9 @@ func searchUsers(c *gin.Context) {
 
 // Helper function to find user by ID
 func findUserByID(id int) (*User, int) {
-    for i := 0; i < len(users); i++ {
-        if users[i].ID == id{
-            return &users[i], i
+    for i := 0; i < len(s.users); i++ {
+        if s.users[i].ID == id{
+            return &s.users[i], i
         }
     }
 	return nil, -1
