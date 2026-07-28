@@ -14,9 +14,9 @@ const validToken = "secret"
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		header := r.Header["X-Auth-Token"]
+		tokens := r.Header.Values("X-Auth-Token")
 
-		if slices.Contains(header, "secret") {
+		if len(tokens) == 1 && tokens[0] == validToken {
 			next.ServeHTTP(w, r)
 			return
 		}
