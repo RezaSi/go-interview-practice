@@ -8,8 +8,10 @@
 | Hikitak | 27 | 27 |
 | IBraveMonkey | 27 | 27 |
 | JackDalberg | 27 | 27 |
+| JoQCorreia | 27 | 27 |
 | Johrespi | 27 | 27 |
 | KhaledMosaad | 27 | 27 |
+| Kosench | 27 | 27 |
 | MYK12397 | 27 | 27 |
 | Mxn-ptr | 27 | 27 |
 | Onkar-25 | 27 | 27 |
@@ -35,6 +37,7 @@
 | koki1610168 | 27 | 27 |
 | kuzminprog | 27 | 27 |
 | lanmanul | 27 | 27 |
+| livingpool | 27 | 27 |
 | longbui98 | 27 | 27 |
 | lyb88999 | 27 | 27 |
 | maket12 | 27 | 27 |
