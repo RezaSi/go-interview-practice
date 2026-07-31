@@ -149,6 +149,9 @@ func (sc *ShapeCalculator) TotalArea(shapes []Shape) float64 {
 
 // LargestShape finds the shape with the largest area
 func (sc *ShapeCalculator) LargestShape(shapes []Shape) Shape {
+	if len(shapes) == 0 {
+		return nil
+	}
 	large := shapes[0]
 
 	for i, a := range shapes {
