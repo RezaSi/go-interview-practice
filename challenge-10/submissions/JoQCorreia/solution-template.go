@@ -170,10 +170,9 @@ func (sc *ShapeCalculator) SortByArea(shapes []Shape, ascending bool) []Shape {
 
 	if !ascending {
 		slices.SortStableFunc(order, func(a, b Shape) int {
-			return cmp.Compare(a.Area(), b.Area())
+			return cmp.Compare(b.Area(), a.Area())
 
 		})
-		slices.Reverse(order)
 		return order
 	}
 
