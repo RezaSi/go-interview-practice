@@ -99,28 +99,22 @@ func (ca *ContentAggregator) workerPool(
 	for {
     	select {
     	    case <-ctx.Done():
-    	        // fmt.Printf("Worker closing (ctx closed)\n")
     	        return
     	    case url, ok := <-jobs:
     	        if !ok {
-    	            // fmt.Printf("Worker closing (jobs channel closed)\n")
     	            return
     	        } 
-    	        // fmt.Printf("Fetching content for %s\n", url)
     	        content, err := ca.fetcher.Fetch(ctx, url)
     	        if err != nil {
     	            errors<-err
     	            continue
     	        }
-    	        // fmt.Printf("Processing content %s for %s\n", string(content), url)
     	        processedData, err := ca.processor.Process(ctx, content)
     	        if err != nil {
     	            errors<-err
     	            continue
     	        }
-    	        // fmt.Printf("Sending processed data for %s\n", url)
     	        results<-processedData
-    	        continue
     	}
 	}
 }
@@ -149,19 +143,25 @@ func (ca *ContentAggregator) fanOut(
 	// Close results after all workers finish
 	go func() {
 	    wg.Wait()
-	    // fmt.Printf("Closing Channels (results/errors)\n")
 	    close(results)
 	    close(errors) // TODO - this may leak
 	}()
 	
 	// Send jobs to the job channel
 	go func() {
+	    limiter := NewTokenBucket(ca.requestsPerSecond, 5)
+	    
     	for _,url := range urls {
+    	    
+    	    err := limiter.Wait(ctx)
+    	    if err != nil {
+			    break
+    	    }
+    	    
     	    jobs <- url
     	}
     	
 	    // Close the job channel to indicate no more jobs will be sent
-	    // fmt.Printf("Closing Channels (jobs)\n")
 	    close(jobs)
 	} ()
 	
@@ -171,20 +171,18 @@ func (ca *ContentAggregator) fanOut(
 	for {
     	select {
     	    case <-ctx.Done():
-    	        // TODO
+    	        resultErrors = append(resultErrors, ctx.Err())
     	        return resultData, resultErrors
     	    case data, ok := <-results:
     	        if !ok {
     	            return resultData, resultErrors
     	        }
-    	        // fmt.Printf("Received result %v\n", data)
     	        resultData = append(resultData, data)
     	        continue
     	    case dataError, ok := <-errors:
     	        if !ok {
     	            return resultData, resultErrors
     	        }
-    	        // fmt.Printf("Received error %v\n", dataError)
     	        resultErrors = append(resultErrors, dataError)
     	        continue
     	}
@@ -202,7 +200,6 @@ type HTTPFetcher struct {
 // Fetch retrieves content from a URL via HTTP
 func (hf *HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	// TODO: Implement HTTP-based content fetching with context support
-	// fmt.Println("Fetch")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 	    return nil, err
@@ -233,15 +230,11 @@ type HTMLProcessor struct {
 // Process extracts structured data from HTML content
 func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (ProcessedData, error) {
 	// TODO: Implement HTML processing logic
-	// fmt.Println("Process")
-	
 	r := bytes.NewReader(content)
 	
-	fmt.Printf("parsing %s\n", string(content))
 	doc, err := html.Parse(r)
 	if err != nil {
-	    fmt.Println("parse error %w", err)
-		return ProcessedData{}, err
+	    return ProcessedData{}, err
 	}
 	
 	title, err := hp.findTitle(doc)
@@ -255,6 +248,8 @@ func (hp *HTMLProcessor) Process(ctx context.Context, content []byte) (Processed
 	    Title: title,
 	    Description: description,
 	    Keywords: keywords,
+	    Timestamp: time.Now(),
+	    Source: string(content),
 	}, nil
 } 
 
@@ -335,4 +330,44 @@ func (hp *HTMLProcessor) findKeywords(doc *html.Node) string {
 	}
 
 	return walk(doc)
+}
+
+type TokenBucket struct {
+	tokens chan struct{}
+}
+
+func NewTokenBucket(rate int, burst int) *TokenBucket {
+	tb := &TokenBucket{
+		tokens: make(chan struct{}, burst),
+	}
+
+	// Fill the bucket initially.
+	for i := 0; i < burst; i++ {
+		tb.tokens <- struct{}{}
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second / time.Duration(rate))
+		defer ticker.Stop()
+
+		for range ticker.C {
+			select {
+			case tb.tokens <- struct{}{}:
+				// added token
+			default:
+				// bucket already full
+			}
+		}
+	}()
+
+	return tb
+}
+
+func (tb *TokenBucket) Wait(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-tb.tokens:
+		return nil
+	}
 }
