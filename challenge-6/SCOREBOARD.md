@@ -11,15 +11,18 @@
 | Be1chenok | 7 | 7 |
 | BrianHuang813 | 7 | 7 |
 | Cpoing | 7 | 7 |
+| DavidCao22 | 7 | 7 |
 | ForcemCS | 7 | 7 |
 | Francky999 | 7 | 7 |
 | Gandook | 7 | 7 |
 | GinVlad | 7 | 7 |
 | HT2Knock | 7 | 7 |
 | Hikitak | 7 | 7 |
+| Ilya837 | 7 | 7 |
 | ImHotDog | 7 | 7 |
 | JackDalberg | 7 | 7 |
 | JarhsonNing | 7 | 7 |
+| JoQCorreia | 7 | 7 |
 | Johrespi | 7 | 7 |
 | JunLog | 7 | 7 |
 | Khabbab172 | 7 | 7 |
@@ -36,6 +39,7 @@
 | RezaSi | 7 | 7 |
 | SleepsOne | 7 | 7 |
 | VFarsiyants | 7 | 7 |
+| WHFF521 | 7 | 7 |
 | Xmilton | 7 | 7 |
 | YounesBouchbouk | 7 | 7 |
 | ZaharBorisenko | 7 | 7 |
@@ -59,6 +63,7 @@
 | brenoamin | 7 | 7 |
 | chaos1ee | 7 | 7 |
 | clgp-aint-cool | 7 | 7 |
+| deltron-fr | 7 | 7 |
 | dquang0504 | 7 | 7 |
 | duj4 | 7 | 7 |
 | duplabe | 7 | 7 |
@@ -82,6 +87,7 @@
 | lajosbnk | 7 | 7 |
 | lanmanul | 7 | 7 |
 | lhducc | 7 | 7 |
+| mactavishz | 7 | 7 |
 | maket12 | 7 | 7 |
 | manik23 | 7 | 7 |
 | maulana48 | 7 | 7 |

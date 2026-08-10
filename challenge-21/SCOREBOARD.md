@@ -18,9 +18,11 @@
 | ImHotDog | 35 | 35 |
 | JackDalberg | 35 | 35 |
 | JarhsonNing | 35 | 35 |
+| JoQCorreia | 35 | 35 |
 | Johrespi | 35 | 35 |
 | JunLog | 35 | 35 |
 | KhaledMosaad | 35 | 35 |
+| Kosench | 35 | 35 |
 | Lezhni | 35 | 35 |
 | MYK12397 | 35 | 35 |
 | MuraliMohan-2000 | 35 | 35 |
@@ -29,6 +31,7 @@
 | PopovMarko | 35 | 35 |
 | RezaSi | 35 | 35 |
 | Tonyblaise | 35 | 35 |
+| WHFF521 | 35 | 35 |
 | ZaharBorisenko | 35 | 35 |
 | affandisy | 35 | 35 |
 | akolpakov-somehash | 35 | 35 |
