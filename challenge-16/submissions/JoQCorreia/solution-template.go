@@ -161,8 +161,6 @@ func lps(pat string) []int {
 	return lps
 }
 
-// OptimizedSearch is your optimized version of HighAllocationSearch
-// It should produce identical results but perform better with fewer allocations
 func OptimizedSearch(text, substr string) map[int]string {
 
 	result := make(map[int]string)
@@ -183,7 +181,7 @@ func OptimizedSearch(text, substr string) map[int]string {
 			j++
 
 			if j == len(lowerSubstr) {
-				result[i-j] = text[i-j : i]
+				result[i-j] = text[i-len(substr) : i]
 				j = lps[j-1]
 			}
 		} else {
