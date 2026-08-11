@@ -1,0 +1,64 @@
+# Railway ignore file - exclude unnecessary files from deployment
+
+# Development files
+.env
+.env.local
+.env.example
+env.example
+
+# Documentation (keep essential ones)
+docs/
+images/
+*.md
+!README.md
+!RAILWAY_DEPLOY.md
+
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Test files (keep the test structure but exclude large test data)
+*_test.go
+test/
+tests/
+
+# Build artifacts (will be rebuilt in Docker)
+bin/
+build/
+dist/
+
+# Node modules (if any)
+node_modules/
+
+# Coverage reports
+coverage.txt
+*.cover
+
+# Backup files
+*.bak
+*.backup

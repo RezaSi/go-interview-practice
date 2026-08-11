@@ -71,6 +71,15 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 		s.packageService,
 	)
 
+	// "New in Go" release track. The service is self-contained (it only reads the
+	// releases/ directory), so it is constructed here rather than threaded through
+	// NewServer — that keeps main.go untouched.
+	releaseService := services.NewReleaseService()
+	if err := releaseService.Load(); err != nil {
+		log.Printf("releases: %v", err)
+	}
+	releaseHandler := handlers.NewReleaseHandler(s.content, releaseService)
+
 	// API routes
 	mux.HandleFunc("/api/challenges", apiHandler.GetAllChallenges)
 	mux.HandleFunc("/api/challenges/", apiHandler.GetChallengeByID)
@@ -88,6 +97,9 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/api/packages/", apiHandler.HandlePackageChallenge)
 	mux.HandleFunc("/api/packages-save-to-filesystem", apiHandler.SavePackageChallengeToFilesystem)
 
+	// Release track API routes
+	mux.HandleFunc("/api/releases/run", releaseHandler.RunChallenge)
+
 	// AI-powered API routes
 	mux.HandleFunc("/api/ai/code-review", apiHandler.AICodeReview)
 	mux.HandleFunc("/api/ai/interviewer-questions", apiHandler.AIInterviewerQuestions)
@@ -96,6 +108,17 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 
 	// GitHub webhook route
 	mux.HandleFunc("/webhook/github", apiHandler.GitHubWebhookHandler)
+
+	// Health check endpoint for Railway
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  "healthy",
+			"service": "go-interview-practice",
+			"version": "1.0.0",
+		})
+	})
 
 	// Debug route for sponsors
 	mux.HandleFunc("/api/debug/sponsors", apiHandler.GetSponsorsDebug)
@@ -140,6 +163,8 @@ func (s *Server) SetupRoutes() *http.ServeMux {
 	mux.HandleFunc("/", webHandler.HomePage)
 	mux.HandleFunc("/challenge/", webHandler.ChallengePage)
 	mux.HandleFunc("/interview", webHandler.InterviewPage)
+	mux.HandleFunc("/releases", releaseHandler.Route)
+	mux.HandleFunc("/releases/", releaseHandler.Route)
 	mux.HandleFunc("/scoreboard", webHandler.ScoreboardPage)
 	mux.HandleFunc("/scoreboard/", webHandler.ScoreChallengeHandler)
 	mux.HandleFunc("/packages/", func(w http.ResponseWriter, r *http.Request) {

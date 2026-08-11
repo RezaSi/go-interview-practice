@@ -791,6 +791,7 @@
 
     function displayTestResults(data, duration, isSubmit) {
         const testResults = document.getElementById('test-results');
+        let html = '';
         
         if (data.success) {
             html = `

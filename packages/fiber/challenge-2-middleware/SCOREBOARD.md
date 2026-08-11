@@ -2,4 +2,4 @@
 
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
-| odelbos | 0 | 1 |
+| odelbos | 11 | 11 |
