@@ -206,4 +206,3 @@ func SimulateCPUWork(duration time.Duration) {
 		}
 	}
 }
-
