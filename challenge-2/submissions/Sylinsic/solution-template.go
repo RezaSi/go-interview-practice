@@ -22,8 +22,8 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	l := len(s)
 	b := []rune(s)
+	l := len(b)
 	for i, j := 0, l-1; i < l/2; i,j = i+1,j-1 {
 	    b[i],b[j] = b[j],b[i]
 	}
