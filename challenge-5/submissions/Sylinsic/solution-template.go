@@ -12,19 +12,11 @@ const validToken = "secret"
 // Otherwise, respond with 401 Unauthorized.
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	    header := r.Header
-	    valid := false
-	    
-	    if len(header) == 0 {
-	    } else if val,exists := header["X-Auth-Token"]; !exists {
-	    } else if len(val) == 0 {
-	    } else if val[0] != validToken {
-	    } else { valid = true }
-        
-        if !valid {
-            w.WriteHeader(401)
-            return
-        }
+	    token := r.Header.Get("X-Auth-Token")
+	    if token == "" || token != validToken {
+	        w.WriteHeader(401)
+	        return
+	    }
       
         next.ServeHTTP(w,r) 
 	})
