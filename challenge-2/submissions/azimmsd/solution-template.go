@@ -23,7 +23,6 @@ func main() {
 
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
-	// TODO: Implement the function
 	runes := []rune(s)
 	output := []string{}
 
