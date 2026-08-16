@@ -1,0 +1,92 @@
+<svg viewBox="0 0 800 430" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: filepath.Join lets a user-supplied path escape the base directory, while os.Root resolves each component against an open directory and refuses anything that leaves it, including symlinks.">
+  <defs>
+    <marker id="orA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+    <marker id="orR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#dc3545"/>
+    </marker>
+    <marker id="orG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1e7e34"/>
+    </marker>
+  </defs>
+
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d;
+           letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .bad { fill: #dc3545; } .ok { fill: #1e7e34; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .jail{ fill: #f8faff; stroke: #667eea; stroke-dasharray: 6 4; }
+  </style>
+
+  <!-- LEFT: the old way -->
+  <text class="lbl" x="14" y="18">BEFORE — filepath.Join</text>
+  <rect class="box" x="14" y="28" width="372" height="96" rx="10"/>
+  <text class="t" x="28" y="52">base := "/srv/files"</text>
+  <text class="t" x="28" y="72">name := <tspan class="bad">"../../etc/passwd"</tspan></text>
+  <text class="t" x="28" y="92">p := filepath.Join(base, name)</text>
+  <text class="t bad" x="28" y="112">→ /etc/passwd</text>
+
+  <path d="M200 130 L200 152" stroke="#dc3545" stroke-width="2" marker-end="url(#orR)"/>
+  <text class="h bad" x="14" y="172">Opens fine. The read left the directory.</text>
+
+  <!-- RIGHT: the new way -->
+  <text class="lbl" x="414" y="18">AFTER — os.Root</text>
+  <rect class="box" x="414" y="28" width="372" height="96" rx="10"/>
+  <text class="t" x="428" y="52">root, _ := os.OpenRoot(base)</text>
+  <text class="t" x="428" y="72">f, err := root.Open(name)</text>
+  <text class="ts bad" x="428" y="96">err: openat ../../etc/passwd:</text>
+  <text class="ts bad" x="428" y="113">     path escapes from parent</text>
+
+  <path d="M600 130 L600 152" stroke="#1e7e34" stroke-width="2" marker-end="url(#orG)"/>
+  <text class="h ok" x="414" y="172">Refused before anything opens.</text>
+
+  <!-- resolution walk -->
+  <text class="lbl" x="14" y="212">HOW THE PATH IS RESOLVED</text>
+  <rect class="jail" x="14" y="222" width="372" height="130" rx="10"/>
+  <text class="h" x="28" y="245">the open directory is the boundary</text>
+
+  <rect x="28" y="258" width="78" height="28" rx="6" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts" x="42" y="277">reports</text>
+  <path d="M110 272 L128 272" stroke="#6c757d" stroke-width="1.5" marker-end="url(#orA)"/>
+
+  <rect x="132" y="258" width="62" height="28" rx="6" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts" x="150" y="277">2024</text>
+  <path d="M198 272 L216 272" stroke="#6c757d" stroke-width="1.5" marker-end="url(#orA)"/>
+
+  <rect x="220" y="258" width="48" height="28" rx="6" fill="#fff5f5" stroke="#f5c2c7"/>
+  <text class="ts bad" x="238" y="277">..</text>
+  <path d="M272 272 L292 272" stroke="#dc3545" stroke-width="1.5" marker-end="url(#orR)"/>
+  <text class="ts bad" x="298" y="277">stop</text>
+
+  <text class="n" x="28" y="308">each component is opened relative to the</text>
+  <text class="n" x="28" y="324">previous one, never re-joined as a string</text>
+  <text class="n" x="28" y="342">so there is no check-then-use gap</text>
+
+  <!-- symlink -->
+  <text class="lbl" x="414" y="212">SYMLINKS ARE NOT A WAY OUT</text>
+  <rect class="box" x="414" y="222" width="372" height="130" rx="10"/>
+  <text class="h" x="428" y="245">the link is followed, then judged</text>
+
+  <rect x="428" y="258" width="96" height="28" rx="6" fill="#f8f9fa" stroke="#e9ecef"/>
+  <text class="ts" x="442" y="277">link</text>
+  <path d="M528 272 L548 272" stroke="#6c757d" stroke-width="1.5" marker-end="url(#orA)"/>
+  <rect x="552" y="258" width="116" height="28" rx="6" fill="#fff5f5" stroke="#f5c2c7"/>
+  <text class="ts bad" x="564" y="277">/etc/hosts</text>
+  <path d="M672 272 L692 272" stroke="#dc3545" stroke-width="1.5" marker-end="url(#orR)"/>
+  <text class="ts bad" x="698" y="277">refused</text>
+
+  <text class="n" x="428" y="308">the target sits outside the boundary,</text>
+  <text class="n" x="428" y="324">so following it fails</text>
+  <text class="n" x="428" y="342">a link to a sibling inside still works</text>
+
+  <!-- footer -->
+  <rect x="14" y="368" width="772" height="48" rx="10" fill="#f0f4ff" stroke="#d9e0fb"/>
+  <text class="h" x="30" y="390">The check is the resolution, not a string comparison you wrote.</text>
+  <text class="n" x="30" y="408">That is why a prefix test can be bypassed and os.Root cannot.</text>
+</svg>
