@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Employee struct {
 	ID     int
@@ -12,27 +14,27 @@ type Employee struct {
 
 type Manager struct {
 	Employees []Employee
-	rwm sync.RWMutex
+	rwm       sync.RWMutex
 }
 
 func (m *Manager) find(id int) *Employee {
-    for i := range len(m.Employees) {
-        if m.Employees[i].ID == id {
-            return &m.Employees[i]
-        }
-    }
-    return nil
+	for i := range len(m.Employees) {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
+		}
+	}
+	return nil
 }
 
 // AddEmployee adds a new employee to the manager's list.
 func (m *Manager) AddEmployee(e Employee) {
 	m.rwm.Lock()
 	defer m.rwm.Unlock()
-	
-/*	existEmployee := m.find(e.ID)
-	if existEmployee != nil {
-	    return
-	}*/
+
+	/*	existEmployee := m.find(e.ID)
+		if existEmployee != nil {
+		    return
+		}*/
 	m.Employees = append(m.Employees, e)
 }
 
@@ -42,38 +44,42 @@ func (m *Manager) RemoveEmployee(id int) {
 	defer m.rwm.Unlock()
 	keep := 0
 	for i := range len(m.Employees) {
-	    if m.Employees[i].ID != id {
-	        m.Employees[keep] = m.Employees[i]
-	        keep++
-	    }
+		if m.Employees[i].ID != id {
+			m.Employees[keep] = m.Employees[i]
+			keep++
+		}
 	}
-    m.Employees = m.Employees[:keep]
+	m.Employees = m.Employees[:keep]
 }
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
 	m.rwm.RLock()
 	defer m.rwm.RUnlock()
-	
+
 	if len(m.Employees) == 0 {
-	    return 0
+		return 0
 	}
-	
+
 	sum := float64(0)
 	for _, v := range m.Employees {
-	    sum += v.Salary
+		sum += v.Salary
 	}
-	
-	
+
 	return sum / float64(len(m.Employees))
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-    m.rwm.RLock()
-    defer m.rwm.RUnlock()
-    
-	return m.find(id)
+	m.rwm.RLock()
+	defer m.rwm.RUnlock()
+
+	employee := m.find(id)
+	if employee == nil {
+		return employee
+	}
+	snapshot := *employee
+	return &snapshot
 }
 
 func main() {
