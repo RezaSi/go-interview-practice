@@ -51,6 +51,7 @@
 | Seokky | 8 | 8 |
 | Shopticks | 8 | 8 |
 | Stevo-S | 8 | 8 |
+| Sylinsic | 8 | 8 |
 | TOomaAh | 8 | 8 |
 | Tonyblaise | 8 | 8 |
 | VFarsiyants | 8 | 8 |
@@ -74,6 +75,7 @@
 | ashwinipatankar | 8 | 8 |
 | atplay90 | 8 | 8 |
 | awsl1110 | 8 | 8 |
+| azimmsd | 8 | 8 |
 | berkaykrc | 8 | 8 |
 | berkkaradalan | 8 | 8 |
 | betosmith2000 | 8 | 8 |
