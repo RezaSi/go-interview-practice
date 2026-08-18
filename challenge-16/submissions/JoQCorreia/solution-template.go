@@ -29,7 +29,8 @@ func SlowSort(data []int) []int {
 // It should produce identical results but perform better
 func OptimizedSort(data []int) []int {
 	
-	sort := slices.Clone(data)
+	sort := make([]int, len(data))
+	copy(sort, data)
 	slices.Sort(sort)
 	return sort
 }
@@ -206,4 +207,3 @@ func SimulateCPUWork(duration time.Duration) {
 		}
 	}
 }
-
