@@ -38,6 +38,7 @@
 | Raycas96 | 7 | 7 |
 | RezaSi | 7 | 7 |
 | SleepsOne | 7 | 7 |
+| Sylinsic | 7 | 7 |
 | VFarsiyants | 7 | 7 |
 | WHFF521 | 7 | 7 |
 | Xmilton | 7 | 7 |
