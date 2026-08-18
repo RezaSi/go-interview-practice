@@ -85,6 +85,7 @@
 | Shopticks | 6 | 6 |
 | Spiridonov-KA | 6 | 6 |
 | Stevo-S | 6 | 6 |
+| Sylinsic | 6 | 6 |
 | TOomaAh | 6 | 6 |
 | Tonyblaise | 6 | 6 |
 | VFarsiyants | 6 | 6 |
@@ -118,6 +119,7 @@
 | aswinsreeraj | 6 | 6 |
 | atplay90 | 6 | 6 |
 | awsl1110 | 6 | 6 |
+| azimmsd | 6 | 6 |
 | azs0309 | 6 | 6 |
 | baoqg9104 | 6 | 6 |
 | benvdh | 6 | 6 |
