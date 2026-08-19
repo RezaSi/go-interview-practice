@@ -1,0 +1,29 @@
+{
+  "title": "Fan Out Without the Bookkeeping",
+  "description": "Write two concurrent fan-outs with sync.WaitGroup.Go: one that collects results in input order, and one that counts hits from many goroutines safely.",
+  "short_description": "Let the WaitGroup do the counting",
+  "difficulty": "Beginner",
+  "estimated_time": "15-20 min",
+  "go_version": "1.25",
+  "learning_objectives": [
+    "Start goroutines with wg.Go instead of Add and Done",
+    "Collect ordered results by writing to an index rather than appending",
+    "Share a counter across goroutines with sync/atomic",
+    "Recognise what wg.Go does not give you"
+  ],
+  "prerequisites": ["Goroutines", "sync.WaitGroup basics"],
+  "tags": ["concurrency", "sync", "stdlib", "fan-out"],
+  "real_world_connection": "Fanning out over a list of ids and gathering the answers is the shape of most concurrent Go anyone writes: batch lookups, parallel health checks, multi-source aggregation.",
+  "requirements": [
+    "FetchAll returns results in the same order as ids",
+    "FetchAll runs the fetches concurrently, not one after another",
+    "CountMatching counts correctly with 500 goroutines running at once",
+    "Both wait for every goroutine before returning"
+  ],
+  "bonus_points": [
+    "Swap atomic.Int64 for a plain int and watch which test starts failing",
+    "Rewrite FetchAll with Add and Done to see how much longer it gets"
+  ],
+  "icon": "bi-diagram-2",
+  "order": 1
+}
