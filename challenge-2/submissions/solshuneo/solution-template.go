@@ -23,7 +23,7 @@ func main() {
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
 	// TODO: Implement the function
-    mybyte := []byte(s)
+    mybyte := []rune(s)
     n := len(mybyte)
     for l, r := 0, n - 1; l < r; l, r = l + 1, r - 1 {
         mybyte[l], mybyte[r] = mybyte[r], mybyte[l]
