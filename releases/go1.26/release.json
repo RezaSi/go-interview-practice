@@ -1,0 +1,11 @@
+{
+  "version": "1.26",
+  "display_name": "Go 1.26",
+  "status": "released",
+  "toolchain": "go1.26",
+  "released": "February 2026",
+  "headline": "Two small changes that delete a lot of boilerplate.",
+  "summary": "Go 1.26 is a quiet release with a couple of genuinely delightful bits: new() finally takes an expression, so you can get a pointer to any value without a temporary variable, and errors.AsType gives error inspection a generic form that fits in an if statement.",
+  "docs_url": "https://go.dev/doc/go1.26",
+  "features": ["new-expr", "errors-astype"]
+}

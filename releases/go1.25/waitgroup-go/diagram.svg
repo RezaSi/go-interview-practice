@@ -1,0 +1,76 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: the manual Add and Done pattern has three failure modes, while wg.Go increments the counter before starting the goroutine and decrements it in a deferred call you cannot forget.">
+  <defs>
+    <marker id="wgA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .bad { fill: #dc3545; } .ok { fill: #1e7e34; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .good{ fill: #f8faff; stroke: #667eea; }
+  </style>
+
+  <!-- before -->
+  <text class="lbl" x="14" y="18">BEFORE — YOU KEEP THE COUNT</text>
+  <rect class="box" x="14" y="28" width="372" height="130" rx="10"/>
+  <text class="t" x="28" y="52">for _, job := range jobs {</text>
+  <text class="t" x="28" y="72">    wg.Add(1)</text>
+  <text class="t" x="28" y="92">    go func() {</text>
+  <text class="t" x="28" y="112">        defer wg.Done()</text>
+  <text class="t" x="28" y="132">        work(job)</text>
+  <text class="t" x="28" y="152">    }()</text>
+
+  <!-- after -->
+  <text class="lbl" x="414" y="18">AFTER — THE WAITGROUP KEEPS IT</text>
+  <rect class="good" x="414" y="28" width="372" height="130" rx="10"/>
+  <text class="t" x="428" y="52">for _, job := range jobs {</text>
+  <text class="t" x="428" y="72">    wg.Go(func() {</text>
+  <text class="t" x="428" y="92">        work(job)</text>
+  <text class="t" x="428" y="112">    })</text>
+  <text class="t" x="428" y="132">}</text>
+  <text class="ts ok" x="428" y="152">two lines shorter, two bugs impossible</text>
+
+  <!-- what Go does -->
+  <text class="lbl" x="14" y="196">WHAT wg.Go DOES</text>
+  <rect class="box" x="14" y="206" width="772" height="80" rx="10"/>
+
+  <rect x="34" y="228" width="150" height="34" rx="7" fill="#f0f4ff" stroke="#d9e0fb"/>
+  <text class="ts" x="52" y="250">wg.Add(1)</text>
+  <path d="M190 245 L214 245" stroke="#6c757d" stroke-width="1.5" marker-end="url(#wgA)"/>
+
+  <rect x="220" y="228" width="180" height="34" rx="7" fill="#f0f4ff" stroke="#d9e0fb"/>
+  <text class="ts" x="238" y="250">start the goroutine</text>
+  <path d="M406 245 L430 245" stroke="#6c757d" stroke-width="1.5" marker-end="url(#wgA)"/>
+
+  <rect x="436" y="228" width="150" height="34" rx="7" fill="#f0f4ff" stroke="#d9e0fb"/>
+  <text class="ts" x="454" y="250">defer wg.Done()</text>
+  <path d="M592 245 L616 245" stroke="#6c757d" stroke-width="1.5" marker-end="url(#wgA)"/>
+
+  <rect x="622" y="228" width="144" height="34" rx="7" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts ok" x="640" y="250">run f()</text>
+
+  <text class="n" x="34" y="278">Add happens on the calling goroutine, before the new one exists, which is the ordering the race detector wants</text>
+
+  <!-- failure modes -->
+  <text class="lbl" x="14" y="316">THE THREE CLASSIC MISTAKES</text>
+  <rect class="box" x="14" y="326" width="250" height="62" rx="10"/>
+  <text class="h bad" x="28" y="348">Forgot Done</text>
+  <text class="n" x="28" y="368">Wait blocks forever. Gone: Go</text>
+  <text class="n" x="28" y="382">writes the defer for you.</text>
+
+  <rect class="box" x="275" y="326" width="250" height="62" rx="10"/>
+  <text class="h bad" x="289" y="348">Add inside the goroutine</text>
+  <text class="n" x="289" y="368">Wait can return early. Gone: Add</text>
+  <text class="n" x="289" y="382">runs before the goroutine starts.</text>
+
+  <rect class="box" x="536" y="326" width="250" height="62" rx="10"/>
+  <text class="h bad" x="550" y="348">Reuse before Wait returns</text>
+  <text class="n" x="550" y="368">Still possible. Go does not fix</text>
+  <text class="n" x="550" y="382">this one, so keep it in mind.</text>
+</svg>
