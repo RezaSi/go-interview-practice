@@ -6,6 +6,7 @@
 | AkifhanIlgaz | 23 | 23 |
 | AlexO-85 | 23 | 23 |
 | Ali-Fartoot | 23 | 23 |
+| Antrikshgwal | 23 | 23 |
 | Be1chenok | 23 | 23 |
 | BrianHuang813 | 23 | 23 |
 | BroQi | 23 | 23 |
@@ -46,6 +47,7 @@
 | chaos1ee | 23 | 23 |
 | dquang0504 | 23 | 23 |
 | duj4 | 23 | 23 |
+| gootibi | 23 | 23 |
 | grozdovk | 23 | 23 |
 | hasnogaems | 23 | 23 |
 | himanshum9 | 23 | 23 |
