@@ -48,9 +48,9 @@ func NewInMemoryBookRepository() *InMemoryBookRepository {
 }
 
 var (
-	InMemoRepoIsNotInited = errors.New("InMemoryRepository: books is not initialized")
-	InMemoRepoNotFound    = errors.New("InMemoryRepository: book is not found")
-	InMemoRepoNilBRPtr    = errors.New("InMemoryRepository: book pointer parameter is nil")
+	ErrInMemoRepoIsNotInited = errors.New("InMemoryRepository: books is not initialized")
+	ErrInMemoRepoNotFound    = errors.New("InMemoryRepository: book is not found")
+	ErrInMemoRepoNilBRPtr    = errors.New("InMemoryRepository: book pointer parameter is nil")
 )
 
 func (br *InMemoryBookRepository) GetAll() ([]*Book, error) {
@@ -58,7 +58,7 @@ func (br *InMemoryBookRepository) GetAll() ([]*Book, error) {
 	defer br.mu.RUnlock()
 
 	if br.books == nil {
-		return nil, InMemoRepoIsNotInited
+		return nil, ErrInMemoRepoIsNotInited
 	}
 
 	ret := []*Book{}
@@ -73,12 +73,12 @@ func (br *InMemoryBookRepository) GetAll() ([]*Book, error) {
 
 func (br *InMemoryBookRepository) getByID(id string) (*Book, error) {
 	if br.books == nil {
-		return nil, InMemoRepoIsNotInited
+		return nil, ErrInMemoRepoIsNotInited
 	}
 
 	bookPtr, exists := br.books[id]
 	if !exists {
-		return nil, fmt.Errorf("%w: %s", InMemoRepoNotFound, id)
+		return nil, fmt.Errorf("%w: %s", ErrInMemoRepoNotFound, id)
 	}
 
 	return bookPtr, nil
@@ -102,11 +102,11 @@ func (br *InMemoryBookRepository) Create(book *Book) error {
 	defer br.mu.Unlock()
 
 	if book == nil {
-		return InMemoRepoNilBRPtr
+		return ErrInMemoRepoNilBRPtr
 	}
 
 	if br.books == nil {
-		return InMemoRepoIsNotInited
+		return ErrInMemoRepoIsNotInited
 	}
 
 	id := rand.Uint64()
@@ -123,11 +123,11 @@ func (br *InMemoryBookRepository) Update(id string, book *Book) error {
 	defer br.mu.Unlock()
 
 	if book == nil {
-		return InMemoRepoNilBRPtr
+		return ErrInMemoRepoNilBRPtr
 	}
 
 	if br.books == nil {
-		return InMemoRepoIsNotInited
+		return ErrInMemoRepoIsNotInited
 	}
 
 	if id != book.ID {
@@ -140,7 +140,7 @@ func (br *InMemoryBookRepository) Update(id string, book *Book) error {
 
 	_, exists := br.books[id]
 	if !exists {
-		return fmt.Errorf("%w: %s", InMemoRepoNotFound, id)
+		return fmt.Errorf("%w: %s", ErrInMemoRepoNotFound, id)
 	}
 
 	bookCopy := *book
@@ -154,12 +154,12 @@ func (br *InMemoryBookRepository) Delete(id string) error {
 	defer br.mu.Unlock()
 
 	if br.books == nil {
-		return InMemoRepoIsNotInited
+		return ErrInMemoRepoIsNotInited
 	}
 
 	_, exists := br.books[id]
 	if !exists {
-		return fmt.Errorf("%w: %s", InMemoRepoNotFound, id)
+		return fmt.Errorf("%w: %s", ErrInMemoRepoNotFound, id)
 	}
 
 	delete(br.books, id)
@@ -172,7 +172,7 @@ func (br *InMemoryBookRepository) SearchByAuthor(author string) ([]*Book, error)
 	defer br.mu.RUnlock()
 
 	if br.books == nil {
-		return nil, InMemoRepoIsNotInited
+		return nil, ErrInMemoRepoIsNotInited
 	}
 
 	result := []*Book{}
@@ -192,7 +192,7 @@ func (br *InMemoryBookRepository) SearchByTitle(title string) ([]*Book, error) {
 	defer br.mu.RUnlock()
 
 	if br.books == nil {
-		return nil, InMemoRepoIsNotInited
+		return nil, ErrInMemoRepoIsNotInited
 	}
 
 	result := []*Book{}
@@ -394,7 +394,7 @@ func (h *BookHandler) HandleBook(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		book, err := h.Service.GetBookByID(id)
 		if err != nil {
-			if errors.Is(err, InMemoRepoNotFound) {
+			if errors.Is(err, ErrInMemoRepoNotFound) {
 				sendError(w, &ErrorResponse{
 					StatusCode: http.StatusNotFound,
 					Error:      err.Error(),
@@ -426,7 +426,7 @@ func (h *BookHandler) HandleBook(w http.ResponseWriter, r *http.Request) {
 		book.ID = id
 
 		if err := h.Service.UpdateBook(id, &book); err != nil {
-			if errors.Is(err, InMemoRepoNotFound) {
+			if errors.Is(err, ErrInMemoRepoNotFound) {
 				sendError(w, &ErrorResponse{
 					StatusCode: http.StatusNotFound,
 					Error:      err.Error(),
@@ -446,7 +446,7 @@ func (h *BookHandler) HandleBook(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 		if err := h.Service.DeleteBook(id); err != nil {
-			if errors.Is(err, InMemoRepoNotFound) {
+			if errors.Is(err, ErrInMemoRepoNotFound) {
 				sendError(w, &ErrorResponse{
 					StatusCode: http.StatusNotFound,
 					Error:      err.Error(),
