@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand/v2"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,8 +49,8 @@ func NewInMemoryBookRepository() *InMemoryBookRepository {
 
 var (
 	InMemoRepoIsNotInited = errors.New("InMemoryRepository: books is not initialized")
-	InMemoRepoNotFound     = errors.New("InMemoryRepository: book is not found")
-	InMemoRepoNilBRPtr     = errors.New("InMemoryRepository: book pointer parameter is nil")
+	InMemoRepoNotFound    = errors.New("InMemoryRepository: book is not found")
+	InMemoRepoNilBRPtr    = errors.New("InMemoryRepository: book pointer parameter is nil")
 )
 
 func (br *InMemoryBookRepository) GetAll() ([]*Book, error) {
