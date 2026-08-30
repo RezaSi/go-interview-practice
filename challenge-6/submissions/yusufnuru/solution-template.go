@@ -19,7 +19,7 @@ import (
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
 	// Your implementation here
-		wordCounts := make(map[string]int)
+	wordCounts := make(map[string]int)
 
 	words := strings.FieldsFunc(strings.ReplaceAll(text, "'", ""), func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
