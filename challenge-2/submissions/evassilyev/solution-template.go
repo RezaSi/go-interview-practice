@@ -23,8 +23,8 @@ func main() {
 // ReverseString returns the reversed string of s.
 func ReverseString(s string) string {
 	// TODO: Implement the function
-    result := make([]rune, len(s), len(s))
-	for i, r := range s {
+    result := make([]rune, len(s))
+	for i, r := range []rune(s) {
 	    result[len(s) - i - 1] = r    
 	}
 	return string(result)
