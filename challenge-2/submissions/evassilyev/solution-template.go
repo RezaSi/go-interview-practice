@@ -28,6 +28,6 @@ func ReverseString(s string) string {
         l++
         r--
     }
-	
-	return string(runes)
+
+        return string(runes)
 }
