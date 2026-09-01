@@ -1,0 +1,28 @@
+{
+  "title": "Serve Files Safely",
+  "description": "Take a file handler with the classic path traversal bug and rebuild it on os.Root, so ../ can no longer walk out of the served directory.",
+  "short_description": "Close a path traversal hole with a directory handle",
+  "difficulty": "Intermediate",
+  "estimated_time": "15-20 min",
+  "go_version": "1.24",
+  "learning_objectives": [
+    "Open a directory with os.OpenRoot and read and write through it",
+    "Explain why a filepath.Join prefix check is not enough",
+    "Recognise the path escapes from parent error"
+  ],
+  "prerequisites": ["Basic file I/O", "filepath"],
+  "tags": ["security", "filesystem", "stdlib", "path-traversal"],
+  "real_world_connection": "Path traversal is CWE-22 and shows up in file servers, upload handlers and archive extractors every year. os.Root turns it from a validation problem into an API choice.",
+  "requirements": [
+    "ReadSafe reads files inside BaseDir and refuses anything that resolves outside",
+    "WriteSafe writes inside BaseDir and refuses anything that resolves outside",
+    "Missing files inside the root still report a normal not-exist error",
+    "Do not change ReadUnsafe"
+  ],
+  "bonus_points": [
+    "Open the root once in a struct field instead of per call and see what changes",
+    "Try root.Open(\"/etc/passwd\") with a leading slash and read the error"
+  ],
+  "icon": "bi-shield-lock",
+  "order": 1
+}
