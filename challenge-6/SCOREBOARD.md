@@ -68,6 +68,7 @@
 | dquang0504 | 7 | 7 |
 | duj4 | 7 | 7 |
 | duplabe | 7 | 7 |
+| evassilyev | 7 | 7 |
 | grozdovk | 7 | 7 |
 | himanshum9 | 7 | 7 |
 | hudazaan | 7 | 7 |

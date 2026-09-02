@@ -153,6 +153,7 @@
 | emreEngineering | 6 | 6 |
 | emrelab | 6 | 6 |
 | es-codigo | 6 | 6 |
+| evassilyev | 6 | 6 |
 | ezra-gocci | 6 | 6 |
 | flaviogf | 6 | 6 |
 | fleimkeipa | 6 | 6 |
