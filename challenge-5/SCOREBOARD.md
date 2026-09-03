@@ -40,6 +40,7 @@
 | berkkaradalan | 9 | 9 |
 | bmeverett | 9 | 9 |
 | chenyao0910 | 9 | 9 |
+| evassilyev | 9 | 9 |
 | grozdovk | 9 | 9 |
 | himanshum9 | 9 | 9 |
 | hudazaan | 9 | 9 |
