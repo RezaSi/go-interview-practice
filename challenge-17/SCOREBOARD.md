@@ -6,10 +6,14 @@
 | Cpoing | 18 | 18 |
 | Gandook | 18 | 18 |
 | IBraveMonkey | 18 | 18 |
+| ImHotDog | 18 | 18 |
 | JackDalberg | 18 | 18 |
+| JoQCorreia | 18 | 18 |
 | Johrespi | 18 | 18 |
 | Khabbab172 | 18 | 18 |
 | KhaledMosaad | 18 | 18 |
+| Kosench | 18 | 18 |
+| Lezhni | 18 | 18 |
 | MYK12397 | 18 | 18 |
 | Mxn-ptr | 18 | 18 |
 | PolinaSvet | 18 | 18 |
@@ -19,8 +23,10 @@
 | adi041518 | 18 | 18 |
 | amanabay | 18 | 18 |
 | ashwinipatankar | 18 | 18 |
+| atplay90 | 18 | 18 |
 | azs0309 | 18 | 18 |
 | cep-ter | 18 | 18 |
+| gootibi | 18 | 18 |
 | grozdovk | 18 | 18 |
 | hudazaan | 18 | 18 |
 | hvijaycse | 18 | 18 |
@@ -31,8 +37,10 @@
 | kuzminprog | 18 | 18 |
 | lanmanul | 18 | 18 |
 | longbui98 | 18 | 18 |
+| miank1 | 18 | 18 |
 | mick4711 | 18 | 18 |
 | mmzykin | 18 | 18 |
+| mvsouza | 18 | 18 |
 | nzamulov | 18 | 18 |
 | odelbos | 18 | 18 |
 | onomica | 18 | 18 |

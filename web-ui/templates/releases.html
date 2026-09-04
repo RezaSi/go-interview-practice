@@ -1,0 +1,56 @@
+{{define "content"}}
+<div class="rl-page">
+<div class="rl-hero mb-4">
+    <div class="rl-hero-inner">
+        <div class="rl-hero-eyebrow"><i class="bi bi-broadcast"></i> New in Go</div>
+        <h1 class="rl-hero-title">Every release, explained and practised</h1>
+        <p class="rl-hero-sub">
+            Release notes tell you what changed. These pages show you why it changed, draw the
+            mechanism, dig into the proposal behind it, and hand you a compiler to try it on.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    {{range .Releases}}
+    <div class="col-12">
+        <a class="rl-release-card" href="/releases/{{.Version}}">
+            <div class="rl-release-main">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="rl-version">{{.DisplayName}}</span>
+                    {{if eq .Status "released"}}
+                        <span class="rl-badge rl-badge-green"><i class="bi bi-check-circle-fill"></i> Released</span>
+                    {{else if eq .Status "rc"}}
+                        <span class="rl-badge rl-badge-amber"><i class="bi bi-hourglass-split"></i> Release candidate</span>
+                    {{else}}
+                        <span class="rl-badge rl-badge-grey"><i class="bi bi-calendar3"></i> Upcoming</span>
+                    {{end}}
+                    {{if .Expected}}<span class="rl-when">expected {{.Expected}}</span>{{end}}
+                </div>
+                <h2 class="rl-release-headline">{{.Headline}}</h2>
+                <p class="rl-release-summary">{{.Summary}}</p>
+                <div class="rl-stats">
+                    <span><b>{{.AvailableCount}}</b> feature{{if ne .AvailableCount 1}}s{{end}} written up</span>
+                    <span><b>{{.ChallengeCount}}</b> hands-on challenge{{if ne .ChallengeCount 1}}s{{end}}</span>
+                    {{if .Toolchain}}<span class="rl-toolchain"><i class="bi bi-box-seam"></i> {{.Toolchain}}</span>{{end}}
+                </div>
+            </div>
+            <div class="rl-release-go">
+                <span>go</span>
+                <b>{{.Version}}</b>
+                <i class="bi bi-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+    {{else}}
+    <div class="col-12">
+        <div class="alert alert-light border text-center py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2 text-muted"></i>
+            No releases published yet.
+        </div>
+    </div>
+    {{end}}
+</div>
+</div>
+{{template "release_styles" .}}
+{{end}}

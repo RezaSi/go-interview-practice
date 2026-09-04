@@ -1,0 +1,15 @@
+{
+  "title": "testing/synctest",
+  "kind": "stdlib",
+  "short_description": "A virtual clock for your tests, so a five second timeout takes no time at all.",
+  "summary": "Concurrent code is hard to test for a boring reason: the interesting behaviour happens after a delay, and tests cannot afford to wait. So we sprinkle `time.Sleep(50 * time.Millisecond)` and hope. `testing/synctest` runs your goroutines in a bubble with a fake clock that only moves when everything is blocked, which makes a five second timeout finish instantly and makes the flakiness go away.",
+  "difficulty": "Intermediate",
+  "estimated_time": "30 min",
+  "icon": "bi-hourglass-split",
+  "tags": ["stdlib", "testing", "concurrency", "time"],
+  "diagram_caption": "Inside a bubble the clock is a value, not a wall. It only advances when every goroutine is durably blocked, so waiting costs nothing.",
+  "proposal_url": "https://github.com/golang/go/issues/67434",
+  "docs_url": "https://go.dev/doc/go1.25#testingsynctest",
+  "order": 1,
+  "challenges": ["challenge-1-a-cache-that-expires"]
+}

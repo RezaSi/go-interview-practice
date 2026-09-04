@@ -3,6 +3,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | Onkar-25 | 8 | 8 |
+| Sylinsic | 8 | 8 |
 | aswinsreeraj | 8 | 8 |
 | grozdovk | 8 | 8 |
 | imankhodadi | 8 | 8 |
