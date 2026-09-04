@@ -22,6 +22,7 @@
 | atplay90 | 15 | 15 |
 | berkkaradalan | 15 | 15 |
 | blxxdclxud | 15 | 15 |
+| evassilyev | 15 | 15 |
 | grozdovk | 15 | 15 |
 | imankhodadi | 15 | 15 |
 | inok94 | 15 | 15 |

@@ -23,6 +23,7 @@
 | atplay90 | 25 | 25 |
 | bmamha | 25 | 25 |
 | brenoamin | 25 | 25 |
+| evassilyev | 25 | 25 |
 | gootibi | 25 | 25 |
 | grozdovk | 25 | 25 |
 | himanshum9 | 25 | 25 |
