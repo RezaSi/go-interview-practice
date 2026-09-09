@@ -23,6 +23,7 @@
 | IBraveMonkey | 8 | 8 |
 | Ilya837 | 8 | 8 |
 | ImHotDog | 8 | 8 |
+| IvanDamNation | 8 | 8 |
 | JarhsonNing | 8 | 8 |
 | JoQCorreia | 8 | 8 |
 | JunLog | 8 | 8 |
@@ -179,6 +180,7 @@
 | xyersh | 8 | 8 |
 | ymonn | 8 | 8 |
 | yudha-Dlesmana | 8 | 8 |
+| zelie-delhotal | 8 | 8 |
 | zylbeyondlimits | 8 | 8 |
 | 0xQuietDev | 6 | 8 |
 | 0xtrooper | 6 | 8 |
