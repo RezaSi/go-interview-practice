@@ -107,6 +107,15 @@ func NewBankAccount(id, owner string, initBalance, minBalance float64) (*BankAcc
         }
     }
     
+    if math.IsInf(initBalance, 0) || math.IsInf(minBalance, 0) {
+        return nil, &AccountError{
+            ID: id,
+            Err: &ValidationError{
+                Message: "initial balance or minimum balance cannot be Inf",
+            },
+        }
+    }
+    
     if initBalance < 0 {
         return nil, &NegativeAmountError{
             Amount: initBalance,
@@ -160,6 +169,15 @@ func (a *BankAccount) deposit(amount float64) error {
         }
     }
     
+    if math.IsInf(amount, 0) {
+        return &AccountError{
+            ID: a.ID,
+            Err: &ValidationError{
+                Message: "transaction amount cannot be Inf",
+            },
+        }
+    }
+    
     if amount < 0 {
 	    return &NegativeAmountError{
 	        Amount: amount,
@@ -198,6 +216,15 @@ func (a *BankAccount) withdraw(amount float64) error {
             ID: a.ID,
             Err: &ValidationError{
                 Message: "transaction amount cannot be NaN",
+            },
+        }
+    }
+    
+    if math.IsInf(amount, 0) {
+        return &AccountError{
+            ID: a.ID,
+            Err: &ValidationError{
+                Message: "transaction amount cannot be Inf",
             },
         }
     }
