@@ -204,6 +204,12 @@ func (a *BankAccount) withdraw(amount float64) error {
 // It returns an error if the amount is invalid, exceeds the transaction limit,
 // or would bring the balance below the minimum required balance.
 func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
+    if target == nil {
+        return &AccountError{
+            ID: a.ID,
+            Err: &ValidationError{Message: "target account cannot be nil"},
+        }
+    }
     if a.ID == target.ID {
         return &AccountError{
             ID: a.ID,
