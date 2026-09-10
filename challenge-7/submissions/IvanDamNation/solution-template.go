@@ -3,6 +3,7 @@ package challenge7
 
 import (
     "fmt"
+    "math"
 	"sync"
 )
 
@@ -10,8 +11,8 @@ import (
 type BankAccount struct {
 	ID         string
 	Owner      string
-	Balance    float64
-	MinBalance float64
+	Balance    float64  // Better use int64 or decimal
+	MinBalance float64  // Can cause calc inaccuracy or NaN errors (IEEE 754)
 	mu         sync.Mutex // For thread safety
 }
 
@@ -92,7 +93,16 @@ func NewBankAccount(id, owner string, initBalance, minBalance float64) (*BankAcc
         return nil, &AccountError{
             ID: id,
             Err: &ValidationError{
-                Message: "Owner cannot be empty",
+                Message: "owner cannot be empty",
+            },
+        }
+    }
+    
+    if math.IsNaN(initBalance) || math.IsNaN(minBalance) {
+        return nil, &AccountError {
+            ID: id,
+            Err: &ValidationError{
+                Message: "initial balance or minimum balance cannot be NaN",
             },
         }
     }
@@ -141,6 +151,15 @@ func (a *BankAccount) Deposit(amount float64) error {
 }
 
 func (a *BankAccount) deposit(amount float64) error {
+    if math.IsNaN(amount) {
+        return &AccountError{
+            ID: a.ID,
+            Err: &ValidationError{
+                Message: "transaction amount cannot be NaN",
+            },
+        }
+    }
+    
     if amount < 0 {
 	    return &NegativeAmountError{
 	        Amount: amount,
@@ -174,6 +193,15 @@ func (a *BankAccount) Withdraw(amount float64) error {
 }
 
 func (a *BankAccount) withdraw(amount float64) error {
+    if math.IsNaN(amount) {
+        return &AccountError{
+            ID: a.ID,
+            Err: &ValidationError{
+                Message: "transaction amount cannot be NaN",
+            },
+        }
+    }
+    
     if amount < 0 {
 	    return &NegativeAmountError{
 	        Amount: amount,
@@ -210,6 +238,7 @@ func (a *BankAccount) Transfer(amount float64, target *BankAccount) error {
             Err: &ValidationError{Message: "target account cannot be nil"},
         }
     }
+    
     if a.ID == target.ID {
         return &AccountError{
             ID: a.ID,
