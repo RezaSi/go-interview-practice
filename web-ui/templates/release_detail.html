@@ -1,0 +1,67 @@
+{{define "content"}}
+<div class="rl-page">
+{{$rel := .Release}}
+<nav class="rl-crumbs mb-3">
+    <a href="/releases">New in Go</a> <i class="bi bi-chevron-right"></i>
+    <span>{{$rel.DisplayName}}</span>
+</nav>
+
+<div class="rl-hero rl-hero-sm mb-4">
+    <div class="rl-hero-inner">
+        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <div class="rl-hero-eyebrow mb-0">{{$rel.DisplayName}}</div>
+            {{if eq $rel.Status "released"}}
+                <span class="rl-badge rl-badge-onhero"><i class="bi bi-check-circle-fill"></i> Released</span>
+            {{else if eq $rel.Status "rc"}}
+                <span class="rl-badge rl-badge-onhero"><i class="bi bi-hourglass-split"></i> Release candidate</span>
+            {{else}}
+                <span class="rl-badge rl-badge-onhero"><i class="bi bi-calendar3"></i> Expected {{$rel.Expected}}</span>
+            {{end}}
+        </div>
+        <h1 class="rl-hero-title">{{$rel.Headline}}</h1>
+        <p class="rl-hero-sub">{{$rel.Summary}}</p>
+        <div class="rl-hero-meta">
+            {{if $rel.Toolchain}}
+            <span><i class="bi bi-box-seam"></i> challenges compile with <code>{{$rel.Toolchain}}</code></span>
+            {{end}}
+            {{if $rel.DocsURL}}
+            <a href="{{$rel.DocsURL}}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Official release notes</a>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<h2 class="rl-section-title">Features</h2>
+<div class="row g-3">
+    {{range $rel.Features}}
+    <div class="col-md-6">
+        {{if eq .Status "available"}}
+        <a class="rl-feature-card" href="/releases/{{$rel.Version}}/{{.Slug}}">
+            <div class="rl-feature-icon"><i class="bi {{.Icon}}"></i></div>
+            <div class="rl-feature-body">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h3 class="rl-feature-title">{{.Title}}</h3>
+                    <span class="rl-kind rl-kind-{{.Kind}}">{{.Kind}}</span>
+                </div>
+                <p class="rl-feature-desc">{{if .ShortDescriptionHTML}}{{.ShortDescriptionHTML}}{{else}}{{.ShortDescription}}{{end}}</p>
+            </div>
+            <i class="bi bi-arrow-right rl-feature-arrow"></i>
+        </a>
+        {{else}}
+        <div class="rl-feature-card rl-feature-soon">
+            <div class="rl-feature-icon"><i class="bi {{.Icon}}"></i></div>
+            <div class="rl-feature-body">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h3 class="rl-feature-title">{{.Title}}</h3>
+                    <span class="rl-badge rl-badge-grey">Coming soon</span>
+                </div>
+                <p class="rl-feature-desc">{{if .ShortDescriptionHTML}}{{.ShortDescriptionHTML}}{{else}}{{.ShortDescription}}{{end}}</p>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+</div>
+{{template "release_styles" .}}
+{{end}}

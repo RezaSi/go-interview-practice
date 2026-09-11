@@ -1,0 +1,28 @@
+{
+  "title": "Optional Fields Without Temporaries",
+  "description": "Build a config struct full of optional pointer fields using new(expr) instead of a pile of named temporaries, and prove the returned pointers do not alias the caller's values.",
+  "short_description": "Delete the temporary variables and the ptr helper",
+  "difficulty": "Beginner",
+  "estimated_time": "10-15 min",
+  "go_version": "1.26",
+  "learning_objectives": [
+    "Use new with an expression instead of a type",
+    "Explain why new(expr) allocates rather than aliases",
+    "Keep nil meaningful as unset when zero is a real value"
+  ],
+  "prerequisites": ["Pointers", "Structs"],
+  "tags": ["language", "pointers", "syntax"],
+  "real_world_connection": "Optional fields in API request types and config structs are almost always *int and *bool, and every codebase grows a ptr helper to populate them. This removes the helper.",
+  "requirements": [
+    "NewConfig sets Retries, Debug and Label and leaves Timeout nil",
+    "Zero values must still produce non-nil pointers",
+    "Each call allocates its own memory",
+    "Bump returns a pointer to n+1 that does not alias the caller's variable"
+  ],
+  "bonus_points": [
+    "Write NewConfig the old way with three temporaries and compare the two",
+    "Try new(Config{Retries: new(3)}) and decide whether you prefer it to &Config{...}"
+  ],
+  "icon": "bi-box-arrow-in-down",
+  "order": 1
+}

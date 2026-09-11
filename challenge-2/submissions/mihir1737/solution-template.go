@@ -1,0 +1,36 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Read input from standard input
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		input := scanner.Text()
+
+		// Call the ReverseString function
+		output := ReverseString(input)
+
+		// Print the result
+		fmt.Println(output)
+	}
+}
+
+// ReverseString returns the reversed string of s.
+func ReverseString(st string) string {
+	s := []rune(st)
+
+	l, r := 0, len(s)-1
+
+	for l < r {
+		s[l], s[r] = s[r], s[l]
+		l++
+		r--
+	}
+
+	return string(s)
+}

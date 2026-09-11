@@ -1,0 +1,298 @@
+{{define "content"}}
+{{$rel := .Release}}
+{{$f := .Feature}}
+{{$c := .Challenge}}
+
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/releases">New in Go</a></li>
+                <li class="breadcrumb-item"><a href="/releases/{{$rel.Version}}">{{$rel.DisplayName}}</a></li>
+                <li class="breadcrumb-item"><a href="/releases/{{$rel.Version}}/{{$f.Slug}}">{{$f.Title}}</a></li>
+                <li class="breadcrumb-item active">{{$c.Title}}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{$c.Title}}</h5>
+                <span class="badge bg-primary badge-{{$c.Difficulty | lower}}">{{$c.Difficulty}}</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-box-seam me-1"></i>go{{$c.GoVersion}}
+                </p>
+                <div class="markdown-content" id="challenge-description">
+                    {{$c.ReadmeHTML}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="editorTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="solution-tab" data-bs-toggle="tab" href="#solution" role="tab">Solution</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tests-tab" data-bs-toggle="tab" href="#tests" role="tab">Tests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="results-tab" data-bs-toggle="tab" href="#results" role="tab">Results</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="hints-tab" data-bs-toggle="tab" href="#hints" role="tab">
+                            <i class="bi bi-lightbulb me-1"></i>Hints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="learning-tab" data-bs-toggle="tab" href="#learning" role="tab">Learnings</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="solution" role="tabpanel">
+                        <div id="editor" class="editor-container"></div>
+                    </div>
+                    <div class="tab-pane fade" id="tests" role="tabpanel">
+                        <div id="test-editor" class="editor-container"></div>
+                    </div>
+                    <div class="tab-pane fade" id="results" role="tabpanel">
+                        <div id="test-results" class="p-3">
+                            <div class="alert alert-info mb-0">
+                                Run your code to see the test results. It compiles with go{{$c.GoVersion}}.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="hints" role="tabpanel">
+                        <div class="p-3">
+                            {{if $c.Hints}}
+                            <div class="text-center mb-4">
+                                <i class="bi bi-lightbulb" style="font-size: 2.5rem; color: #ffc107;"></i>
+                                <h5 class="mb-2">Progressive Hints</h5>
+                                <p class="text-muted mb-3">Click "Show Next Hint" to reveal hints one by one</p>
+                            </div>
+
+                            <div id="hints-container"></div>
+
+                            <div class="text-center mt-4">
+                                <button class="btn btn-outline-warning" id="show-hint-btn">
+                                    <i class="bi bi-lightbulb me-2"></i>Show Next Hint
+                                </button>
+                                <button class="btn btn-outline-secondary ms-2 d-none" id="reset-hints-btn">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Hints
+                                </button>
+                            </div>
+
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <span id="hints-progress">0</span> of <span id="total-hints">{{len $c.Hints}}</span> hints revealed
+                                </small>
+                            </div>
+
+                            <div id="hints-data" hidden>
+                                {{range $i, $h := $c.Hints}}
+                                <template data-hint-title="{{$h.Title}}">{{$h.HTML}}</template>
+                                {{end}}
+                            </div>
+                            {{else}}
+                            <div class="markdown-content">{{$c.HintsHTML}}</div>
+                            {{end}}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="learning" role="tabpanel">
+                        <div class="p-3 markdown-content">{{$c.LearningHTML}}</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <button class="btn btn-primary" id="run-button" {{if not .RunnerEnabled}}disabled{{end}}>
+                        <span class="spinner-border spinner-border-sm d-none" id="run-spinner" role="status" aria-hidden="true"></span>
+                        <span id="run-text">Run Tests</span>
+                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" id="reset-button">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                        </button>
+                        {{if .PrevChallenge}}
+                        <a class="btn btn-outline-secondary" href="/releases/{{$rel.Version}}/{{$f.Slug}}/{{.PrevChallenge}}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                        {{end}}
+                        {{if .NextChallenge}}
+                        <a class="btn btn-outline-secondary" href="/releases/{{$rel.Version}}/{{$f.Slug}}/{{.NextChallenge}}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<textarea id="rl-template-src" hidden>{{$c.Template}}</textarea>
+<textarea id="rl-testfile-src" hidden>{{$c.TestFile}}</textarea>
+<div id="rl-meta"
+     data-release="{{$rel.Version}}"
+     data-feature="{{$f.Slug}}"
+     data-challenge="{{$c.Slug}}"
+     hidden></div>
+{{end}}
+
+{{define "scripts"}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/mode-golang.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var meta = document.getElementById('rl-meta');
+    if (!meta) return;
+
+    var release = meta.dataset.release;
+    var feature = meta.dataset.feature;
+    var challenge = meta.dataset.challenge;
+    var storeKey = 'rl:' + release + ':' + feature + ':' + challenge;
+
+    var original = document.getElementById('rl-template-src').value;
+
+    var editor = ace.edit('editor');
+    editor.setTheme('ace/theme/chrome');
+    editor.session.setMode('ace/mode/golang');
+
+    var saved = null;
+    try { saved = localStorage.getItem(storeKey); } catch (e) {}
+    editor.setValue(saved || original);
+    editor.clearSelection();
+
+    editor.session.on('change', function () {
+        try { localStorage.setItem(storeKey, editor.getValue()); } catch (e) {}
+    });
+
+    var testEditor = ace.edit('test-editor');
+    testEditor.setTheme('ace/theme/chrome');
+    testEditor.session.setMode('ace/mode/golang');
+    testEditor.setValue(document.getElementById('rl-testfile-src').value);
+    testEditor.setReadOnly(true);
+    testEditor.clearSelection();
+
+    document.getElementById('reset-button').addEventListener('click', function () {
+        editor.setValue(original);
+        editor.clearSelection();
+        try { localStorage.removeItem(storeKey); } catch (e) {}
+    });
+
+    // Progressive hints, same behaviour as the packages/ challenges: one at a time.
+    (function () {
+        var data = document.getElementById('hints-data');
+        var container = document.getElementById('hints-container');
+        var showBtn = document.getElementById('show-hint-btn');
+        var resetBtn = document.getElementById('reset-hints-btn');
+        var progress = document.getElementById('hints-progress');
+        if (!data || !container || !showBtn) return;
+
+        var hints = Array.prototype.slice.call(data.querySelectorAll('template'));
+        var shown = 0;
+
+        showBtn.addEventListener('click', function () {
+            if (shown >= hints.length) return;
+            var tpl = hints[shown];
+            var item = document.createElement('div');
+            item.className = 'alert alert-info mb-3';
+            var head = document.createElement('div');
+            head.innerHTML = '<span class="badge bg-warning text-dark me-2">Hint ' + (shown + 1) + '</span>' +
+                '<strong>' + tpl.getAttribute('data-hint-title') + '</strong>';
+            var body = document.createElement('div');
+            body.className = 'markdown-content mt-2';
+            body.appendChild(tpl.content.cloneNode(true));
+            item.appendChild(head);
+            item.appendChild(body);
+            container.appendChild(item);
+
+            item.querySelectorAll('pre code').forEach(function (el) {
+                if (window.hljs) hljs.highlightElement(el);
+            });
+
+            shown++;
+            progress.textContent = shown;
+            resetBtn.classList.remove('d-none');
+            if (shown >= hints.length) showBtn.classList.add('d-none');
+        });
+
+        resetBtn.addEventListener('click', function () {
+            shown = 0;
+            container.innerHTML = '';
+            progress.textContent = '0';
+            showBtn.classList.remove('d-none');
+            resetBtn.classList.add('d-none');
+        });
+    })();
+
+    var runBtn = document.getElementById('run-button');
+    var runSpinner = document.getElementById('run-spinner');
+    var runText = document.getElementById('run-text');
+    var results = document.getElementById('test-results');
+
+    function showResultsTab() {
+        var tab = document.getElementById('results-tab');
+        if (tab && window.bootstrap) bootstrap.Tab.getOrCreateInstance(tab).show();
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    if (runBtn) {
+        runBtn.addEventListener('click', function () {
+            runBtn.disabled = true;
+            runSpinner.classList.remove('d-none');
+            runText.textContent = 'Running...';
+            results.innerHTML = '<div class="alert alert-info mb-0">Compiling and running the tests...</div>';
+            showResultsTab();
+
+            fetch('/api/releases/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    release: release,
+                    feature: feature,
+                    challenge: challenge,
+                    code: editor.getValue()
+                })
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                var head = data.passed
+                    ? '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-1"></i>All tests passed</div>'
+                    : '<div class="alert alert-danger"><i class="bi bi-x-circle-fill me-1"></i>Some tests failed</div>';
+                var info = '<p class="text-muted small mb-2">' + escapeHtml(data.toolchain || '') +
+                           ' &middot; ' + (data.executionMs || 0) + ' ms</p>';
+                results.innerHTML = head + info +
+                    '<pre class="bg-light p-3 rounded" style="white-space:pre-wrap;word-break:break-word;">' +
+                    '<code>' + escapeHtml(data.output || '(no output)') + '</code></pre>';
+            })
+            .catch(function (err) {
+                results.innerHTML = '<div class="alert alert-danger">Could not run the tests: ' +
+                    escapeHtml(String(err)) + '</div>';
+            })
+            .finally(function () {
+                runBtn.disabled = false;
+                runSpinner.classList.add('d-none');
+                runText.textContent = 'Run Tests';
+            });
+        });
+    }
+});
+</script>
+{{end}}

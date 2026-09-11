@@ -1,0 +1,15 @@
+{
+  "title": "sync.WaitGroup.Go",
+  "kind": "stdlib",
+  "short_description": "One method that removes the Add/Done bookkeeping, and the class of bug that came with it.",
+  "summary": "`wg.Add(1)`, `go func() { defer wg.Done(); ... }()` is the most copy-pasted four lines in Go, and it has three well-known ways to go wrong: forgetting `Done`, putting `Add` inside the goroutine, and reusing a `WaitGroup` before `Wait` returns. `wg.Go(f)` does the counting for you, so two of those become impossible to write.",
+  "difficulty": "Beginner",
+  "estimated_time": "20 min",
+  "icon": "bi-diagram-2",
+  "tags": ["stdlib", "concurrency", "sync"],
+  "diagram_caption": "The counter is incremented before the goroutine starts and decremented by a deferred call you cannot forget.",
+  "proposal_url": "https://github.com/golang/go/issues/63796",
+  "docs_url": "https://go.dev/doc/go1.25#sync",
+  "order": 2,
+  "challenges": ["challenge-1-fan-out-without-the-bookkeeping"]
+}

@@ -1,0 +1,15 @@
+{
+  "title": "errors.AsType",
+  "kind": "stdlib",
+  "short_description": "errors.As with the target variable removed, so it fits inside an if.",
+  "summary": "`errors.As` needs somewhere to put the result, so it takes a pointer to a variable you have to declare on the line above. That variable then lingers in scope, and passing the wrong thing is a run-time panic rather than a compile error. `errors.AsType[T]` returns the value and a bool, which turns three lines into one and moves the mistake to compile time.",
+  "difficulty": "Beginner",
+  "estimated_time": "20 min",
+  "icon": "bi-funnel",
+  "tags": ["stdlib", "errors", "generics"],
+  "diagram_caption": "Both walk the same Unwrap chain. The difference is where the answer goes: into a variable you declared, or back as a return value.",
+  "proposal_url": "https://github.com/golang/go/issues/51945",
+  "docs_url": "https://go.dev/doc/go1.26",
+  "order": 2,
+  "challenges": ["challenge-1-inspecting-a-wrapped-error"]
+}

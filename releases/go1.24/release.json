@@ -1,0 +1,11 @@
+{
+  "version": "1.24",
+  "display_name": "Go 1.24",
+  "status": "released",
+  "toolchain": "go1.24",
+  "released": "February 2025",
+  "headline": "A filesystem you cannot escape, and aliases that take type parameters.",
+  "summary": "Go 1.24 added os.Root, a directory handle that refuses to open anything outside itself even through a symlink, which turns path traversal from a code review problem into a compiler-adjacent one. It also finished generic type aliases, so an alias can finally carry type parameters.",
+  "docs_url": "https://go.dev/doc/go1.24",
+  "features": ["os-root", "generic-type-aliases"]
+}

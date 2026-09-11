@@ -1,0 +1,58 @@
+<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: new(T) allocates a zero value and returns its address, while new(expr) allocates a new variable already initialised to the value of expr, replacing the temporary variable pattern.">
+  <defs>
+    <marker id="neA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .bad { fill: #dc3545; } .ok { fill: #1e7e34; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .good{ fill: #f8faff; stroke: #667eea; }
+  </style>
+
+  <!-- old -->
+  <text class="lbl" x="14" y="18">BEFORE — THE TEMPORARY</text>
+  <rect class="box" x="14" y="28" width="372" height="104" rx="10"/>
+  <text class="t bad" x="28" y="52">p := &amp;yearsSince(born)   // not addressable</text>
+  <text class="n" x="28" y="74">so instead:</text>
+  <text class="t" x="28" y="96">age := yearsSince(born)</text>
+  <text class="t" x="28" y="116">p := &amp;age</text>
+
+  <!-- new -->
+  <text class="lbl" x="414" y="18">AFTER — new TAKES A VALUE</text>
+  <rect class="good" x="414" y="28" width="372" height="104" rx="10"/>
+  <text class="t" x="428" y="60">p := new(yearsSince(born))</text>
+  <text class="ts ok" x="428" y="92">one line, no name to invent,</text>
+  <text class="ts ok" x="428" y="112">and nothing else can reach the variable</text>
+
+  <!-- memory model -->
+  <text class="lbl" x="14" y="172">WHAT GETS ALLOCATED</text>
+  <rect class="box" x="14" y="182" width="372" height="152" rx="10"/>
+  <text class="h" x="28" y="204">new(int)</text>
+  <rect x="28" y="216" width="120" height="36" rx="6" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text class="ts" x="76" y="239">0</text>
+  <path d="M154 234 L182 234" stroke="#6c757d" stroke-width="1.5" marker-end="url(#neA)"/>
+  <text class="ts" x="190" y="238">*int pointing at it</text>
+
+  <text class="h" x="28" y="284">new(41 + 1)</text>
+  <rect x="28" y="296" width="120" height="36" rx="6" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts ok" x="72" y="319">42</text>
+  <path d="M154 314 L182 314" stroke="#6c757d" stroke-width="1.5" marker-end="url(#neA)"/>
+  <text class="ts" x="190" y="318">*int pointing at it</text>
+
+  <!-- copy semantics -->
+  <text class="lbl" x="414" y="172">IT IS A NEW VARIABLE, NOT AN ALIAS</text>
+  <rect class="box" x="414" y="182" width="372" height="152" rx="10"/>
+  <text class="t" x="428" y="206">func Bump(n int) *int {</text>
+  <text class="t" x="428" y="226">    return new(n + 1)</text>
+  <text class="t" x="428" y="246">}</text>
+  <text class="n" x="428" y="274">The result points at fresh memory holding n+1.</text>
+  <text class="n" x="428" y="292">Writing through it cannot touch the caller's n,</text>
+  <text class="n" x="428" y="310">because n was copied into the new variable.</text>
+</svg>

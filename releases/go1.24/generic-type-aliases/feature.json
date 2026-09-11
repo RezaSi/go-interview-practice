@@ -1,0 +1,15 @@
+{
+  "title": "Generic Type Aliases",
+  "kind": "language",
+  "short_description": "Aliases can finally take type parameters, so you can name a generic type without creating a new one.",
+  "summary": "`type Set[T comparable] = map[T]struct{}` was a syntax error until Go 1.24. Defined types could be generic and aliases could not, which meant naming a generic type always created a *new* type, with its own method set and its own conversion rules. The alias form gives you the name without the new identity, and knowing which of the two you want is most of the skill.",
+  "difficulty": "Intermediate",
+  "estimated_time": "25 min",
+  "icon": "bi-signpost-split",
+  "tags": ["language", "generics", "types"],
+  "diagram_caption": "A defined type is a new type that happens to have the same structure. An alias is another name for the same type, so it stays interchangeable.",
+  "proposal_url": "https://github.com/golang/go/issues/46477",
+  "docs_url": "https://go.dev/doc/go1.24#language",
+  "order": 2,
+  "challenges": ["challenge-1-naming-a-generic-type"]
+}

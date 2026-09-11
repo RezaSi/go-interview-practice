@@ -1,0 +1,28 @@
+{
+  "title": "Naming a Generic Type",
+  "description": "Build a set and a pair on top of generic aliases, and see the property that separates an alias from a defined type: it stays interchangeable with the type it names.",
+  "short_description": "Get the name without creating a new type",
+  "difficulty": "Intermediate",
+  "estimated_time": "20-25 min",
+  "go_version": "1.24",
+  "learning_objectives": [
+    "Write a generic alias and know when to prefer it to a defined type",
+    "Explain why an alias needs no conversion at a boundary",
+    "Remember that an alias cannot carry methods"
+  ],
+  "prerequisites": ["Generics basics", "Maps"],
+  "tags": ["language", "generics", "types"],
+  "real_world_connection": "Long generic signatures show up everywhere in handler and repository code, and moving a type between packages without breaking callers is a routine refactor. Both are alias jobs.",
+  "requirements": [
+    "NewSet deduplicates and returns a usable empty set for no items",
+    "Union returns a new set and leaves both inputs untouched",
+    "Contains reports membership",
+    "Zip pairs values and stops at the shorter slice"
+  ],
+  "bonus_points": [
+    "Try adding a method to Set and read the compiler error",
+    "Change the alias to a defined type and count how many call sites stop compiling"
+  ],
+  "icon": "bi-signpost-split",
+  "order": 1
+}
