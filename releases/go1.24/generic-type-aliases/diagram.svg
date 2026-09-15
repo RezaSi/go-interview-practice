@@ -1,0 +1,63 @@
+<svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: a defined generic type creates a distinct type that needs conversion and can carry methods, while a generic alias is another spelling of the same type and stays interchangeable but cannot have methods.">
+  <defs>
+    <marker id="gaA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .ok  { fill: #1e7e34; } .bad { fill: #dc3545; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .good{ fill: #f8faff; stroke: #667eea; }
+  </style>
+
+  <!-- defined type -->
+  <text class="lbl" x="14" y="18">DEFINED TYPE — A NEW TYPE</text>
+  <rect class="box" x="14" y="28" width="372" height="150" rx="10"/>
+  <text class="t" x="28" y="52">type Set[T comparable] map[T]struct{}</text>
+
+  <rect x="28" y="70" width="150" height="34" rx="7" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text class="ts" x="46" y="92">Set[string]</text>
+  <path d="M184 87 L212 87" stroke="#6c757d" stroke-width="1.5" marker-end="url(#gaA)"/>
+  <text class="ts bad" x="220" y="91">≠ map[string]struct{}</text>
+
+  <text class="n" x="28" y="124">needs a conversion to pass to a func taking a map</text>
+  <text class="n ok" x="28" y="144">can have methods: func (s Set[T]) Add(v T)</text>
+  <text class="n" x="28" y="164">use when the type is its own abstraction</text>
+
+  <!-- alias -->
+  <text class="lbl" x="414" y="18">ALIAS — ANOTHER NAME</text>
+  <rect class="good" x="414" y="28" width="372" height="150" rx="10"/>
+  <text class="t" x="428" y="52">type Set[T comparable] = map[T]struct{}</text>
+
+  <rect x="428" y="70" width="150" height="34" rx="7" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts" x="446" y="92">Set[string]</text>
+  <path d="M584 87 L612 87" stroke="#6c757d" stroke-width="1.5" marker-end="url(#gaA)"/>
+  <text class="ts ok" x="620" y="91">= map[string]struct{}</text>
+
+  <text class="n ok" x="428" y="124">interchangeable, no conversion anywhere</text>
+  <text class="n bad" x="428" y="144">cannot have methods, it is not your type</text>
+  <text class="n" x="428" y="164">use when you only want a shorter name</text>
+
+  <!-- the equals sign -->
+  <rect class="box" x="14" y="200" width="772" height="76" rx="10"/>
+  <text class="h" x="30" y="224">One character decides it</text>
+  <text class="t" x="30" y="250">type Set[T comparable]   map[T]struct{}   <tspan class="n">defined: a new type</tspan></text>
+  <text class="t" x="30" y="268">type Set[T comparable] = map[T]struct{}   <tspan class="n">alias: the same type</tspan></text>
+
+  <!-- what changed -->
+  <rect class="box" x="14" y="292" width="378" height="74" rx="10"/>
+  <text class="h" x="30" y="314">Before Go 1.24</text>
+  <text class="n" x="30" y="334">An alias could not take type parameters at all,</text>
+  <text class="n" x="30" y="352">so naming a generic type always made a new one.</text>
+
+  <rect class="good" x="408" y="292" width="378" height="74" rx="10"/>
+  <text class="h" x="424" y="314">After</text>
+  <text class="n" x="424" y="334">Both forms are available, so the choice between</text>
+  <text class="n" x="424" y="352">a new identity and a shorter name is now yours.</text>
+</svg>

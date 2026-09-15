@@ -1,0 +1,71 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: errors.As and errors.AsType both walk the Unwrap chain looking for a matching type; As writes into a variable you declared beforehand, AsType returns the value and a boolean.">
+  <defs>
+    <marker id="eaA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+    <marker id="eaG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1e7e34"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .ok  { fill: #1e7e34; } .bad { fill: #dc3545; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .good{ fill: #f8faff; stroke: #667eea; }
+  </style>
+
+  <!-- the chain -->
+  <text class="lbl" x="14" y="18">THE UNWRAP CHAIN, WALKED BY BOTH</text>
+  <rect class="box" x="14" y="28" width="772" height="86" rx="10"/>
+
+  <rect x="34" y="50" width="170" height="42" rx="7" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text class="ts" x="46" y="68">fmt.Errorf("load: %w")</text>
+  <text class="n" x="46" y="84">*fmt.wrapError</text>
+  <path d="M210 71 L236 71" stroke="#6c757d" stroke-width="1.5" marker-end="url(#eaA)"/>
+
+  <rect x="242" y="50" width="170" height="42" rx="7" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text class="ts" x="254" y="68">fmt.Errorf("open: %w")</text>
+  <text class="n" x="254" y="84">*fmt.wrapError</text>
+  <path d="M418 71 L444 71" stroke="#6c757d" stroke-width="1.5" marker-end="url(#eaA)"/>
+
+  <rect x="450" y="50" width="170" height="42" rx="7" fill="#e8f5e8" stroke="#cfe8cf"/>
+  <text class="ts ok" x="462" y="68">&amp;fs.PathError{...}</text>
+  <text class="n" x="462" y="84">match</text>
+  <path d="M626 71 L652 71" stroke="#1e7e34" stroke-width="1.5" marker-end="url(#eaG)"/>
+  <text class="ts ok" x="660" y="75">stop</text>
+
+  <!-- before -->
+  <text class="lbl" x="14" y="154">BEFORE — errors.As</text>
+  <rect class="box" x="14" y="164" width="372" height="126" rx="10"/>
+  <text class="t" x="28" y="188">var pe *fs.PathError</text>
+  <text class="t" x="28" y="208">if errors.As(err, &amp;pe) {</text>
+  <text class="t" x="28" y="228">    log.Print(pe.Path)</text>
+  <text class="t" x="28" y="248">}</text>
+  <text class="n" x="28" y="274">pe stays in scope after the if, holding nil</text>
+
+  <!-- after -->
+  <text class="lbl" x="414" y="154">AFTER — errors.AsType</text>
+  <rect class="good" x="414" y="164" width="372" height="126" rx="10"/>
+  <text class="ts" x="428" y="188">pe, ok := errors.AsType[*fs.PathError](err)</text>
+  <text class="ts" x="428" y="208">if ok {</text>
+  <text class="ts" x="428" y="228">    log.Print(pe.Path)</text>
+  <text class="ts" x="428" y="246">}</text>
+  <text class="n ok" x="428" y="270">pe is scoped to the if, and the type</text>
+  <text class="n ok" x="428" y="286">argument is checked at compile time</text>
+
+  <!-- failure modes -->
+  <rect class="box" x="14" y="310" width="372" height="76" rx="10"/>
+  <text class="h bad" x="28" y="332">Wrong target: panic at run time</text>
+  <text class="n" x="28" y="352">errors.As(err, pe) without the &amp;, or a target</text>
+  <text class="n" x="28" y="370">that is not a pointer, panics when the line runs.</text>
+
+  <rect class="good" x="414" y="310" width="372" height="76" rx="10"/>
+  <text class="h ok" x="428" y="332">Wrong type: it does not build</text>
+  <text class="n" x="428" y="352">The type argument is checked by the compiler,</text>
+  <text class="n" x="428" y="370">so the mistake never reaches production.</text>
+</svg>

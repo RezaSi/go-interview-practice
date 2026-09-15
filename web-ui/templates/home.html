@@ -21,9 +21,19 @@
                 <div class="github-stats d-flex align-items-center flex-wrap">
                     <!-- Star Button -->
                     <div class="d-inline-flex align-items-center">
-                        <i class="bi bi-star-fill text-warning me-2"></i>
-                        <iframe src="https://ghbtns.com/github-btn.html?user=RezaSi&repo=go-interview-practice&type=star&count=true" 
-                                frameborder="0" scrolling="0" width="100" height="20" title="GitHub Stars"></iframe>
+                        <!-- GitHub star widget: one pill, two links, same split as github.com -->
+                        <span class="gh-star">
+                            <a class="gh-star-btn" href="https://github.com/RezaSi/go-interview-practice"
+                               target="_blank" rel="noopener"
+                               aria-label="Star RezaSi/go-interview-practice on GitHub">
+                                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                                    <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path>
+                                </svg>Star
+                            </a>
+                            <a class="gh-star-count" id="gh-star-count"
+                               href="https://github.com/RezaSi/go-interview-practice"
+                               target="_blank" rel="noopener" aria-label="star count">2,435</a>
+                        </span>
                     </div>
                     
                     <!-- Sponsor Button -->
@@ -817,4 +827,45 @@
         font-size: 0.875rem;
     }
 </style>
-{{end}} 
+
+<script>
+// Replaces the old ghbtns.com iframe, which rendered blank whenever that third-party
+// service was unavailable. Fetch the real count, cache it for a day, and fall back to
+// the number already in the markup rather than showing nothing.
+(function () {
+    var el = document.getElementById('gh-star-count');
+    if (!el) return;
+    var KEY = 'gh-stars:go-interview-practice';
+    try {
+        var hit = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (hit && Date.now() - hit.at < 86400000) { el.textContent = hit.text; return; }
+    } catch (e) {}
+    fetch('https://api.github.com/repos/RezaSi/go-interview-practice')
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (d) {
+            if (typeof d.stargazers_count !== 'number') return;
+            var n = d.stargazers_count;
+            var text = n.toLocaleString('en-US');
+            el.textContent = text;
+            try { localStorage.setItem(KEY, JSON.stringify({ text: text, at: Date.now() })); } catch (e) {}
+        })
+        .catch(function () {});
+})();
+</script>
+
+
+<style>
+.gh-star{display:inline-flex;align-items:stretch;background:#fff;border-radius:999px;overflow:hidden;
+    box-shadow:0 2px 10px rgba(16,24,40,.18);line-height:1;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.gh-star a{display:inline-flex;align-items:center;text-decoration:none;font-size:.78rem;font-weight:650;
+    padding:.42rem .85rem;color:#24292f;transition:background .15s ease}
+.gh-star-btn{gap:.35rem}
+.gh-star-btn svg{fill:#eab308;flex:none}
+.gh-star-btn:hover{background:#f3f4f6;color:#24292f}
+.gh-star-count{border-left:1px solid #e5e7eb;color:#57606a;font-variant-numeric:tabular-nums;
+    padding-left:.8rem;padding-right:.9rem}
+.gh-star-count:hover{background:#f3f4f6;color:#24292f}
+</style>
+
+{{end}}

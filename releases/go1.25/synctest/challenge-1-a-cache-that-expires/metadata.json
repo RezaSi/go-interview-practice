@@ -1,0 +1,29 @@
+{
+  "title": "A Cache That Expires",
+  "description": "Implement TTL expiry and a background janitor on a small cache, then watch the whole test suite verify hours of behaviour in a quarter of a second inside synctest bubbles.",
+  "short_description": "Write time-dependent code and test it without waiting",
+  "difficulty": "Intermediate",
+  "estimated_time": "20-25 min",
+  "go_version": "1.25",
+  "learning_objectives": [
+    "Implement TTL expiry against time.Now rather than a counter",
+    "Write a ticker loop that shuts down on context cancellation",
+    "Read a test that uses synctest.Test and synctest.Wait",
+    "Explain why the bubble makes a timing test deterministic"
+  ],
+  "prerequisites": ["Goroutines and channels", "context", "time"],
+  "tags": ["testing", "concurrency", "time", "stdlib"],
+  "real_world_connection": "Caches, retries, rate limiters and heartbeats all behave correctly only after some delay. Before synctest, testing them meant sleeping and hoping, which is where a large share of flaky CI failures come from.",
+  "requirements": [
+    "Get returns a miss for unknown keys and for entries past their expiry",
+    "Get still hits one second before the TTL",
+    "Cleanup deletes expired entries on every tick",
+    "Cleanup leaves live entries alone and returns when the context is cancelled"
+  ],
+  "bonus_points": [
+    "Remove the ticker and sleep in a loop instead, then see which test starts failing",
+    "Add a test that asserts Cleanup has removed nothing before the first tick"
+  ],
+  "icon": "bi-hourglass-split",
+  "order": 1
+}

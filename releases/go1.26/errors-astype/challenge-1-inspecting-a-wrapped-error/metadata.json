@@ -1,0 +1,28 @@
+{
+  "title": "Inspecting a Wrapped Error",
+  "description": "Pull structured detail out of a wrapped error chain with errors.AsType, and use errors.Is for the sentinel, so each question is asked with the right tool.",
+  "short_description": "Ask an error what it is, in one line",
+  "difficulty": "Beginner",
+  "estimated_time": "15-20 min",
+  "go_version": "1.26",
+  "learning_objectives": [
+    "Use errors.AsType to find a typed error anywhere in a chain",
+    "Choose between errors.Is and errors.AsType deliberately",
+    "Remember that wrapping means a type assertion is not enough"
+  ],
+  "prerequisites": ["Error wrapping with %w", "errors.Is and errors.As"],
+  "tags": ["errors", "stdlib", "generics"],
+  "real_world_connection": "Any handler that maps internal errors to HTTP status codes does this: is it a validation problem, a rate limit, or a missing record, and what were the details.",
+  "requirements": [
+    "FailedField and RetryAfter look through the whole chain",
+    "Both report false when there is no match, including for a nil error",
+    "Classify names validation, ratelimit, notfound or unknown",
+    "The sentinel is matched with errors.Is, not by type"
+  ],
+  "bonus_points": [
+    "Rewrite one of them with errors.As and compare the line count and the scope of the variable",
+    "Add a second ValidationError deeper in the chain and confirm the outermost match wins"
+  ],
+  "icon": "bi-funnel",
+  "order": 1
+}

@@ -1,0 +1,78 @@
+<svg viewBox="0 0 800 430" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Diagram: without synctest a test sleeps in real time and is flaky; inside a synctest bubble the clock only advances when every goroutine is durably blocked, so the same test finishes instantly and deterministically.">
+  <defs>
+    <marker id="stA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6c757d"/>
+    </marker>
+    <marker id="stG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1e7e34"/>
+    </marker>
+  </defs>
+  <style>
+    .t   { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .ts  { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #343a40; }
+    .lbl { font: 700 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; letter-spacing: .07em; }
+    .h   { font: 600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #212529; }
+    .n   { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #6c757d; }
+    .bad { fill: #dc3545; } .ok { fill: #1e7e34; } .vi { fill: #764ba2; }
+    .box { fill: #f8f9fa; stroke: #e9ecef; }
+    .bub { fill: #f8faff; stroke: #667eea; stroke-dasharray: 6 4; }
+  </style>
+
+  <!-- BEFORE -->
+  <text class="lbl" x="14" y="18">WITHOUT SYNCTEST</text>
+  <rect class="box" x="14" y="28" width="372" height="118" rx="10"/>
+  <text class="t" x="28" y="52">go worker()</text>
+  <text class="t" x="28" y="72">time.Sleep(50 * time.Millisecond)</text>
+  <text class="t" x="28" y="92">if !done { t.Fatal("not finished") }</text>
+  <text class="ts bad" x="28" y="118">50ms of real time, every run</text>
+  <text class="ts bad" x="28" y="136">and still flaky on a loaded CI box</text>
+
+  <!-- AFTER -->
+  <text class="lbl" x="414" y="18">WITH SYNCTEST</text>
+  <rect class="bub" x="414" y="28" width="372" height="118" rx="10"/>
+  <text class="t" x="428" y="52">synctest.Test(t, func(t *testing.T) {</text>
+  <text class="t" x="428" y="72">    go worker()</text>
+  <text class="t" x="428" y="92">    synctest.Wait()</text>
+  <text class="t" x="428" y="112">})</text>
+  <text class="ts ok" x="428" y="136">0s of real time, same answer every run</text>
+
+  <!-- timeline -->
+  <text class="lbl" x="14" y="186">HOW THE CLOCK MOVES INSIDE A BUBBLE</text>
+  <rect class="box" x="14" y="196" width="772" height="128" rx="10"/>
+
+  <line x1="46" y1="268" x2="742" y2="268" stroke="#ced4da" stroke-width="2"/>
+
+  <!-- ticks -->
+  <circle cx="110" cy="268" r="6" fill="#667eea"/>
+  <text class="ts" x="72" y="292">t = 0s</text>
+  <text class="n" x="60" y="240">goroutines running</text>
+
+  <circle cx="330" cy="268" r="6" fill="#764ba2"/>
+  <text class="ts" x="286" y="292">all blocked</text>
+  <text class="n" x="268" y="240">clock jumps forward</text>
+
+  <circle cx="550" cy="268" r="6" fill="#764ba2"/>
+  <text class="ts" x="506" y="292">all blocked</text>
+  <text class="n" x="488" y="240">clock jumps again</text>
+
+  <circle cx="742" cy="268" r="6" fill="#1e7e34"/>
+  <text class="ts ok" x="676" y="292">t = 5s, done</text>
+
+  <path d="M118 268 L322 268" stroke="#667eea" stroke-width="2" marker-end="url(#stA)"/>
+  <path d="M338 268 L542 268" stroke="#764ba2" stroke-width="2" marker-end="url(#stA)"/>
+  <path d="M558 268 L734 268" stroke="#1e7e34" stroke-width="2" marker-end="url(#stG)"/>
+
+  <text class="n" x="46" y="312">real time elapsed: about a microsecond, because nothing actually slept</text>
+
+  <!-- footer -->
+  <rect x="14" y="340" width="378" height="76" rx="10" fill="#f0f4ff" stroke="#d9e0fb"/>
+  <text class="h" x="30" y="362">Wait ≠ advance the clock</text>
+  <text class="n" x="30" y="382">Wait returns once every other goroutine in the</text>
+  <text class="n" x="30" y="398">bubble is durably blocked. Time moves separately.</text>
+
+  <rect x="408" y="340" width="378" height="76" rx="10" fill="#fff8e1" stroke="#ffe08a"/>
+  <text class="h" x="424" y="362">The bubble has a boundary</text>
+  <text class="n" x="424" y="382">Real network, real files and channels shared with</text>
+  <text class="n" x="424" y="398">the outside are still real. Keep the bubble sealed.</text>
+</svg>

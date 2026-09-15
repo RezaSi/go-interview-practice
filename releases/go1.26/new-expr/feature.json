@@ -1,0 +1,15 @@
+{
+  "title": "new(expr)",
+  "kind": "language",
+  "short_description": "The built-in new now takes a value, not just a type, so the temporary variable goes away.",
+  "summary": "Go has never let you take the address of a value that is not already in a variable. `&Config{}` works because a composite literal is addressable, but `&f()`, `&42` and `&someParam` are not, so we invented the two line dance: assign to a temporary, then take its address. Go 1.26 lets `new` accept an expression, and the dance is over.",
+  "difficulty": "Beginner",
+  "estimated_time": "20 min",
+  "icon": "bi-box-arrow-in-down",
+  "tags": ["language", "pointers", "syntax"],
+  "diagram_caption": "new(T) allocates a zero value of T. new(expr) allocates a new variable already holding the value of expr, and returns its address.",
+  "proposal_url": "https://go.dev/doc/go1.26",
+  "docs_url": "https://go.dev/doc/go1.26",
+  "order": 1,
+  "challenges": ["challenge-1-optional-fields-without-temporaries"]
+}

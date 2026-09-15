@@ -1,0 +1,11 @@
+{
+  "version": "1.25",
+  "display_name": "Go 1.25",
+  "status": "released",
+  "toolchain": "go1.25",
+  "released": "August 2025",
+  "headline": "Testing concurrent code stopped being guesswork.",
+  "summary": "No language changes in 1.25, but two additions change how concurrent Go gets written and tested: testing/synctest runs your goroutines against a virtual clock so a 24-hour timeout takes no real time, and sync.WaitGroup.Go removes the Add/Done dance that everyone eventually gets wrong.",
+  "docs_url": "https://go.dev/doc/go1.25",
+  "features": ["synctest", "waitgroup-go"]
+}

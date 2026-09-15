@@ -1,0 +1,22 @@
+{
+  "title": "os.Root",
+  "kind": "stdlib",
+  "short_description": "A directory handle that refuses to open anything outside itself, symlinks included.",
+  "summary": "Path traversal has always been the application's problem in Go. You took a user-supplied name, joined it to a base directory, and hoped your validation was airtight. `os.Root` moves the check into the kernel-facing layer: every operation is resolved relative to an open directory, and anything that would escape it fails with `path escapes from parent`, even when the escape hatch is a symlink.",
+  "difficulty": "Intermediate",
+  "estimated_time": "30 min",
+  "icon": "bi-shield-lock",
+  "tags": [
+    "stdlib",
+    "security",
+    "filesystem",
+    "path-traversal"
+  ],
+  "diagram_caption": "Every path is resolved step by step against the open directory. The moment a component would leave it, the operation fails.",
+  "proposal_url": "https://github.com/golang/go/issues/67002",
+  "docs_url": "https://go.dev/doc/go1.24#directory-limited-filesystem-access",
+  "order": 1,
+  "challenges": [
+    "challenge-1-serve-files-safely"
+  ]
+}

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"web-ui/internal/server"
@@ -59,7 +60,14 @@ func main() {
 	mux := srv.SetupRoutes()
 
 	// Start server
+	// Port is configurable so several instances (or another service already on
+	// 8080) can coexist locally. Defaults to 8080 as before.
 	port := 8080
+	if p := os.Getenv("PORT"); p != "" {
+		if n, err := strconv.Atoi(p); err == nil && n > 0 {
+			port = n
+		}
+	}
 	log.Printf("Server starting on http://localhost:%d", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }

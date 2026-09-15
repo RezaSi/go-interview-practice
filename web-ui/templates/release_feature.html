@@ -1,0 +1,126 @@
+{{define "content"}}
+<div class="rl-page">
+{{$rel := .Release}}
+{{$f := .Feature}}
+<nav class="rl-crumbs mb-3">
+    <a href="/releases">New in Go</a> <i class="bi bi-chevron-right"></i>
+    <a href="/releases/{{$rel.Version}}">{{$rel.DisplayName}}</a> <i class="bi bi-chevron-right"></i>
+    <span>{{$f.Title}}</span>
+</nav>
+
+<div class="rl-feature-head mb-4">
+    <h1 class="rl-feature-h1">{{$f.Title}}</h1>
+    <p class="rl-feature-lede">{{$f.SummaryHTML}}</p>
+    <div class="rl-links">
+        {{if $f.ProposalURL}}<a href="{{$f.ProposalURL}}" target="_blank" rel="noopener"><i class="bi bi-github"></i> Proposal</a>{{end}}
+        {{if $f.DocsURL}}<a href="{{$f.DocsURL}}" target="_blank" rel="noopener"><i class="bi bi-file-text"></i> Release notes</a>{{end}}
+        {{if $f.Toolchain}}<span class="rl-links-tool"><i class="bi bi-box-seam"></i> {{$f.Toolchain}}</span>{{end}}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-3 d-none d-lg-block">
+        <nav class="rl-toc">
+            <div class="rl-toc-title">On this page</div>
+            <ul>
+                {{range $f.Sections}}
+                <li><a href="#{{.ID}}">{{.Title}}</a></li>
+                {{end}}
+                {{if $f.HasDiagram}}<li><a href="#how-it-works">How it works</a></li>{{end}}
+                {{if $f.HasProposal}}<li><a href="#proposal">Inside the proposal</a></li>{{end}}
+                {{if $f.HasVisual}}<li><a href="#see-it">See it work</a></li>{{end}}
+                {{if $f.Challenges}}<li><a href="#practice">Practice</a></li>{{end}}
+            </ul>
+        </nav>
+    </div>
+
+    <div class="col-lg-9">
+        {{if $f.HasDiagram}}
+        <section class="rl-diagram-wrap" id="how-it-works">
+            <h2 class="rl-h2">How it works</h2>
+            {{if $f.DiagramAlt}}<p class="rl-visual-hint">{{$f.DiagramAlt}}</p>{{end}}
+            <figure class="rl-diagram">{{$f.DiagramSVG}}</figure>
+        </section>
+        {{end}}
+
+        <article class="rl-prose">
+            {{$f.ExplainerHTML}}
+        </article>
+
+        {{if $f.HasProposal}}
+        <section class="rl-proposal" id="proposal">
+            <h2 class="rl-h2">Inside the proposal</h2>
+            <p class="rl-visual-hint">How the design was argued, and what the standard library actually does at run time.</p>
+            <article class="rl-prose">{{$f.ProposalHTML}}</article>
+        </section>
+        {{end}}
+
+        {{if $f.HasVisual}}
+        <section class="rl-visual-wrap" id="see-it">
+            <h2 class="rl-h2">See it work</h2>
+            <p class="rl-visual-hint">This diagram is interactive, click the controls.</p>
+            {{$f.VisualHTML}}
+        </section>
+        {{end}}
+
+        {{if $f.Challenges}}
+        <section id="practice" class="rl-practice">
+            <h2 class="rl-h2">Practice</h2>
+            <p class="rl-visual-hint">
+                Real code, real tests, compiled with <code>{{$f.Toolchain}}</code>, so the compiler errors you
+                see are the real ones.
+            </p>
+            <div class="rl-ch-list">
+                {{range $i, $c := $f.Challenges}}
+                <a class="rl-ch" href="/releases/{{$rel.Version}}/{{$f.Slug}}/{{$c.Slug}}">
+                    <span class="rl-ch-num">{{add $i 1}}</span>
+                    <span class="rl-ch-body">
+                        <span class="rl-ch-title">{{$c.Title}}</span>
+                        <span class="rl-ch-desc">{{$c.ShortDescription}}</span>
+                    </span>
+                    <i class="bi bi-arrow-right rl-ch-arrow"></i>
+                </a>
+                {{end}}
+            </div>
+        </section>
+        {{end}}
+    </div>
+</div>
+</div>
+{{if $f.Challenges}}
+<div id="rl-first-challenge" data-href="/releases/{{$rel.Version}}/{{$f.Slug}}/{{(index $f.Challenges 0).Slug}}" hidden></div>
+{{end}}
+{{template "release_styles" .}}
+{{end}}
+
+{{define "scripts"}}
+<script>
+// base.html emits no <!DOCTYPE>, so pages render in quirks mode and <body> is the
+// scrolling element. Native "#anchor" jumps do nothing there, so the table of
+// contents links and the "Try it" button scroll explicitly instead.
+document.addEventListener('DOMContentLoaded', function () {
+    // The "Try it" call to action navigates to the first challenge rather than
+    // scrolling, which is both more useful and immune to the quirks-mode scrolling
+    // described below.
+    var first = document.getElementById('rl-first-challenge');
+    var cta = document.querySelector('.rl-tryit-btn');
+    if (first && cta) cta.setAttribute('href', first.dataset.href);
+
+    var links = document.querySelectorAll('.rl-toc a[href^="#"]');
+    Array.prototype.forEach.call(links, function (a) {
+        a.addEventListener('click', function (e) {
+            var target = document.getElementById(a.getAttribute('href').slice(1));
+            if (!target) return;
+            e.preventDefault();
+            // Compute the absolute offset and set it on whichever element scrolls.
+            // scrollIntoView is unreliable in quirks mode, where <body> is the scroller.
+            var y = 0, node = target;
+            while (node) { y += node.offsetTop; node = node.offsetParent; }
+            var scroller = document.scrollingElement || document.documentElement;
+            scroller.scrollTo({ top: Math.max(0, y - 90), behavior: 'smooth' });
+            history.replaceState(null, '', a.getAttribute('href'));
+        });
+    });
+});
+</script>
+{{end}}
