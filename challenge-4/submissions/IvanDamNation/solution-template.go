@@ -19,7 +19,7 @@ type bfsWorkerBuf struct {
 func ConcurrentBFSQueries(graph map[int][]int, queries []int, numWorkers int) map[int][]int {
 	paths := make(map[int][]int, len(queries))
 	
-	if len(queries) == 0 {
+	if len(queries) == 0 || numWorkers <= 0 {
 	    return paths
 	}
 	
