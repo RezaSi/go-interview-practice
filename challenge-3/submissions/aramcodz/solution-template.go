@@ -1,8 +1,8 @@
 package main
 
 import (
-    "fmt"
-    "slices"
+	"fmt"
+	"slices"
 )
 
 type Employee struct {
@@ -23,34 +23,34 @@ func (m *Manager) AddEmployee(e Employee) {
 
 // RemoveEmployee removes an employee by ID from the manager's list.
 func (m *Manager) RemoveEmployee(id int) {
-    empToRemove := m.FindEmployeeByID(id)
-    if empToRemove != nil {
-        index := slices.Index(m.Employees, *empToRemove)
-        m.Employees = slices.Delete(m.Employees, index, index+1)
-    }
-	
+	empToRemove := m.FindEmployeeByID(id)
+	if empToRemove != nil {
+		index := slices.Index(m.Employees, *empToRemove)
+		m.Employees = slices.Delete(m.Employees, index, index+1)
+	}
+
 }
 
 // GetAverageSalary calculates the average salary of all employees.
 func (m *Manager) GetAverageSalary() float64 {
-    if len(m.Employees) == 0 {
-        return 0.00
-    }
-    
-    var totalSalary float64 = 0.00
-    for _, emp := range m.Employees {
-        totalSalary += emp.Salary
-    }
-    numEmployees := float64(len(m.Employees))
+	if len(m.Employees) == 0 {
+		return 0.00
+	}
+
+	var totalSalary float64 = 0.00
+	for _, emp := range m.Employees {
+		totalSalary += emp.Salary
+	}
+	numEmployees := float64(len(m.Employees))
 	return totalSalary / numEmployees
 }
 
 // FindEmployeeByID finds and returns an employee by their ID.
 func (m *Manager) FindEmployeeByID(id int) *Employee {
-	for _, employee := range m.Employees {
-	    if employee.ID == id {
-	        return &employee
-	    }
+	for i := range m.Employees {
+		if m.Employees[i].ID == id {
+			return &m.Employees[i]
+		}
 	}
 	return nil
 }
