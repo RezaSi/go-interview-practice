@@ -200,10 +200,7 @@ func (cb *circuitBreakerImpl) recordSuccess() {
 	cb.metrics.ConsecutiveFailures = 0
 	
 	if cb.state == StateHalfOpen {
-	    cb.halfOpenRequests++
-	    if cb.halfOpenRequests >= cb.config.MaxRequests {
-	        cb.setState(StateClosed)
-	    }
+	    cb.setState(StateClosed)
 	}
 }
 
