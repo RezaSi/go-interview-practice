@@ -158,7 +158,7 @@ func (cb *circuitBreakerImpl) setState(newState State) {
 	}
 	
 	if cb.config.OnStateChange != nil {
-	    cb.config.OnStateChange(cb.name, oldState, newState)
+	    go cb.config.OnStateChange(cb.name, oldState, newState)
 	}
 }
 
@@ -193,6 +193,8 @@ func (cb *circuitBreakerImpl) recordSuccess() {
     cb.mutex.Lock()
     defer cb.mutex.Unlock()
     
+    cb.tick()
+    
 	cb.metrics.Requests++
 	cb.metrics.Successes++
 	cb.metrics.ConsecutiveFailures = 0
@@ -209,6 +211,8 @@ func (cb *circuitBreakerImpl) recordSuccess() {
 func (cb *circuitBreakerImpl) recordFailure() {
     cb.mutex.Lock()
     defer cb.mutex.Unlock()
+    
+    cb.tick()
     
 	cb.metrics.Requests++
 	cb.metrics.Failures++
@@ -234,6 +238,16 @@ func (cb *circuitBreakerImpl) shouldTrip() bool {
 // isReady checks if the circuit breaker is ready to transition from open to half-open
 func (cb *circuitBreakerImpl) isReady() bool {
 	return time.Since(cb.lastStateChange) >= cb.config.Timeout
+}
+
+// tick flushing metrics based on TTL (Interval)
+func (cb *circuitBreakerImpl) tick() {
+    if cb.state == StateClosed {
+        if time.Since(cb.lastStateChange) >= cb.config.Interval {
+            cb.metrics = Metrics{}
+            cb.lastStateChange = time.Now()
+        }
+    }
 }
 
 // Example usage and testing helper functions
