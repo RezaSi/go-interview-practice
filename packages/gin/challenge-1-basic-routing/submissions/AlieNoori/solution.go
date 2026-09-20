@@ -7,13 +7,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
 // User represents a user in our system
 type User struct {
-	ID    int    `json:"id"`
+	ID    int    `json:"id" `
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Age   int    `json:"age"`
@@ -34,9 +35,12 @@ var users = []User{
 	{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
 	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
 }
-var nextID = 4
 
-var emailRegex = regexp.MustCompile(`[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}`)
+var (
+	nextID     = 4
+	mu         = &sync.Mutex{}
+	emailRegex = regexp.MustCompile(`[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}`)
+)
 
 func main() {
 	// TODO: Create Gin router
@@ -62,7 +66,9 @@ func main() {
 	router.GET("/users/search", searchUsers)
 
 	// TODO: Start server on port 8080
-	router.Run()
+	if err := router.Run(); err != nil {
+		panic(err)
+	}
 }
 
 // TODO: Implement handler functions
@@ -133,8 +139,10 @@ func createUser(c *gin.Context) {
 		return
 	}
 	// Add user to storage
+	mu.Lock()
 	user.ID = nextID
 	nextID++
+	mu.Unlock()
 	users = append(users, user)
 	// Return created user
 
@@ -190,7 +198,7 @@ func updateUser(c *gin.Context) {
 		})
 		return
 	}
-
+	user.ID = userID
 	users[idx] = user
 
 	// Return updated user
