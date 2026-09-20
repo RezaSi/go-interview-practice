@@ -39,7 +39,7 @@ var users = []User{
 var (
 	nextID     = 4
 	mu         = &sync.Mutex{}
-	emailRegex = regexp.MustCompile(`[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}`)
+	emailRegex = regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
 )
 
 func main() {
