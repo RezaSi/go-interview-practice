@@ -3,10 +3,12 @@ package main
 import (
     "cmp"
     "slices"
+    "strconv"
 	"strings"
 	"testing"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 // SlowSort sorts a slice of integers using a very inefficient algorithm (bubble sort)
@@ -30,7 +32,8 @@ func SlowSort(data []int) []int {
 // OptimizedSort is your optimized version of SlowSort
 // It should produce identical results but perform better
 func OptimizedSort(data []int) []int {
-	cData := slices.Clone(data)
+	cData := make([]int, len(data))
+	copy(cData, data)
 	if len(cData) <= 1 {
 	    return cData
 	}
@@ -49,14 +52,14 @@ func BenchmarkSortingAlgorithms(b *testing.B) {
 	for _, size := range sizes {
 		inputData := generateRandomSlice(size)
 
-		b.Run("SlowSort-Size-"+string(rune(size)), func(b *testing.B) {
+		b.Run("SlowSort-Size-"+strconv.Itoa(size), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_ = SlowSort(inputData)
 			}
 		})
 
-		b.Run("OptimizedSort-Size-"+string(rune(size)), func(b *testing.B) {
+		b.Run("OptimizedSort-Size-"+strconv.Itoa(size), func(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_ = OptimizedSort(inputData)
@@ -227,8 +230,15 @@ func HighAllocationSearch(text, substr string) map[int]string {
 // OptimizedSearch is your optimized version of HighAllocationSearch
 // It should produce identical results but perform better with fewer allocations
 func OptimizedSearch(text, substr string) map[int]string {
-	if len(text) == 0 || len(substr) == 0 || len(substr) > len(text) {
+	if len(substr) > len(text) {
 		return map[int]string{}
+	}
+
+	if len(substr) == 0 {
+		if len(text) == 0 {
+			return map[int]string{}
+		}
+		return map[int]string{0: ""}
 	}
 
 	subRunes := make([]rune, 0, len(substr))
@@ -239,6 +249,9 @@ func OptimizedSearch(text, substr string) map[int]string {
 	lsp := lspBuild(subRunes)
 
 	maxMatches := len(text) / len(substr)
+	if maxMatches == 0 {
+		maxMatches = 1
+	}
 	matches := make(map[int]string, maxMatches)
 	
 	bytePositions := make([]int, len(subRunes))
@@ -248,7 +261,11 @@ func OptimizedSearch(text, substr string) map[int]string {
 		lowerR := unicode.ToLower(r)
 		
 		for j > 0 && lowerR != subRunes[j] {
+			oldJ := j
 			j = lsp[j-1]
+			if j > 0 {
+				copy(bytePositions[0:j], bytePositions[oldJ-j:oldJ])
+			}
 		}
 		
 		if lowerR == subRunes[j] {
@@ -258,12 +275,14 @@ func OptimizedSearch(text, substr string) map[int]string {
 		
 		if j == len(subRunes) {
 			startByteIdx := bytePositions[0]
-			endByteIdx := byteIdx + len(string(r))
+			endByteIdx := byteIdx + utf8.RuneLen(r)
 			
 			matches[startByteIdx] = text[startByteIdx:endByteIdx]
+			
+			oldJ := j
 			j = lsp[j-1]
 			if j > 0 {
-				copy(bytePositions[0:j], bytePositions[len(subRunes)-j:len(subRunes)])
+				copy(bytePositions[0:j], bytePositions[oldJ-j:oldJ])
 			}
 		}
 	}
