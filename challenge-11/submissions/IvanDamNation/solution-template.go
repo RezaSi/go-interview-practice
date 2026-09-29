@@ -110,6 +110,7 @@ func (ca *ContentAggregator) workerPool(
             }
             continue
         }
+        res.Source = url
         
         select {
         case <-ctx.Done():
