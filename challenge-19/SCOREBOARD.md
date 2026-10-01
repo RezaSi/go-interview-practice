@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AkifhanIlgaz | 27 | 27 |
 | Ali-Fartoot | 27 | 27 |
+| AlieNoori | 27 | 27 |
 | ForcemCS | 27 | 27 |
 | Gandook | 27 | 27 |
 | Hikitak | 27 | 27 |

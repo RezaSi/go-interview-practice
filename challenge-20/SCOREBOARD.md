@@ -1,6 +1,7 @@
 # Scoreboard for challenge-20
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| AlieNoori | 13 | 13 |
 | IvanDamNation | 13 | 13 |
 | JackDalberg | 13 | 13 |
 | JoQCorreia | 13 | 13 |

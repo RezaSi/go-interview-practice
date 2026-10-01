@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AkifhanIlgaz | 36 | 36 |
 | Ali-Fartoot | 36 | 36 |
+| AlieNoori | 36 | 36 |
 | Hikitak | 36 | 36 |
 | IvanDamNation | 36 | 36 |
 | JoQCorreia | 36 | 36 |
