@@ -1,7 +1,6 @@
 package cache
 
 import (
-    "fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -312,7 +311,7 @@ func (c *LFUCache) Capacity() int {
 
 func (c *LFUCache) HitRate() float64 {
     h := c.hits.Load()
-    m := c.hits.Load()
+    m := c.misses.Load()
 	
 	if h + m == 0 {
 	    return 0.0
@@ -484,9 +483,6 @@ func (c *FIFOCache) Clear() {
 	c.hits.Store(0)
 	c.misses.Store(0)
 	
-	c.leastRecent.next.prev = nil
-	c.mostRecent.prev.next = nil
-	
 	c.leastRecent.next = c.mostRecent
 	c.mostRecent.prev = c.leastRecent
 }
@@ -603,25 +599,28 @@ func (c *ThreadSafeCache) HitRate() float64 {
 
 // NewCache creates a cache with the specified policy and capacity
 func NewCache(policy CachePolicy, capacity int) Cache {
-	var cache Cache
+	if capacity <= 0 {
+	    return nil
+	}
+	
 	switch policy {
 	case LRU:
-		cache = NewLRUCache(capacity)
+		return NewLRUCache(capacity)
 	case LFU:
-		cache = NewLFUCache(capacity)
+		return NewLFUCache(capacity)
 	case FIFO:
-		cache = NewFIFOCache(capacity)
+		return NewFIFOCache(capacity)
 	default:
-		fmt.Errorf("unexpected type of cache policy")
 		return nil
 	}
-	return cache
 }
 
 // NewThreadSafeCacheWithPolicy creates a thread-safe cache with the specified policy
 func NewThreadSafeCacheWithPolicy(policy CachePolicy, capacity int) Cache {
 	newCache := NewCache(policy, capacity)
-	newTSCache := NewThreadSafeCache(newCache)
+	if newCache == nil {
+	    return nil
+	}
 	
-	return newTSCache
+	return NewThreadSafeCache(newCache)
 }
