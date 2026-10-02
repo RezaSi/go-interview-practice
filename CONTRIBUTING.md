@@ -39,7 +39,7 @@ You can submit solutions to both Classic and Package challenges:
 2. **Clone Your Fork:**
 
    ```bash
-   git clone https://github.com/yourusername/go-interview-practice.git
+   git clone https://github.com/<your-username>/go-interview-practice.git
    ```
 
 3. **Create a New Branch:**
@@ -80,7 +80,7 @@ You can submit solutions to both Classic and Package challenges:
 
 #### **For Package Challenges**
 
-1. **Fork and Clone** (same as above)
+1. **Fork and Clone** (same as above).
 
 2. **Create a New Branch:**
 
