@@ -590,6 +590,9 @@ func (c *ThreadSafeCache) Capacity() int {
 }
 
 func (c *ThreadSafeCache) HitRate() float64 {
+    c.mu.RLock()
+	defer c.mu.RUnlock()
+	
 	return c.cache.HitRate()
 }
 
