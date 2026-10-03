@@ -42,6 +42,12 @@ func (c *Client) Receive() string {
     return msg
 }
 
+func (c *Client) isDisconnected() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.disconnected
+}
+
 // ChatServer manages client connections and message routing
 type ChatServer struct {
 	mu          sync.RWMutex
@@ -78,6 +84,7 @@ func (s *ChatServer) Connect(username string) (*Client, error) {
 func (s *ChatServer) Disconnect(client *Client) {
 	s.mu.Lock()
 	if _, exists := s.clients[client.username]; !exists {
+	    s.mu.Unlock()
 	    return
 	}
 	delete(s.clients, client.username)
@@ -115,7 +122,7 @@ func (s *ChatServer) PrivateMessage(sender *Client, recipient string, message st
 	    return ErrRecipientNotFound
 	}
 	
-	if sender.disconnected || user.disconnected {
+	if sender.isDisconnected() || user.isDisconnected() {
 	    return ErrClientDisconnected
 	}
 	
