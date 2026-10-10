@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -220,7 +221,7 @@ func (s *DefaultBookService) CreateBook(book *Book) error {
 	const maxRetries = 3
 	var err error
 
-	for range maxRetries {
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		book.ID = uuid.New().String()
 		err = s.repo.Create(book)
 		if errors.Is(err, ErrIDAlreadyExists) {
@@ -324,10 +325,21 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 			defer r.Body.Close()
 
-			if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+			decoder := json.NewDecoder(r.Body)
+
+			if err := decoder.Decode(&book); err != nil {
 				respondWithError(w, ErrorResponse{
 					StatusCode: http.StatusBadRequest,
 					Error:      err.Error(),
+				})
+				return
+			}
+
+			var dummy struct{}
+			if err := decoder.Decode(&dummy); err != io.EOF {
+				respondWithError(w, ErrorResponse{
+					StatusCode: http.StatusBadRequest,
+					Error:      "Request body must contain only one JSON object",
 				})
 				return
 			}
@@ -421,10 +433,21 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 			defer r.Body.Close()
 
-			if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+			decoder := json.NewDecoder(r.Body)
+
+			if err := decoder.Decode(&book); err != nil {
 				respondWithError(w, ErrorResponse{
 					StatusCode: http.StatusBadRequest,
 					Error:      "Invalid JSON payload",
+				})
+				return
+			}
+
+			var dummy struct{}
+			if err := decoder.Decode(&dummy); err != io.EOF {
+				respondWithError(w, ErrorResponse{
+					StatusCode: http.StatusBadRequest,
+					Error:      "Request body must contain only one JSON object",
 				})
 				return
 			}
