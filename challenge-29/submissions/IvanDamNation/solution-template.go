@@ -158,6 +158,16 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 
 	select {
 	case <-ctx.Done():
+		tb.mu.Lock()
+
+		tb.tokens += n64
+
+		tb.lastRefill = tb.lastRefill.Add(-sleepDuration)
+		if tb.lastRefill.Before(time.Now()) {
+			tb.lastRefill = time.Now()
+		}
+		tb.mu.Unlock()
+
 		tb.metrics.deniedRequests.Add(1)
 		return ctx.Err()
 	case <-timer.C:
