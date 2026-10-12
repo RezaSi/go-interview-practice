@@ -160,12 +160,13 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	case <-ctx.Done():
 		tb.mu.Lock()
 
+		now := time.Now()
+		tb.tokens += now.Sub(tb.lastRefill).Seconds() * float64(tb.rate)
 		tb.tokens += n64
-
-		tb.lastRefill = tb.lastRefill.Add(-sleepDuration)
-		if tb.lastRefill.Before(time.Now()) {
-			tb.lastRefill = time.Now()
+		if tb.tokens > float64(tb.burst) {
+			tb.tokens = float64(tb.burst)
 		}
+		tb.lastRefill = now
 		tb.mu.Unlock()
 
 		tb.metrics.deniedRequests.Add(1)
