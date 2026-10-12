@@ -130,6 +130,7 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 	}
 
 	if n > tb.burst {
+		tb.metrics.deniedRequests.Add(1)
 		return fmt.Errorf("request size %d exceeds token bucket burst %v", n, tb.burst)
 	}
 	n64 := float64(n)
