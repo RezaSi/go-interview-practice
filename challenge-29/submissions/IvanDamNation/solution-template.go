@@ -89,8 +89,12 @@ func (tb *TokenBucketLimiter) Allow() bool {
 }
 
 func (tb *TokenBucketLimiter) AllowN(n int) bool {
-	n64 := float64(n)
 	tb.metrics.totalRequests.Add(1)
+	if n < 0 {
+		tb.metrics.deniedRequests.Add(1)
+		return false
+	}
+	n64 := float64(n)
 
 	tb.mu.Lock()
 	isAllowed, newTokens, nextRefill, _ := tb.hasTokensLazy(n64)
@@ -118,9 +122,24 @@ func (tb *TokenBucketLimiter) WaitN(ctx context.Context, n int) error {
 		return err
 	}
 
-	n64 := float64(n)
-	start := time.Now()
 	tb.metrics.totalRequests.Add(1)
+
+	if n < 0 {
+		tb.metrics.deniedRequests.Add(1)
+		return fmt.Errorf("request size %d cannot be negative", n)
+	}
+
+	if n > tb.burst {
+		return fmt.Errorf("request size %d exceeds token bucket burst %v", n, tb.burst)
+	}
+	n64 := float64(n)
+
+	start := time.Now()
+
+	if n > tb.burst {
+		tb.metrics.deniedRequests.Add(1)
+		return fmt.Errorf("request size %d exceeds burst limit %d", n, tb.burst)
+	}
 
 	tb.mu.Lock()
 	isAllowed, newTokens, nextRefill, sleepDuration := tb.hasTokensLazy(n64)
@@ -279,7 +298,7 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		isAllowed, sleepDuration := sw.checkLazy(n, now)
 		if isAllowed {
 			for i := 0; i < n; i++ {
-				sw.putRequest(start)
+				sw.putRequest(now)
 			}
 			sw.mu.Unlock()
 			break
@@ -412,6 +431,10 @@ func (fw *FixedWindowLimiter) Allow() bool {
 
 func (fw *FixedWindowLimiter) AllowN(n int) bool {
 	fw.metrics.totalRequests.Add(1)
+	if n < 0 {
+		fw.metrics.deniedRequests.Add(1)
+		return false
+	}
 
 	fw.mu.Lock()
 	isAllowed := fw.updateWindowAndCheckLazy(n)
@@ -439,6 +462,11 @@ func (fw *FixedWindowLimiter) WaitN(ctx context.Context, n int) error {
 	}
 
 	fw.metrics.totalRequests.Add(1)
+
+	if n < 0 {
+		fw.metrics.deniedRequests.Add(1)
+		return fmt.Errorf("request size %d cannot be negative", n)
+	}
 
 	if n > fw.rate {
 		fw.metrics.deniedRequests.Add(1)
