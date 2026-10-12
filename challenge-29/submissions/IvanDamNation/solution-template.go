@@ -159,11 +159,10 @@ func (tb *TokenBucketLimiter) hasTokensLazy(n float64) (bool, float64, time.Time
 	now := time.Now()
 
 	if newTokens < n {
-		deficit := n - tb.tokens
+		deficit := n - newTokens
 		sleepSec := deficit / float64(tb.rate)
 		sleepDuration := time.Duration(sleepSec * float64(time.Second))
-		targetTime := now.Add(sleepDuration)
-		return false, newTokens, targetTime, sleepDuration
+		return false, newTokens, now, sleepDuration
 	}
 
 	return true, newTokens, now, 0
@@ -322,7 +321,9 @@ func (sw *SlidingWindowLimiter) Burst() int {
 func (sw *SlidingWindowLimiter) Reset() {
 	sw.mu.Lock()
 	defer sw.mu.Unlock()
-	sw.requests = make([]time.Time, 0)
+	sw.requests = make([]time.Time, sw.rate)
+	sw.readPtr = 0
+	sw.reqQSize = 0
 
 	sw.metrics.allowedRequests.Store(0)
 	sw.metrics.deniedRequests.Store(0)
