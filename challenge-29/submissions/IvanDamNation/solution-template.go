@@ -241,7 +241,7 @@ func (sw *SlidingWindowLimiter) AllowN(n int) bool {
 	sw.mu.Lock()
 	isAllowed, _ := sw.checkLazy(n, now)
 	if isAllowed {
-		for range n {
+		for i := 0; i < n; i++ {
 			sw.putRequest(now)
 		}
 	}
@@ -279,7 +279,7 @@ func (sw *SlidingWindowLimiter) WaitN(ctx context.Context, n int) error {
 		sw.mu.Lock()
 		isAllowed, sleepDuration := sw.checkLazy(n, now)
 		if isAllowed {
-			for range n {
+			for i := 0; i < n; i++ {
 				sw.putRequest(start)
 			}
 			sw.mu.Unlock()
