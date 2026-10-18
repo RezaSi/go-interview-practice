@@ -269,7 +269,10 @@ func (s *OAuth2Server) HandleAuthorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	checkedScopes := make([]string, 0, len(client.AllowedScopes))
-	for s := range strings.SplitSeq(scope, " ") {
+	for _, s := range strings.Split(scope, " ") {
+		if s == "" {
+			continue
+		}
 		if _, exists := allowedMap[s]; exists {
 			checkedScopes = append(checkedScopes, s)
 		}
