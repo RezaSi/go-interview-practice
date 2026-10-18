@@ -3,6 +3,7 @@
 |------------|--------------|-------------|
 | AlieNoori | 27 | 27 |
 | Cpoing | 27 | 27 |
+| IvanDamNation | 27 | 27 |
 | Kosench | 27 | 27 |
 | PolinaSvet | 27 | 27 |
 | PopovMarko | 27 | 27 |
