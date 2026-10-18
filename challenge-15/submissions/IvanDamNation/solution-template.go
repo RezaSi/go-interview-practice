@@ -29,7 +29,7 @@ var (
 	ErrIDNotUnique          = errors.New("provided ClientID already exists")
 	ErrInvalidGrant         = errors.New("invalid grant")
 	ErrInvalidPKCEMethod    = errors.New("invalid challenge method")
-	ErrInvalidRedirectURI   = errors.New("ivalid redirect URI")
+	ErrInvalidRedirectURI   = errors.New("invalid redirect URI")
 	ErrNoAuthCode           = errors.New("no auth code found")
 	ErrATGen                = errors.New("access token generation error")
 	ErrATNotFound           = errors.New("unregistered access token")
@@ -341,6 +341,11 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 		s.mu.Lock()
 		authCode, exists := s.authCodes[code]
+		if exists && authCode.ClientID != clientID {
+			s.mu.Unlock()
+			sendJSONError(w, http.StatusBadRequest, "invalid_grant", ErrInvalidGrant.Error())
+			return
+		}
 		delete(s.authCodes, code)
 		s.mu.Unlock()
 
@@ -705,7 +710,7 @@ func (c *OAuth2Client) MakeAuthenticatedRequest(url string, method string) (*htt
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer"+c.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
