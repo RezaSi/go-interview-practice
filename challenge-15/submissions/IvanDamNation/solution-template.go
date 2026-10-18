@@ -426,6 +426,11 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 		newAt, newRt, err := s.RefreshAccessToken(refreshToken, clientID)
 
 		if err != nil {
+			if errors.Is(err, ErrInvalidGrant) {
+				sendJSONError(w, http.StatusBadRequest, "invalid_grant", ErrInvalidGrant.Error())
+				return
+			}
+
 			if errors.Is(err, ErrRTNotFound) ||
 				errors.Is(err, ErrClientNotFound) ||
 				errors.Is(err, ErrTokenTimeout) {
@@ -496,7 +501,7 @@ func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) 
 	}
 
 	if refToken.ClientID != clientID {
-		return nil, nil, ErrClientNotFound // Или ErrSecretMismatch / специальная ошибка
+		return nil, nil, ErrInvalidGrant
 	}
 
 	delete(s.refreshTokens, refreshToken)
