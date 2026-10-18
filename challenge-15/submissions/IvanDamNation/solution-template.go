@@ -341,18 +341,20 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 		s.mu.Lock()
 		authCode, exists := s.authCodes[code]
-		if exists && authCode.ClientID != clientID {
+		if !exists {
 			s.mu.Unlock()
-			sendJSONError(w, http.StatusBadRequest, "invalid_grant", ErrInvalidGrant.Error())
+			sendJSONError(w, http.StatusUnauthorized, "invalid_grant", ErrNoAuthCode.Error())
 			return
 		}
+
+		if authCode.ClientID != clientID {
+			s.mu.Unlock()
+			sendJSONError(w, http.StatusBadRequest, "invalid_grant", "client mismatch")
+			return
+		}
+
 		delete(s.authCodes, code)
 		s.mu.Unlock()
-
-		if !exists {
-			http.Error(w, ErrNoAuthCode.Error(), http.StatusUnauthorized)
-			return
-		}
 
 		redirectURI := r.PostForm.Get("redirect_uri")
 		if authCode.RedirectURI != redirectURI {
@@ -421,7 +423,7 @@ func (s *OAuth2Server) HandleToken(w http.ResponseWriter, r *http.Request) {
 
 	case "refresh_token":
 		refreshToken := r.PostForm.Get("refresh_token")
-		newAt, newRt, err := s.RefreshAccessToken(refreshToken)
+		newAt, newRt, err := s.RefreshAccessToken(refreshToken, clientID)
 
 		if err != nil {
 			if errors.Is(err, ErrRTNotFound) ||
@@ -484,13 +486,17 @@ func (s *OAuth2Server) ValidateToken(token string) (*Token, error) {
 }
 
 // RefreshAccessToken refreshes an access token using a refresh token
-func (s *OAuth2Server) RefreshAccessToken(refreshToken string) (*Token, *RefreshToken, error) {
+func (s *OAuth2Server) RefreshAccessToken(refreshToken string, clientID string) (*Token, *RefreshToken, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	refToken, tokenExists := s.refreshTokens[refreshToken]
 	if !tokenExists {
 		return nil, nil, ErrRTNotFound
+	}
+
+	if refToken.ClientID != clientID {
+		return nil, nil, ErrClientNotFound // Или ErrSecretMismatch / специальная ошибка
 	}
 
 	delete(s.refreshTokens, refreshToken)
