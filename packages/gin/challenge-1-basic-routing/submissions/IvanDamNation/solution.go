@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,7 @@ var (
 	ErrEmptyEmail         = errors.New("empty email")
 	ErrEmptySearch        = errors.New("no search parameter provided")
 	ErrEmptyUsername      = errors.New("empty username")
+	ErrInvalidAge         = errors.New("ivalid age")
 	ErrInvalidEmailFormat = errors.New("invalid email format")
 	ErrInvalidIDFormat    = errors.New("invalid id format")
 	ErrInvalidUserFields  = errors.New("invalid user fields")
@@ -37,12 +39,15 @@ type Response struct {
 }
 
 // In-memory storage
-var users = []User{
-	{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
-	{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
-	{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
-}
-var nextID = 4
+var (
+	usersMu sync.RWMutex
+	users   = []User{
+		{ID: 1, Name: "John Doe", Email: "john@example.com", Age: 30},
+		{ID: 2, Name: "Jane Smith", Email: "jane@example.com", Age: 25},
+		{ID: 3, Name: "Bob Wilson", Email: "bob@example.com", Age: 35},
+	}
+	nextID = 4
+)
 
 func main() {
 	router := gin.Default()
@@ -62,6 +67,9 @@ func main() {
 
 // getAllUsers handles GET /users
 func getAllUsers(c *gin.Context) {
+	usersMu.RLock()
+	defer usersMu.RUnlock()
+
 	u := users
 
 	resp := Response{
@@ -76,6 +84,9 @@ func getAllUsers(c *gin.Context) {
 
 // getUserByID handles GET /users/:id
 func getUserByID(c *gin.Context) {
+	usersMu.RLock()
+	defer usersMu.RUnlock()
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -105,6 +116,9 @@ func getUserByID(c *gin.Context) {
 
 // createUser handles POST /users
 func createUser(c *gin.Context) {
+	usersMu.Lock()
+	defer usersMu.Unlock()
+
 	var newUser User
 	var err error
 	if err = c.ShouldBindJSON(&newUser); err != nil {
@@ -137,6 +151,9 @@ func createUser(c *gin.Context) {
 
 // updateUser handles PUT /users/:id
 func updateUser(c *gin.Context) {
+	usersMu.Lock()
+	defer usersMu.Unlock()
+
 	var err error
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -174,15 +191,9 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
-	if updateUser.Age != 0 {
-		user.Age = updateUser.Age
-	}
-	if updateUser.Email != "" {
-		user.Email = updateUser.Email
-	}
-	if updateUser.Name != "" {
-		user.Name = updateUser.Name
-	}
+	user.Age = updateUser.Age
+	user.Email = updateUser.Email
+	user.Name = updateUser.Name
 
 	c.JSON(http.StatusOK, Response{
 		Success: true,
@@ -194,6 +205,9 @@ func updateUser(c *gin.Context) {
 
 // deleteUser handles DELETE /users/:id
 func deleteUser(c *gin.Context) {
+	usersMu.Lock()
+	defer usersMu.Unlock()
+
 	var err error
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -225,6 +239,8 @@ func deleteUser(c *gin.Context) {
 
 // searchUsers handles GET /users/search?name=value
 func searchUsers(c *gin.Context) {
+	usersMu.RLock()
+	defer usersMu.RUnlock()
 	username := strings.ToLower(c.Query("name"))
 	if username == "" {
 		c.JSON(http.StatusBadRequest, Response{
@@ -250,12 +266,12 @@ func searchUsers(c *gin.Context) {
 }
 
 // Helper function to find user by ID
-func findUserByID(id int) (*User, int) {
-	var user *User
+func findUserByID(id int) (User, int) {
+	var user User
 	index := -1
 	for i, u := range users {
 		if u.ID == id {
-			user = &users[i]
+			user = users[i]
 			index = i
 			break
 		}
@@ -268,6 +284,10 @@ func findUserByID(id int) (*User, int) {
 func validateUser(user User) error {
 	if user.Name == "" {
 		return ErrEmptyUsername
+	}
+
+	if user.Age < 0 {
+		return ErrInvalidAge
 	}
 
 	if user.Email == "" {
