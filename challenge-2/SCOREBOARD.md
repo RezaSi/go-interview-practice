@@ -20,6 +20,7 @@
 | Falasefemi2 | 8 | 8 |
 | ForcemCS | 8 | 8 |
 | ForgottenGrom | 8 | 8 |
+| GenkiSugiyama | 8 | 8 |
 | Hikitak | 8 | 8 |
 | IBraveMonkey | 8 | 8 |
 | Ilya837 | 8 | 8 |
