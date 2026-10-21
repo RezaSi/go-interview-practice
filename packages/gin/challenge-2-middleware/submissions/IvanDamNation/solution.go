@@ -120,7 +120,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if role != "admin" && strings.Contains(c.Request.URL.Path, "/admin") {
+		if role != "admin" && strings.HasPrefix(c.Request.URL.Path, "/admin") {
 			reqID := getRequestID(c)
 			c.AbortWithStatusJSON(http.StatusForbidden, APIResponse{
 				Error:     "low permission",
@@ -169,6 +169,7 @@ type ClientRate struct {
 func RateLimitMiddleware() gin.HandlerFunc {
 	var mu sync.Mutex
 	clients := make(map[string]*ClientRate)
+	lastCleanup := time.Time{}
 
 	const (
 		maxLimit    = 100
@@ -177,10 +178,18 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	)
 
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
+		ip := c.RemoteIP()
 		now := time.Now()
 
 		mu.Lock()
+		if now.Sub(lastCleanup) >= resetTime {
+			for clientIP, clientRate := range clients {
+				if now.After(clientRate.ResetTime) {
+					delete(clients, clientIP)
+				}
+			}
+			lastCleanup = now
+		}
 		rate, exists := clients[ip]
 		if !exists || now.After(rate.ResetTime) {
 			rate = &ClientRate{
