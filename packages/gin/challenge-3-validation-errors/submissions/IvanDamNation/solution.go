@@ -55,7 +55,7 @@ type Image struct {
 
 // Inventory represents product inventory information
 type Inventory struct {
-	Quantity    int       `json:"quantity" binding:"required,min=0"`
+	Quantity    int       `json:"quantity" binding:"min=0"`
 	Reserved    int       `json:"reserved" binding:"min=0"`
 	Available   int       `json:"available"` // Calculated field
 	Location    string    `json:"location" binding:"required"`
@@ -131,6 +131,14 @@ func isValidWarehouseCode(code string) bool {
 func validateProduct(product *Product) []ValidationError {
 	var errors []ValidationError
 
+	if len(product.Name) < 3 || len(product.Name) > 100 {
+		errors = append(errors, ValidationError{
+			Field:   "name",
+			Value:   product.Name,
+			Message: "Name must be between 3 and 100 characters after sanitization",
+		})
+	}
+
 	if !isValidSKU(product.SKU) {
 		errors = append(errors, ValidationError{
 			Field:   "sku",
@@ -196,9 +204,7 @@ func sanitizeProduct(product *Product) {
 	product.Inventory.Available = product.Inventory.Quantity - product.Inventory.Reserved
 
 	now := time.Now()
-	if product.ID == 0 {
-		product.CreatedAt = now
-	}
+	product.CreatedAt = now
 	product.UpdatedAt = now
 }
 
@@ -280,6 +286,7 @@ func createProductsBulk(c *gin.Context) {
 	var successCount int
 
 	validate := validator.New()
+	validate.SetTagName("binding")
 
 	for _, product := range inputProducts {
 		sanitizeProduct(&product)
