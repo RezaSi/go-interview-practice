@@ -4,6 +4,7 @@
 |------------|--------------|-------------|
 | 22-7-co | 58 | 58 |
 | ItalloMangueBoy | 58 | 58 |
+| IvanDamNation | 58 | 58 |
 | Mxn-ptr | 58 | 58 |
 | PolinaSvet | 58 | 58 |
 | PopovMarko | 58 | 58 |
