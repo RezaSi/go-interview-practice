@@ -96,11 +96,11 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 
 | 🏅 | Developer | Solved | Rate | Achievement | Progress |
 |:---:|:---:|:---:|:---:|:---:|:---|
-| 🥇 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥈 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 🥉 | <img src="https://github.com/mvsouza.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mvsouza](https://github.com/mvsouza)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 4 | <img src="https://github.com/nzamulov.png" width="24" height="24" style="border-radius: 50%;"><br/>**[nzamulov](https://github.com/nzamulov)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
-| 5 | <img src="https://github.com/IvanDamNation.png" width="24" height="24" style="border-radius: 50%;"><br/>**[IvanDamNation](https://github.com/IvanDamNation)** | **29**/30 | **96.7%** | Master | ⬜✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥇 | <img src="https://github.com/IvanDamNation.png" width="24" height="24" style="border-radius: 50%;"><br/>**[IvanDamNation](https://github.com/IvanDamNation)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥈 | <img src="https://github.com/PolinaSvet.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PolinaSvet](https://github.com/PolinaSvet)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 🥉 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 4 | <img src="https://github.com/mvsouza.png" width="24" height="24" style="border-radius: 50%;"><br/>**[mvsouza](https://github.com/mvsouza)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
+| 5 | <img src="https://github.com/nzamulov.png" width="24" height="24" style="border-radius: 50%;"><br/>**[nzamulov](https://github.com/nzamulov)** | **30**/30 | **100.0%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 6 | <img src="https://github.com/odelbos.png" width="24" height="24" style="border-radius: 50%;"><br/>**[odelbos](https://github.com/odelbos)** | **29**/30 | **96.7%** | Master | ✅⬜✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 7 | <img src="https://github.com/imankhodadi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[imankhodadi](https://github.com/imankhodadi)** | **28**/30 | **93.3%** | Master | ✅✅✅✅✅✅✅✅✅✅✅⬜✅⬜✅<br/>✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ |
 | 8 | <img src="https://github.com/atplay90.png" width="24" height="24" style="border-radius: 50%;"><br/>**[atplay90](https://github.com/atplay90)** | **25**/30 | **83.3%** | Master | ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅<br/>✅✅✅✅✅✅✅✅⬜⬜⬜✅⬜⬜✅ |
@@ -120,8 +120,8 @@ Our most accomplished Go developers, ranked by number of challenges completed:
 ### Challenge Progress Overview
 
 - **Total Challenges Available**: 30
-- **Active Developers**: 400
-- **Most Challenges Solved**: 30 by PolinaSvet
+- **Active Developers**: 401
+- **Most Challenges Solved**: 30 by IvanDamNation
 
 <!-- END_CLASSIC_LEADERBOARD -->
 ## 🚀 Package Challenges Leaderboard
