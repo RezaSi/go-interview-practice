@@ -225,7 +225,6 @@ func validateToken(tokenString string) (*JWTClaims, error) {
 			return jwtSecret, nil
 		},
 		jwt.WithValidMethods([]string{"HS256"}),
-		jwt.WithExpirationRequired(),
 	)
 
 	if err != nil {
