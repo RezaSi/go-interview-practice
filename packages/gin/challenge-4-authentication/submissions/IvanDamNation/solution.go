@@ -1,8 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -79,6 +80,7 @@ type JWTClaims struct {
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
+	Type     string `json:"typ,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -172,7 +174,9 @@ func generateTokens(userID int, username string, role Roles) (*TokenResponse, er
 		UserID:   userID,
 		Username: username,
 		Role:     string(role),
+		Type:     "access",
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        generateJTI(),
 			ExpiresAt: jwt.NewNumericDate(now.Add(accessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
@@ -184,7 +188,10 @@ func generateTokens(userID int, username string, role Roles) (*TokenResponse, er
 		return nil, err
 	}
 
-	claims.RegisteredClaims.ExpiresAt = jwt.NewNumericDate(now.Add(refreshTokenTTL))
+	claims.ID = generateJTI()
+	claims.Type = "refresh"
+	claims.ExpiresAt = jwt.NewNumericDate(now.Add(refreshTokenTTL))
+
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	rtStr, err := rt.SignedString(jwtSecret)
 	if err != nil {
@@ -202,16 +209,25 @@ func generateTokens(userID int, username string, role Roles) (*TokenResponse, er
 	}, nil
 }
 
+func generateJTI() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
 // validateToken validates provided JWT token
 func validateToken(tokenString string) (*JWTClaims, error) {
 	claims := &JWTClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(t *jwt.Token) (any, error) {
+			return jwtSecret, nil
+		},
+		jwt.WithValidMethods([]string{"HS256"}),
+		jwt.WithExpirationRequired(),
+	)
 
-		return jwtSecret, nil
-	})
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +419,7 @@ func login(c *gin.Context) {
 	if user == nil {
 		c.JSON(http.StatusUnauthorized, APIResponse{
 			Success: false,
-			Error:   ErrUserNotFound.Error(),
+			Error:   ErrInvalidCreds.Error(),
 		})
 		return
 	}
@@ -480,7 +496,6 @@ func logout(c *gin.Context) {
 	for k, v := range refreshTokens {
 		if v == userID {
 			delete(refreshTokens, k)
-			break
 		}
 	}
 
@@ -513,8 +528,16 @@ func refreshToken(c *gin.Context) {
 		return
 	}
 
+	if claims.Type != "refresh" {
+		c.JSON(http.StatusUnauthorized, APIResponse{
+			Success: false,
+			Error:   ErrInvalidToken.Error(),
+		})
+		return
+	}
+
 	userID, exists := refreshTokens[req.RefreshToken]
-	if !exists {
+	if !exists || userID != claims.UserID {
 		c.JSON(http.StatusUnauthorized, APIResponse{
 			Success: false,
 			Error:   ErrInvalidToken.Error(),
@@ -523,7 +546,16 @@ func refreshToken(c *gin.Context) {
 	}
 	delete(refreshTokens, req.RefreshToken)
 
-	tokens, err := generateTokens(userID, claims.Username, Roles(claims.Role))
+	user := findUserByID(userID)
+	if user == nil || isAccountLocked(user) {
+		c.JSON(http.StatusUnauthorized, APIResponse{
+			Success: false,
+			Error:   ErrInvalidToken.Error(),
+		})
+		return
+	}
+
+	tokens, err := generateTokens(user.ID, user.Username, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Success: false,
@@ -565,6 +597,14 @@ func authMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, APIResponse{
 				Success: false,
 				Error:   err.Error(),
+			})
+			return
+		}
+
+		if claims.Type != "access" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, APIResponse{
+				Success: false,
+				Error:   ErrInvalidToken.Error(),
 			})
 			return
 		}
@@ -770,6 +810,12 @@ func changePassword(c *gin.Context) {
 
 	user.PasswordHash = hash
 	user.UpdatedAt = time.Now()
+
+	for k, v := range refreshTokens {
+		if v == user.ID {
+			delete(refreshTokens, k)
+		}
+	}
 
 	c.JSON(http.StatusOK, APIResponse{
 		Success: true,
