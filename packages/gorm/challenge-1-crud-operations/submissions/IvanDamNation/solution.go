@@ -65,14 +65,13 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 
 // UpdateUser updates an existing user's information
 func UpdateUser(db *gorm.DB, user *User) error {
-	res := db.First(&User{}, user.ID)
+	res := db.Model(&User{}).Select("*").Where("id = ?", user.ID).Updates(user)
 	if res.Error != nil {
 		return res.Error
 	}
-	
-	res = db.Save(user)
-	if res.Error != nil {
-		return res.Error
+
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 	
 	return nil
