@@ -3,6 +3,7 @@
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
 | 22-7-co | 12 | 12 |
+| IvanDamNation | 12 | 12 |
 | Kinsue | 12 | 12 |
 | Mxn-ptr | 12 | 12 |
 | Onkar-25 | 12 | 12 |
