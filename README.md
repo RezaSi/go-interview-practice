@@ -137,8 +137,8 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥉 | <img src="https://github.com/PopovMarko.png" width="24" height="24" style="border-radius: 50%;"><br/>**[PopovMarko](https://github.com/PopovMarko)** | **8** | **3** pkgs | 💪 Package Advanced | **cobra**: 3 • **gin**: 4 • **gorm**: 1 |
 | 4 | <img src="https://github.com/RezaSi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[RezaSi](https://github.com/RezaSi)** | **7** | **6** pkgs | 💪 Package Advanced | **cobra**: 1 • **echo**: 1 • **fiber**: 1 • **gin**: 1 • **gorm**: 1 • **mongodb**: 2 |
 | 5 | <img src="https://github.com/imankhodadi.png" width="24" height="24" style="border-radius: 50%;"><br/>**[imankhodadi](https://github.com/imankhodadi)** | **7** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 3 |
-| 6 | <img src="https://github.com/22-7-co.png" width="24" height="24" style="border-radius: 50%;"><br/>**[22-7-co](https://github.com/22-7-co)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 1 |
-| 7 | <img src="https://github.com/IvanDamNation.png" width="24" height="24" style="border-radius: 50%;"><br/>**[IvanDamNation](https://github.com/IvanDamNation)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 1 |
+| 6 | <img src="https://github.com/IvanDamNation.png" width="24" height="24" style="border-radius: 50%;"><br/>**[IvanDamNation](https://github.com/IvanDamNation)** | **6** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 2 |
+| 7 | <img src="https://github.com/22-7-co.png" width="24" height="24" style="border-radius: 50%;"><br/>**[22-7-co](https://github.com/22-7-co)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 1 |
 | 8 | <img src="https://github.com/Mxn-ptr.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Mxn-ptr](https://github.com/Mxn-ptr)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 4 • **gorm**: 1 |
 | 9 | <img src="https://github.com/Onkar-25.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Onkar-25](https://github.com/Onkar-25)** | **5** | **3** pkgs | 💪 Package Advanced | **gin**: 2 • **gorm**: 2 • **mongodb**: 1 |
 | 10 | <img src="https://github.com/Sylinsic.png" width="24" height="24" style="border-radius: 50%;"><br/>**[Sylinsic](https://github.com/Sylinsic)** | **5** | **2** pkgs | 💪 Package Advanced | **gin**: 2 • **gorm**: 3 |
@@ -193,7 +193,7 @@ Master Go packages through hands-on challenges! Each package offers a structured
 | 🥈 | **[Sylinsic](https://github.com/Sylinsic)** | 3/5 | 🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% |
 | 🥉 | **[aswinsreeraj](https://github.com/aswinsreeraj)** | 3/5 | 🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% |
 | 4 | **[imankhodadi](https://github.com/imankhodadi)** | 3/5 | 🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 60% |
-| 5 | **[Onkar-25](https://github.com/Onkar-25)** | 2/5 | 🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% |
+| 5 | **[IvanDamNation](https://github.com/IvanDamNation)** | 2/5 | 🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% |
 
 #### Mongodb Package
 
