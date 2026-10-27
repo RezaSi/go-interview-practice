@@ -38,7 +38,7 @@ type Tag struct {
 
 // ConnectDB establishes a connection to the SQLite database and auto-migrates the models
 func ConnectDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("test.db?_foreign_keys=on"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func CreatePostWithTags(db *gorm.DB, post *Post, tagNames []string) error {
 
 	for _, t := range tagNames {
 		var tag Tag
-		err = db.Where(Tag{Name: t}).FirstOrCreate(&tag).Error
+		err = db.Where("name = ?", t).FirstOrCreate(&tag, Tag{Name: t}).Error
 		if err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func AddTagsToPost(db *gorm.DB, postID uint, tagNames []string) error {
 	var tags []Tag
 	for _, t := range tagNames {
 		var tag Tag
-		err = db.Where(Tag{Name: t}).FirstOrCreate(&tag).Error
+		err = db.Where("name = ?", t).FirstOrCreate(&tag, Tag{Name: t}).Error
 		if err != nil {
 			return err
 		}
