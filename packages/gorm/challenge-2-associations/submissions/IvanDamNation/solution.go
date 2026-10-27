@@ -74,25 +74,27 @@ func GetUserWithPosts(db *gorm.DB, userID uint) (*User, error) {
 
 // CreatePostWithTags creates a new post with specified tags
 func CreatePostWithTags(db *gorm.DB, post *Post, tagNames []string) error {
-	var tags []Tag
-	var err error
+	return db.Transaction(func(tx *gorm.DB) error {
+		var tags []Tag
+		var err error
 
-	for _, t := range tagNames {
-		var tag Tag
-		err = db.Where("name = ?", t).FirstOrCreate(&tag, Tag{Name: t}).Error
+		for _, t := range tagNames {
+			var tag Tag
+			err = tx.Where("name = ?", t).FirstOrCreate(&tag, Tag{Name: t}).Error
+			if err != nil {
+				return err
+			}
+			tags = append(tags, tag)
+		}
+
+		post.Tags = tags
+		err = tx.Create(post).Error
 		if err != nil {
 			return err
 		}
-		tags = append(tags, tag)
-	}
 
-	post.Tags = tags
-	err = db.Create(post).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // GetPostsByTag retrieves all posts that have a specific tag
