@@ -72,29 +72,36 @@ func RunMigration(db *gorm.DB, version int) error {
 	}
 
 	type ProductV1 struct {
-		ID          uint      `gorm:"primaryKey"`
-		Name        string    `gorm:"not null"`
-		Price       float64   `gorm:"not null"`
-		Description string    `gorm:"type:text"`
+		ID          uint    `gorm:"primaryKey"`
+		Name        string  `gorm:"not null"`
+		Price       float64 `gorm:"not null"`
+		Description string  `gorm:"type:text"`
 		CreatedAt   time.Time
 		UpdatedAt   time.Time
 	}
 
 	type ProductV3Tmp struct {
-		ID          uint      `gorm:"primaryKey"`
-		Name        string    `gorm:"not null"`
-		Price       float64   `gorm:"not null"`
-		Description string    `gorm:"type:text"`
-		CategoryID  uint      `gorm:"not null"`
-		Stock       int       `gorm:"default:0"`
-		SKU         string    `gorm:"unique;not null"`
-		IsActive    bool      `gorm:"default:true"`
+		ID          uint    `gorm:"primaryKey"`
+		Name        string  `gorm:"not null"`
+		Price       float64 `gorm:"not null"`
+		Description string  `gorm:"type:text"`
+		CategoryID  uint    `gorm:"not null"`
+		Stock       int     `gorm:"default:0"`
+		SKU         string  `gorm:"unique;not null"`
+		IsActive    bool    `gorm:"default:true"`
 		CreatedAt   time.Time
 		UpdatedAt   time.Time
 	}
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		var err error
+		currentVersion, err := GetMigrationVersion(tx)
+		if err != nil {
+			return err
+		}
+		if currentVersion >= version {
+			return nil
+		}
+
 		switch version {
 		case 1:
 			err = tx.Table("products").AutoMigrate(&ProductV1{})
@@ -110,6 +117,10 @@ func RunMigration(db *gorm.DB, version int) error {
 			}
 
 			if tx.Migrator().HasTable("products") {
+				if err = tx.AutoMigrate(&Category{}); err != nil {
+					return err
+				}
+
 				var defaultCategory Category
 				if err = tx.Where("name = ?", "Electronics").FirstOrCreate(&defaultCategory, Category{Name: "Electronics", Description: "Default"}).Error; err != nil {
 					return err
@@ -117,7 +128,7 @@ func RunMigration(db *gorm.DB, version int) error {
 
 				transferSQL := fmt.Sprintf(`
 					INSERT INTO %s (id, name, price, description, category_id, stock, sku, is_active, created_at, updated_at)
-					SELECT id, name, price, description, ?, 0, 'GEN-SKU-' || id, 1, created_at, updated_at 
+					SELECT id, name, price, description, ?, 0, 'GEN-SKU-' || id, 1, created_at, updated_at
 					FROM products;
 				`, tmpTableName)
 
@@ -133,7 +144,7 @@ func RunMigration(db *gorm.DB, version int) error {
 			if err = tx.Migrator().RenameTable(tmpTableName, "products"); err != nil {
 				return err
 			}
-			
+
 			err = tx.AutoMigrate(&Product{})
 		}
 
@@ -153,10 +164,10 @@ func RollbackMigration(db *gorm.DB, version int) error {
 	}
 
 	type ProductV1 struct {
-		ID          uint      `gorm:"primaryKey"`
-		Name        string    `gorm:"not null"`
-		Price       float64   `gorm:"not null"`
-		Description string    `gorm:"type:text"`
+		ID          uint    `gorm:"primaryKey"`
+		Name        string  `gorm:"not null"`
+		Price       float64 `gorm:"not null"`
+		Description string  `gorm:"type:text"`
 		CreatedAt   time.Time
 		UpdatedAt   time.Time
 	}
@@ -165,6 +176,10 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		currentVersion, err := GetMigrationVersion(tx)
 		if err != nil {
 			return err
+		}
+
+		if version > currentVersion {
+			return fmt.Errorf("cannot roll back to version %d from version %d", version, currentVersion)
 		}
 
 		if currentVersion == 3 && version <= 2 {
@@ -177,7 +192,7 @@ func RollbackMigration(db *gorm.DB, version int) error {
 			if tx.Migrator().HasTable("products") {
 				transferSQL := fmt.Sprintf(`
 					INSERT INTO %s (id, name, price, description, created_at, updated_at)
-					SELECT id, name, price, description, created_at, updated_at 
+					SELECT id, name, price, description, created_at, updated_at
 					FROM products;
 				`, tmpTableName)
 
