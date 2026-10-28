@@ -163,11 +163,22 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		return fmt.Errorf("unsupported version: %d", version)
 	}
 
+	// Структура строго для Версии 1 (чистый продукт)
 	type ProductV1 struct {
 		ID          uint    `gorm:"primaryKey"`
 		Name        string  `gorm:"not null"`
 		Price       float64 `gorm:"not null"`
 		Description string  `gorm:"type:text"`
+		CreatedAt   time.Time
+		UpdatedAt   time.Time
+	}
+
+	type ProductV2 struct {
+		ID          uint    `gorm:"primaryKey"`
+		Name        string  `gorm:"not null"`
+		Price       float64 `gorm:"not null"`
+		Description string  `gorm:"type:text"`
+		CategoryID  uint    `gorm:"not null"`
 		CreatedAt   time.Time
 		UpdatedAt   time.Time
 	}
@@ -183,16 +194,16 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		}
 
 		if currentVersion == 3 && version <= 2 {
-			tmpTableName := "_products_v1_tmp"
+			tmpTableName := "_products_v2_tmp"
 
-			if err = tx.Table(tmpTableName).AutoMigrate(&ProductV1{}); err != nil {
+			if err = tx.Table(tmpTableName).AutoMigrate(&ProductV2{}); err != nil {
 				return err
 			}
 
 			if tx.Migrator().HasTable("products") {
 				transferSQL := fmt.Sprintf(`
-					INSERT INTO %s (id, name, price, description, created_at, updated_at)
-					SELECT id, name, price, description, created_at, updated_at
+					INSERT INTO %s (id, name, price, description, category_id, created_at, updated_at)
+					SELECT id, name, price, description, category_id, created_at, updated_at
 					FROM products;
 				`, tmpTableName)
 
@@ -215,6 +226,31 @@ func RollbackMigration(db *gorm.DB, version int) error {
 				if err = tx.Migrator().DropTable(&Category{}); err != nil {
 					return err
 				}
+			}
+
+			tmpTableName := "_products_v1_tmp"
+			if err = tx.Table(tmpTableName).AutoMigrate(&ProductV1{}); err != nil {
+				return err
+			}
+
+			if tx.Migrator().HasTable("products") {
+				transferSQL := fmt.Sprintf(`
+					INSERT INTO %s (id, name, price, description, created_at, updated_at)
+					SELECT id, name, price, description, created_at, updated_at
+					FROM products;
+				`, tmpTableName)
+
+				if err = tx.Exec(transferSQL).Error; err != nil {
+					return err
+				}
+
+				if err = tx.Migrator().DropTable("products"); err != nil {
+					return err
+				}
+			}
+
+			if err = tx.Migrator().RenameTable(tmpTableName, "products"); err != nil {
+				return err
 			}
 		}
 
