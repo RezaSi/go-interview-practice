@@ -71,35 +71,94 @@ func RunMigration(db *gorm.DB, version int) error {
 		return fmt.Errorf("unregistered version: %d", version)
 	}
 
-	var err error
-	switch version {
-	case 1:
-		err = db.Table("products").AutoMigrate(&ProductV1{})
+	type ProductV1 struct {
+		ID          uint      `gorm:"primaryKey"`
+		Name        string    `gorm:"not null"`
+		Price       float64   `gorm:"not null"`
+		Description string    `gorm:"type:text"`
+		CreatedAt   time.Time
+		UpdatedAt   time.Time
+	}
 
-	case 2:
-		err = db.AutoMigrate(&Category{})
+	type ProductV3Tmp struct {
+		ID          uint      `gorm:"primaryKey"`
+		Name        string    `gorm:"not null"`
+		Price       float64   `gorm:"not null"`
+		Description string    `gorm:"type:text"`
+		CategoryID  uint      `gorm:"not null"`
+		Stock       int       `gorm:"default:0"`
+		SKU         string    `gorm:"unique;not null"`
+		IsActive    bool      `gorm:"default:true"`
+		CreatedAt   time.Time
+		UpdatedAt   time.Time
+	}
 
-	case 3:
-		if db.Migrator().HasTable("products") {
-			if err = db.Migrator().DropTable("products"); err != nil {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var err error
+		switch version {
+		case 1:
+			err = tx.Table("products").AutoMigrate(&ProductV1{})
+
+		case 2:
+			err = tx.AutoMigrate(&Category{})
+
+		case 3:
+			tmpTableName := "_products_v3_tmp"
+
+			if err = tx.Table(tmpTableName).AutoMigrate(&ProductV3Tmp{}); err != nil {
 				return err
 			}
+
+			if tx.Migrator().HasTable("products") {
+				var defaultCategory Category
+				if err = tx.Where("name = ?", "Electronics").FirstOrCreate(&defaultCategory, Category{Name: "Electronics", Description: "Default"}).Error; err != nil {
+					return err
+				}
+
+				transferSQL := fmt.Sprintf(`
+					INSERT INTO %s (id, name, price, description, category_id, stock, sku, is_active, created_at, updated_at)
+					SELECT id, name, price, description, ?, 0, 'GEN-SKU-' || id, 1, created_at, updated_at 
+					FROM products;
+				`, tmpTableName)
+
+				if err = tx.Exec(transferSQL, defaultCategory.ID).Error; err != nil {
+					return err
+				}
+
+				if err = tx.Migrator().DropTable("products"); err != nil {
+					return err
+				}
+			}
+
+			if err = tx.Migrator().RenameTable(tmpTableName, "products"); err != nil {
+				return err
+			}
+			
+			err = tx.AutoMigrate(&Product{})
 		}
-		err = db.AutoMigrate(&Product{})
-	}
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	mv := MigrationVersion{ID: 1, Version: version, AppliedAt: time.Now()}
-	return db.Save(&mv).Error
+		mv := MigrationVersion{ID: 1, Version: version, AppliedAt: time.Now()}
+		return tx.Save(&mv).Error
+	})
 }
 
 // RollbackMigration rolls back to a specific migration version
 func RollbackMigration(db *gorm.DB, version int) error {
 	if version < 1 || version > 3 {
 		return fmt.Errorf("unsupported version: %d", version)
+	}
+
+	type ProductV1 struct {
+		ID          uint      `gorm:"primaryKey"`
+		Name        string    `gorm:"not null"`
+		Price       float64   `gorm:"not null"`
+		Description string    `gorm:"type:text"`
+		CreatedAt   time.Time
+		UpdatedAt   time.Time
 	}
 
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -109,12 +168,29 @@ func RollbackMigration(db *gorm.DB, version int) error {
 		}
 
 		if currentVersion == 3 && version <= 2 {
+			tmpTableName := "_products_v1_tmp"
+
+			if err = tx.Table(tmpTableName).AutoMigrate(&ProductV1{}); err != nil {
+				return err
+			}
+
 			if tx.Migrator().HasTable("products") {
+				transferSQL := fmt.Sprintf(`
+					INSERT INTO %s (id, name, price, description, created_at, updated_at)
+					SELECT id, name, price, description, created_at, updated_at 
+					FROM products;
+				`, tmpTableName)
+
+				if err = tx.Exec(transferSQL).Error; err != nil {
+					return err
+				}
+
 				if err = tx.Migrator().DropTable("products"); err != nil {
 					return err
 				}
 			}
-			if err = tx.Table("products").AutoMigrate(&ProductV1{}); err != nil {
+
+			if err = tx.Migrator().RenameTable(tmpTableName, "products"); err != nil {
 				return err
 			}
 		}
