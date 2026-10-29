@@ -2,6 +2,7 @@
 
 | Username   | Passed Tests | Total Tests |
 |------------|--------------|-------------|
+| IvanDamNation | 8 | 8 |
 | Sylinsic | 8 | 8 |
 | imankhodadi | 8 | 8 |
 | odelbos | 8 | 8 |
