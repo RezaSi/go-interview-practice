@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -45,6 +46,8 @@ type Like struct {
 	CreatedAt time.Time
 }
 
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
 // ConnectDB establishes a connection to the SQLite database with auto-migration
 func ConnectDB() (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
@@ -62,6 +65,10 @@ func ConnectDB() (*gorm.DB, error) {
 
 // GetTopUsersByPostCount retrieves users with the most posts
 func GetTopUsersByPostCount(db *gorm.DB, limit int) ([]User, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("invalid limit value")
+	}
+
 	var users []User
 	res := db.
 		Joins("LEFT JOIN posts ON posts.user_id = users.id").
@@ -101,6 +108,7 @@ func GetPostsByCategoryWithUserInfo(db *gorm.DB, category string, page, pageSize
 	err = tx.
 		Where("category = ?", category).
 		Preload("User").
+		Order("created_at DESC, id DESC").
 		Limit(pageSize).
 		Offset(offset).
 		Find(&posts).Error
@@ -207,7 +215,7 @@ func GetCountryUserStats(db *gorm.DB) ([]map[string]any, error) {
 	var stats []map[string]any
 	err := db.
 		Model(&User{}).
-		Select("country").
+		Select("country, COUNT(*) AS user_count").
 		Group("country").
 		Scan(&stats).Error
 
@@ -226,7 +234,7 @@ func SearchPostsByContent(db *gorm.DB, query string, limit int) ([]Post, error) 
 
 	var posts []Post
 	err := db.
-		Where("content LIKE ?", "%"+query+"%").
+		Where("content LIKE ? ESCAPE '\\'", "%"+likeEscaper.Replace(query)+"%").
 		Limit(limit).
 		Find(&posts).Error
 
@@ -239,6 +247,10 @@ func SearchPostsByContent(db *gorm.DB, query string, limit int) ([]Post, error) 
 
 // GetUserRecommendations retrieves user recommendations based on similar interests
 func GetUserRecommendations(db *gorm.DB, userID uint, limit int) ([]User, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("invalid limit value")
+	}
+
 	likedPostsUsersSubQuery := db.
 		Model(&Like{}).
 		Select("user_id").
