@@ -83,12 +83,12 @@ func GetUserByID(ctx context.Context, db *gorm.DB, id uint) (*User, error) {
 // UpdateUserAge updates a user's age using generics API
 func UpdateUserAge(ctx context.Context, db *gorm.DB, userID uint, age int) error {
 	rows, err := gorm.G[User](db).Where("id = ?", userID).Update(ctx, "age", age)
-	if rows == 0 {
-		return fmt.Errorf("user not found")
-	}
-
 	if err != nil {
 		return err
+	}
+	
+	if rows == 0 {
+		return fmt.Errorf("user not found")
 	}
 
 	return nil
@@ -97,14 +97,14 @@ func UpdateUserAge(ctx context.Context, db *gorm.DB, userID uint, age int) error
 // DeleteUser deletes a user by ID using generics API
 func DeleteUser(ctx context.Context, db *gorm.DB, userID uint) error {
 	rows, err := gorm.G[User](db).Where("id = ?", userID).Delete(ctx)
-	if rows == 0 {
-		return fmt.Errorf("user not found")
-	}
-
 	if err != nil {
 		return err
 	}
-
+	
+	if rows == 0 {
+		return fmt.Errorf("user not found")
+	}
+	
 	return nil
 }
 
