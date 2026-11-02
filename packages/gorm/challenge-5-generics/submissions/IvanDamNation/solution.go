@@ -176,7 +176,7 @@ func CreateUserWithResult(ctx context.Context, db *gorm.DB, user *User) (int64, 
 // GetUsersWithCompany retrieves users with their company information using enhanced joins
 func GetUsersWithCompany(ctx context.Context, db *gorm.DB) ([]User, error) {
 	users, err := gorm.G[User](db).Joins(
-		clause.LeftJoin.Association("Company"),
+		clause.InnerJoin.Association("Company"),
 		func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error { return nil },
 	).Find(ctx)
 	if err != nil {
@@ -243,18 +243,23 @@ func GetTopActiveUsers(ctx context.Context, db *gorm.DB, limit int) ([]User, err
 	users, err := gorm.G[User](db).
 		Joins(
 			clause.JoinTarget{
-				Type:  clause.LeftJoin,
-				Table: clause.Table{Name: "posts"},
+				Type:     clause.LeftJoin,
+				Table:    "posts",
+				Subquery: db.Model(&Post{}).Select("id, user_id"),
 			},
-			func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error {
-				db.Where("users.id = posts.user_id")
+			func(j gorm.JoinBuilder, joinTable, curTable clause.Table) error {
+				j.Where(clause.Eq{
+					Column: clause.Column{Table: curTable.Name, Name: "id"},
+					Value:  clause.Column{Table: joinTable.Name, Name: "user_id"},
+				})
 				return nil
 			},
 		).
-		Group("users.id").Order("COUNT(posts.id) DESC").
+		Group("users.id").
+		Order("COUNT(posts.id) DESC").
+		Order("users.id ASC").
 		Limit(limit).
 		Find(ctx)
-
 	if err != nil {
 		return nil, err
 	}
