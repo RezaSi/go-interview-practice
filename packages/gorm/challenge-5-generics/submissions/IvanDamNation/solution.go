@@ -222,8 +222,8 @@ func GetUserWithPostsAndCompany(ctx context.Context, db *gorm.DB, userID uint) (
 // SearchUsersInCompany finds users working in a specific company using join with filters
 func SearchUsersInCompany(ctx context.Context, db *gorm.DB, companyName string) ([]User, error) {
 	users, err := gorm.G[User](db).
-		Joins(clause.LeftJoin.Association("Company"), func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error {
-			db.Where("companies.name = ?", companyName)
+		Joins(clause.InnerJoin.Association("Company"), func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error {
+			db.Where("Company.name = ?", companyName)
 			return nil
 		}).Find(ctx)
 
