@@ -175,7 +175,10 @@ func CreateUserWithResult(ctx context.Context, db *gorm.DB, user *User) (int64, 
 
 // GetUsersWithCompany retrieves users with their company information using enhanced joins
 func GetUsersWithCompany(ctx context.Context, db *gorm.DB) ([]User, error) {
-	users, err := gorm.G[User](db).Joins(clause.LeftJoin.Association("Company"), nil).Find(ctx)
+	users, err := gorm.G[User](db).Joins(
+		clause.LeftJoin.Association("Company"),
+		func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error { return nil },
+	).Find(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -205,8 +208,8 @@ func GetUsersWithPosts(ctx context.Context, db *gorm.DB, limit int) ([]User, err
 func GetUserWithPostsAndCompany(ctx context.Context, db *gorm.DB, userID uint) (*User, error) {
 	user, err := gorm.G[User](db).
 		Where("id = ?", userID).
-		Preload("Posts", nil).
-		Preload("Company", nil).
+		Preload("Posts", func(db gorm.PreloadBuilder) error { return nil }).
+		Preload("Company", func(db gorm.PreloadBuilder) error { return nil }).
 		First(ctx)
 
 	if err != nil {
