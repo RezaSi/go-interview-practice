@@ -241,20 +241,25 @@ func GetTopActiveUsers(ctx context.Context, db *gorm.DB, limit int) ([]User, err
 	}
 
 	users, err := gorm.G[User](db).
-		Joins(
-			clause.JoinTarget{
-				Type:     clause.LeftJoin,
-				Table:    "posts",
-				Subquery: db.Model(&Post{}).Select("id, user_id"),
-			},
-			func(j gorm.JoinBuilder, joinTable, curTable clause.Table) error {
-				j.Where(clause.Eq{
-					Column: clause.Column{Table: curTable.Name, Name: "id"},
-					Value:  clause.Column{Table: joinTable.Name, Name: "user_id"},
-				})
-				return nil
-			},
-		).
+		Scopes(func(stmt *gorm.Statement) {
+			stmt.AddClause(clause.From{
+				Joins: []clause.Join{
+					{
+						Type:  clause.LeftJoin,
+						Table: clause.Table{Name: "posts"},
+						ON: clause.Where{
+							Exprs: []clause.Expression{
+								clause.Eq{
+									Column: clause.Column{Table: "users", Name: "id"},
+									Value:  clause.Column{Table: "posts", Name: "user_id"},
+								},
+							},
+						},
+					},
+				},
+			})
+		}).
+		Select("users.*").
 		Group("users.id").
 		Order("COUNT(posts.id) DESC").
 		Order("users.id ASC").
