@@ -242,8 +242,14 @@ func GetTopActiveUsers(ctx context.Context, db *gorm.DB, limit int) ([]User, err
 
 	users, err := gorm.G[User](db).
 		Joins(
-			clause.LeftJoin.Association("Posts"),
-			func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error { return nil },
+			clause.JoinTarget{
+				Type:  clause.LeftJoin,
+				Table: clause.Table{Name: "posts"},
+			},
+			func(db gorm.JoinBuilder, joinTable, curTable clause.Table) error {
+				db.Where("users.id = posts.user_id")
+				return nil
+			},
 		).
 		Group("users.id").Order("COUNT(posts.id) DESC").
 		Limit(limit).
