@@ -2,7 +2,7 @@
 package main
 
 import (
-	"encoding/json/v2"
+	"encoding/json"
 	"fmt"
 	"log"
 	"maps"
@@ -229,7 +229,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Not found", http.StatusNotFound)
 					return
 				}
-				json.MarshalWrite(w, books)
+				json.NewEncoder(w).Encode(books)
 				return
 			} else if title != "" {
 				books, err := h.Service.SearchBooksByTitle(title)
@@ -237,7 +237,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Not found", http.StatusNotFound)
 					return
 				}
-				json.MarshalWrite(w, books)
+				json.NewEncoder(w).Encode(books)
 				return
 			} else {
 				http.Error(w, "Not found", http.StatusNotFound)
@@ -251,7 +251,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			json.MarshalWrite(w, book)
+			json.NewEncoder(w).Encode(book)
 			return
 		}
 
@@ -260,12 +260,13 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Not found", http.StatusNotFound)
 			return
 		}
-		json.MarshalWrite(w, books)
+		json.NewEncoder(w).Encode(books)
 		return
 	case "POST":
 		var book Book
 		defer r.Body.Close()
-		err := json.UnmarshalRead(r.Body, &book)
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&book)
 		if err != nil {
 			http.Error(w, "Malformed body", http.StatusBadRequest)
 			return
@@ -276,13 +277,14 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		json.MarshalWrite(w, book)
+		json.NewEncoder(w).Encode(book)
 		return
 	case "PUT":
 		if len(pathSplit) == 4 && lastFrag != "" {
 			var book Book
 			defer r.Body.Close()
-			err := json.UnmarshalRead(r.Body, &book)
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&book)
 			if err != nil {
 				http.Error(w, "Malformed body", http.StatusBadRequest)
 				return
@@ -292,7 +294,7 @@ func (h *BookHandler) HandleBooks(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Not found", http.StatusNotFound)
 				return
 			}
-			json.MarshalWrite(w, book)
+			json.NewEncoder(w).Encode(book)
 			return
 		}
 	case "DELETE":
