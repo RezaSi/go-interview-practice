@@ -18,7 +18,7 @@ import (
 // Input: "The quick brown fox jumps over the lazy dog."
 // Output: map[string]int{"the": 2, "quick": 1, "brown": 1, "fox": 1, "jumps": 1, "over": 1, "lazy": 1, "dog": 1}
 func CountWordFrequency(text string) map[string]int {
-    re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+    re := regexp.MustCompile(`[^\p{L}\p{N}]+`)
     text = strings.ReplaceAll(text, "'", "")
 	strs := re.Split(text, -1)
 	countMap := make(map[string]int)
