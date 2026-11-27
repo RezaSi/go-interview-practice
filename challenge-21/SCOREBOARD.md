@@ -6,6 +6,7 @@
 | AkifhanIlgaz | 35 | 35 |
 | Ali-Fartoot | 35 | 35 |
 | Be1chenok | 35 | 35 |
+| Bernardo-git-dev | 35 | 35 |
 | BrianHuang813 | 35 | 35 |
 | BroQi | 35 | 35 |
 | Cpoing | 35 | 35 |
